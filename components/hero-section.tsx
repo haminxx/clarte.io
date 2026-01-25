@@ -5,7 +5,7 @@ import { VoiceCard } from "./voice-card"
 import { Button } from "@/components/ui/button"
 
 interface HeroSectionProps {
-  onStartCall?: () => void
+  onStartCall?: (withScreenShare?: boolean) => void
   isCallActive?: boolean
 }
 

@@ -1,10 +1,10 @@
 "use client"
 
-import { Phone, FileText, BookOpen, Play } from "lucide-react"
+import { Phone, FileText, BookOpen, Play, Monitor } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface VoiceCardProps {
-  onStartCall?: () => void
+  onStartCall?: (withScreenShare?: boolean) => void
   isActive?: boolean
 }
 
@@ -25,7 +25,7 @@ export function VoiceCard({ onStartCall, isActive }: VoiceCardProps) {
         <Button
           variant="outline"
           className="flex items-center gap-2 border-white/20 bg-transparent text-white hover:bg-white/10"
-          onClick={onStartCall}
+          onClick={() => onStartCall?.(false)}
         >
           <Phone className="h-4 w-4" />
           Test a call
@@ -33,9 +33,10 @@ export function VoiceCard({ onStartCall, isActive }: VoiceCardProps) {
         <Button
           variant="outline"
           className="flex items-center gap-2 border-white/20 bg-transparent text-white hover:bg-white/10"
+          onClick={() => onStartCall?.(true)}
         >
-          <FileText className="h-4 w-4" />
-          Create a voice line
+          <Monitor className="h-4 w-4" />
+          Call with screen
         </Button>
         <Button
           variant="outline"
@@ -47,7 +48,8 @@ export function VoiceCard({ onStartCall, isActive }: VoiceCardProps) {
         <Button
           size="icon"
           className="ml-auto h-10 w-10 rounded-full bg-white text-black hover:bg-white/90"
-          onClick={onStartCall}
+          onClick={() => onStartCall?.(true)}
+          title="Start call with screen sharing"
         >
           <Play className="h-4 w-4" />
         </Button>
