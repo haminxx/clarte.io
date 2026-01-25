@@ -1,6 +1,8 @@
 "use client"
 
-import { useEffect, useCallback, useState } from "react"
+import React from "react"
+
+import { useEffect, useCallback, useState, useRef } from "react"
 import { Header } from "@/components/header"
 import { HeroSection } from "@/components/hero-section"
 import { CompanyLogos } from "@/components/company-logos"
@@ -8,7 +10,7 @@ import { FeaturesSection } from "@/components/features-section"
 import { ExportModal } from "@/components/export-modal"
 import { useVapi } from "@/hooks/use-vapi"
 import { useScreenShare } from "@/hooks/use-screen-share"
-import { Phone, PhoneOff, Mic, MicOff, Monitor, MonitorOff, Eye, FileDown } from "lucide-react"
+import { Phone, PhoneOff, Mic, MicOff, Monitor, MonitorOff, Eye, FileDown, Upload, ImageIcon, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export default function Home() {
@@ -29,16 +31,24 @@ export default function Home() {
 
   const {
     isSharing,
+    isSupported,
+    usesFallback,
+    fallbackImage,
+    error: screenShareError,
     startScreenShare,
     stopScreenShare,
     captureFrame,
+    uploadScreenshot,
+    clearFallbackImage,
   } = useScreenShare()
 
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [hasInteracted, setHasInteracted] = useState(false)
   const [showCallUI, setShowCallUI] = useState(false)
   const [showExportModal, setShowExportModal] = useState(false)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [callEnded, setCallEnded] = useState(false)
+  const [showScreenShareOptions, setShowScreenShareOptions] = useState(false)
 
   // Set the capture function when screen sharing starts
   useEffect(() => {
@@ -106,13 +116,28 @@ export default function Home() {
   const handleToggleScreenShare = useCallback(async () => {
     if (isSharing) {
       stopScreenShare()
+      clearFallbackImage()
+      setShowScreenShareOptions(false)
     } else {
+      // Try native screen share first
       const stream = await startScreenShare()
       if (stream) {
         setScreenCaptureFunction(captureFrame)
+      } else {
+        // If screen share failed (not supported), show upload option
+        setShowScreenShareOptions(true)
       }
     }
-  }, [isSharing, startScreenShare, stopScreenShare, captureFrame, setScreenCaptureFunction])
+  }, [isSharing, startScreenShare, stopScreenShare, captureFrame, setScreenCaptureFunction, clearFallbackImage])
+
+  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      await uploadScreenshot(file)
+      setScreenCaptureFunction(captureFrame)
+      setShowScreenShareOptions(false)
+    }
+  }, [uploadScreenshot, captureFrame, setScreenCaptureFunction])
 
   return (
     <div className="min-h-screen bg-[#1a1a1a]">
@@ -252,8 +277,84 @@ export default function Home() {
                   </Button>
                 </div>
 
+                {/* Screen share options modal (when native not available) */}
+                {showScreenShareOptions && (
+                  <div className="mt-4 rounded-lg border border-white/10 bg-white/5 p-4">
+                    <div className="mb-3 flex items-center justify-between">
+                      <h4 className="text-sm font-medium text-white">Share Your Screen</h4>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6"
+                        onClick={() => setShowScreenShareOptions(false)}
+                      >
+                        <X className="h-4 w-4 text-white/60" />
+                      </Button>
+                    </div>
+                    
+                    {screenShareError && (
+                      <p className="mb-3 text-xs text-amber-400">
+                        {screenShareError}
+                      </p>
+                    )}
+                    
+                    <p className="mb-3 text-xs text-white/60">
+                      Screen sharing is not available in this preview environment. 
+                      Upload a screenshot instead, or deploy the app for full screen sharing support.
+                    </p>
+                    
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    
+                    <Button
+                      variant="outline"
+                      className="w-full border-white/20 bg-transparent text-white hover:bg-white/10"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload Screenshot
+                    </Button>
+                  </div>
+                )}
+
+                {/* Fallback image preview */}
+                {usesFallback && fallbackImage && (
+                  <div className="mt-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3">
+                    <div className="mb-2 flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm text-emerald-400">
+                        <ImageIcon className="h-4 w-4" />
+                        <span>Screenshot uploaded</span>
+                      </div>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6"
+                        onClick={() => {
+                          clearFallbackImage()
+                          setShowScreenShareOptions(false)
+                        }}
+                      >
+                        <X className="h-4 w-4 text-white/60" />
+                      </Button>
+                    </div>
+                    <img 
+                      src={fallbackImage || "/placeholder.svg"} 
+                      alt="Uploaded screenshot" 
+                      className="w-full rounded-md max-h-32 object-cover"
+                    />
+                    <p className="mt-2 text-xs text-white/50">
+                      The AI can now reference this image. Click the eye button to analyze.
+                    </p>
+                  </div>
+                )}
+
                 {/* Start with screen share hint */}
-                {!isConnected && (
+                {!isConnected && !showScreenShareOptions && !usesFallback && (
                   <p className="mt-4 text-center text-xs text-white/40">
                     Tip: You can share your screen during the call for AI assistance
                   </p>

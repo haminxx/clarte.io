@@ -6,6 +6,9 @@ interface ScreenShareState {
   isSharing: boolean
   stream: MediaStream | null
   error: string | null
+  isSupported: boolean
+  usesFallback: boolean
+  fallbackImage: string | null
 }
 
 export function useScreenShare() {
@@ -13,14 +16,59 @@ export function useScreenShare() {
     isSharing: false,
     stream: null,
     error: null,
+    isSupported: true,
+    usesFallback: false,
+    fallbackImage: null,
   })
   
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const captureIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  // Check if screen sharing is available
+  const checkScreenShareSupport = useCallback(async (): Promise<boolean> => {
+    // Check if we're in a secure context
+    if (!window.isSecureContext) {
+      return false
+    }
+    
+    // Check if getDisplayMedia exists
+    if (!navigator.mediaDevices?.getDisplayMedia) {
+      return false
+    }
+    
+    // Check permissions policy (will fail in restricted iframes)
+    try {
+      // Try to check if display-capture is allowed
+      const permissionStatus = await navigator.permissions.query({ 
+        name: "display-capture" as PermissionName 
+      }).catch(() => null)
+      
+      if (permissionStatus?.state === "denied") {
+        return false
+      }
+    } catch {
+      // Permission query not supported, we'll try the actual API
+    }
+    
+    return true
+  }, [])
 
   const startScreenShare = useCallback(async () => {
     try {
+      // First check basic support
+      const supported = await checkScreenShareSupport()
+      
+      if (!supported) {
+        setState(prev => ({
+          ...prev,
+          isSupported: false,
+          error: "Screen sharing not available in this context. Use the upload option instead.",
+        }))
+        return null
+      }
+
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: {
           displaySurface: "monitor",
@@ -50,18 +98,37 @@ export function useScreenShare() {
         isSharing: true,
         stream,
         error: null,
+        isSupported: true,
+        usesFallback: false,
+        fallbackImage: null,
       })
 
       return stream
-    } catch (error: any) {
-      console.error("[v0] Screen share error:", error)
-      setState((prev) => ({
-        ...prev,
-        error: error.message || "Failed to start screen sharing",
-      }))
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error"
+      
+      // Check if this is a permissions policy error
+      if (errorMessage.includes("permissions policy") || errorMessage.includes("disallowed")) {
+        setState(prev => ({
+          ...prev,
+          isSupported: false,
+          usesFallback: true,
+          error: "Screen sharing is restricted in this environment. Please use the screenshot upload option, or deploy the app to use full screen sharing.",
+        }))
+      } else if (errorMessage.includes("Permission denied") || errorMessage.includes("NotAllowedError")) {
+        setState(prev => ({
+          ...prev,
+          error: "Screen sharing was cancelled or denied.",
+        }))
+      } else {
+        setState(prev => ({
+          ...prev,
+          error: errorMessage || "Failed to start screen sharing",
+        }))
+      }
       return null
     }
-  }, [])
+  }, [checkScreenShareSupport])
 
   const stopScreenShare = useCallback(() => {
     if (state.stream) {
@@ -84,10 +151,18 @@ export function useScreenShare() {
       isSharing: false,
       stream: null,
       error: null,
+      isSupported: state.isSupported,
+      usesFallback: false,
+      fallbackImage: null,
     })
-  }, [state.stream])
+  }, [state.stream, state.isSupported])
 
   const captureFrame = useCallback(async (): Promise<string | null> => {
+    // If using fallback image, return that
+    if (state.usesFallback && state.fallbackImage) {
+      return state.fallbackImage
+    }
+    
     if (!videoRef.current || !canvasRef.current || !state.isSharing) {
       return null
     }
@@ -108,12 +183,44 @@ export function useScreenShare() {
     // Convert to base64 JPEG (smaller than PNG)
     const dataUrl = canvas.toDataURL("image/jpeg", 0.7)
     return dataUrl
-  }, [state.isSharing])
+  }, [state.isSharing, state.usesFallback, state.fallbackImage])
+
+  // Fallback: Upload screenshot manually
+  const uploadScreenshot = useCallback((file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string
+        setState(prev => ({
+          ...prev,
+          isSharing: true,
+          usesFallback: true,
+          fallbackImage: dataUrl,
+          error: null,
+        }))
+        resolve(dataUrl)
+      }
+      reader.onerror = () => reject(new Error("Failed to read file"))
+      reader.readAsDataURL(file)
+    })
+  }, [])
+
+  const clearFallbackImage = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      isSharing: false,
+      usesFallback: false,
+      fallbackImage: null,
+    }))
+  }, [])
 
   return {
     ...state,
     startScreenShare,
     stopScreenShare,
     captureFrame,
+    uploadScreenshot,
+    clearFallbackImage,
+    fileInputRef,
   }
 }
