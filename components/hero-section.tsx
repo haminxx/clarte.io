@@ -51,12 +51,15 @@ export function HeroSection({ onStartCall, isCallActive }: HeroSectionProps) {
         </div>
       </div>
 
-      {/* Particle Orb Container */}
-      <div className="relative mx-auto h-[500px] w-full max-w-4xl">
-        <ParticleOrb />
+      {/* Particle Orb Container with Voice Card centered */}
+      <div className="relative mx-auto flex h-[500px] w-full max-w-4xl items-center justify-center">
+        {/* Orb centered behind the card */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <ParticleOrb />
+        </div>
         
-        {/* Voice Card positioned at the top of the orb */}
-        <div className="absolute top-8 left-1/2 z-20 w-full max-w-lg -translate-x-1/2 transform px-4">
+        {/* Voice Card centered over the orb */}
+        <div className="relative z-20 w-full max-w-lg px-4">
           <VoiceCard onStartCall={onStartCall} isActive={isCallActive} />
         </div>
       </div>
