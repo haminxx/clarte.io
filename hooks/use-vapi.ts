@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react"
 
-interface ConversationMessage {
+export interface ConversationMessage {
   role: "user" | "assistant" | "system"
   content: string
   timestamp: number
@@ -16,7 +16,19 @@ interface VapiState {
   transcript: string
   error: string | null
   conversationHistory: ConversationMessage[]
+  isDemoMode: boolean
 }
+
+// Demo conversation messages for when VAPI is not configured
+const demoConversation = [
+  { role: "assistant" as const, content: "Hello! Welcome to Clarte. I'm your AI assistant. How can I help you today?" },
+  { role: "user" as const, content: "I'd like to learn about building a product roadmap." },
+  { role: "assistant" as const, content: "Great! I can help you create a product roadmap. Let's start by identifying your key goals. What's the main objective for your product in the next quarter?" },
+  { role: "user" as const, content: "We want to launch a mobile app and increase user engagement by 50%." },
+  { role: "assistant" as const, content: "Excellent goals! For launching a mobile app, I'd suggest breaking this into phases: 1) Research and planning, 2) Design and prototyping, 3) Development sprints, and 4) Testing and launch. For engagement, we should identify key metrics. Shall I create a timeline with milestones for these?" },
+  { role: "user" as const, content: "Yes, that would be helpful. Can you also suggest some engagement features?" },
+  { role: "assistant" as const, content: "Absolutely! For engagement, consider: push notifications for personalized updates, gamification elements like streaks and rewards, social features for sharing, and in-app messaging. I'll structure this into a timeline you can export after our call. Would you like to set specific deadlines?" },
+]
 
 export function useVapi() {
   const [state, setState] = useState<VapiState>({
@@ -26,6 +38,7 @@ export function useVapi() {
     transcript: "",
     error: null,
     conversationHistory: [],
+    isDemoMode: false,
   })
 
   const vapiRef = useRef<any>(null)
@@ -33,13 +46,12 @@ export function useVapi() {
   const screenAnalysisIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const captureFrameRef = useRef<(() => Promise<string | null>) | null>(null)
   const lastScreenContextRef = useRef<string>("")
+  const demoIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Set the capture frame function from outside
   const setScreenCaptureFunction = useCallback((fn: () => Promise<string | null>) => {
     captureFrameRef.current = fn
   }, [])
 
-  // Analyze screen and inject context into conversation
   const analyzeScreenForContext = useCallback(async () => {
     if (!captureFrameRef.current || !state.isConnected) return null
 
@@ -71,7 +83,6 @@ export function useVapi() {
     }
   }, [state.isConnected, state.conversationHistory])
 
-  // Add message to conversation history
   const addToHistory = useCallback((role: "user" | "assistant" | "system", content: string, screenContext?: string) => {
     setState((prev) => ({
       ...prev,
@@ -87,37 +98,73 @@ export function useVapi() {
     }))
   }, [])
 
+  // Demo mode simulation
+  const runDemoMode = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      isConnected: true,
+      isListening: true,
+      isDemoMode: true,
+      error: null,
+    }))
+    isInitializingRef.current = false
+
+    let messageIndex = 0
+    
+    // Simulate conversation with delays
+    const simulateConversation = () => {
+      if (messageIndex < demoConversation.length) {
+        const msg = demoConversation[messageIndex]
+        
+        if (msg.role === "assistant") {
+          setState((prev) => ({ ...prev, isSpeaking: true }))
+        }
+        
+        setState((prev) => ({ ...prev, transcript: msg.content }))
+        addToHistory(msg.role, msg.content)
+        
+        setTimeout(() => {
+          setState((prev) => ({ ...prev, isSpeaking: false }))
+        }, 1500)
+        
+        messageIndex++
+        demoIntervalRef.current = setTimeout(simulateConversation, 3000)
+      }
+    }
+
+    // Start after a short delay
+    demoIntervalRef.current = setTimeout(simulateConversation, 1000)
+  }, [addToHistory])
+
   const startCall = useCallback(async (withScreenShare: boolean = false) => {
     if (isInitializingRef.current || state.isConnected) return
 
     isInitializingRef.current = true
-    setState((prev) => ({ ...prev, error: null, conversationHistory: [] }))
+    setState((prev) => ({ ...prev, error: null, conversationHistory: [], isDemoMode: false }))
 
     try {
-      // Dynamically import Vapi SDK
-      const { default: Vapi } = await import("@vapi-ai/web")
-
-      // Get the public key from our backend
       const response = await fetch("/api/vapi/token")
       const data = await response.json()
 
-      if (!data.publicKey) {
-        throw new Error("Failed to get VAPI public key")
+      // If no VAPI key is configured, run in demo mode
+      if (!data.publicKey || data.demoMode) {
+        console.log("[v0] Running in demo mode - VAPI key not configured")
+        runDemoMode()
+        return
       }
 
-      // Initialize Vapi with the public key
+      const { default: Vapi } = await import("@vapi-ai/web")
+
       const vapi = new Vapi(data.publicKey)
       vapiRef.current = vapi
 
-      // Set up event listeners
       vapi.on("call-start", () => {
         setState((prev) => ({ ...prev, isConnected: true, isListening: true }))
         
-        // If screen sharing is enabled, start periodic analysis
         if (withScreenShare && captureFrameRef.current) {
           screenAnalysisIntervalRef.current = setInterval(async () => {
             await analyzeScreenForContext()
-          }, 10000) // Analyze every 10 seconds
+          }, 10000)
         }
       })
 
@@ -130,7 +177,6 @@ export function useVapi() {
         }))
         isInitializingRef.current = false
         
-        // Clear screen analysis interval
         if (screenAnalysisIntervalRef.current) {
           clearInterval(screenAnalysisIntervalRef.current)
           screenAnalysisIntervalRef.current = null
@@ -147,32 +193,19 @@ export function useVapi() {
 
       vapi.on("message", (message: any) => {
         if (message.type === "transcript" && message.transcript) {
-          setState((prev) => ({
-            ...prev,
-            transcript: message.transcript,
-          }))
+          setState((prev) => ({ ...prev, transcript: message.transcript }))
           
-          // Add to conversation history
           if (message.role === "assistant" || message.role === "user") {
-            addToHistory(
-              message.role,
-              message.transcript,
-              lastScreenContextRef.current || undefined
-            )
+            addToHistory(message.role, message.transcript, lastScreenContextRef.current || undefined)
           }
         }
         
-        // Handle function calls for screen analysis
         if (message.type === "function-call" && message.functionCall?.name === "analyzeScreen") {
           analyzeScreenForContext().then((analysis) => {
             if (analysis && vapiRef.current) {
-              // Send screen analysis back to the assistant
               vapiRef.current.send({
                 type: "add-message",
-                message: {
-                  role: "system",
-                  content: `[Screen Analysis]: ${analysis}`,
-                },
+                message: { role: "system", content: `[Screen Analysis]: ${analysis}` },
               })
             }
           })
@@ -181,68 +214,29 @@ export function useVapi() {
 
       vapi.on("error", (error: any) => {
         console.error("[v0] VAPI error:", error)
-        setState((prev) => ({
-          ...prev,
-          error: error.message || "An error occurred",
-        }))
+        setState((prev) => ({ ...prev, error: error.message || "An error occurred" }))
         isInitializingRef.current = false
       })
 
-      // Build system message with screen sharing context
       const systemMessage = withScreenShare
-        ? `You are a friendly and helpful AI assistant for Clarte, a voice AI platform.
-You have the ability to see the user's screen. You will periodically receive screen analysis updates in system messages prefixed with [Screen Analysis].
-When you receive screen context, use it to provide more relevant and helpful responses.
-You can reference what you see on the user's screen to assist them better.
-Be concise, helpful, and proactive in offering assistance based on what you observe.
-Keep responses brief and conversational since this is a voice call.
-After the call, the user can export our conversation as a timeline, milestones, meeting notes, or various document formats.`
-        : `You are a friendly and helpful AI assistant for Clarte, a voice AI platform.
-You help users understand our services including ultra-low latency voice synthesis, scalable APIs for real-time interactions, and custom voice creation.
-Be concise, helpful, and enthusiastic about voice AI technology.
-Keep responses brief and conversational since this is a voice call.`
+        ? `You are a helpful AI assistant for Clarte. You can see the user's screen and will receive screen analysis updates. Help users plan, organize, and achieve their goals. After the call, users can export the conversation as timelines, milestones, or documents.`
+        : `You are a helpful AI assistant for Clarte, a voice AI platform. Help users understand services and plan their projects. Keep responses brief and conversational.`
 
-      // Start the call with the assistant configuration
       await vapi.start(data.assistantId || {
         model: {
           provider: "openai",
           model: "gpt-4o",
-          messages: [
-            {
-              role: "system",
-              content: systemMessage,
-            },
-          ],
-          ...(withScreenShare && {
-            functions: [
-              {
-                name: "analyzeScreen",
-                description: "Request analysis of the user's current screen content",
-                parameters: {
-                  type: "object",
-                  properties: {},
-                },
-              },
-            ],
-          }),
+          messages: [{ role: "system", content: systemMessage }],
         },
-        voice: {
-          provider: "11labs",
-          voiceId: "21m00Tcm4TlvDq8ikWAM",
-        },
-        firstMessage: withScreenShare
-          ? "Hello! I can see your screen now. Feel free to show me what you're working on, and I'll help you with anything I can see. What would you like assistance with?"
-          : "Hello! Welcome to Clarte. How can I help you explore our voice AI platform today?",
+        voice: { provider: "11labs", voiceId: "21m00Tcm4TlvDq8ikWAM" },
+        firstMessage: "Hello! Welcome to Clarte. How can I help you plan your goals today?",
       })
     } catch (error: any) {
-      console.error("[v0] Failed to start VAPI call:", error)
-      setState((prev) => ({
-        ...prev,
-        error: error.message || "Failed to start call",
-      }))
-      isInitializingRef.current = false
+      console.error("[v0] Failed to start call:", error)
+      // Fall back to demo mode on any error
+      runDemoMode()
     }
-  }, [state.isConnected, addToHistory, analyzeScreenForContext])
+  }, [state.isConnected, addToHistory, analyzeScreenForContext, runDemoMode])
 
   const endCall = useCallback(() => {
     if (vapiRef.current) {
@@ -254,8 +248,12 @@ Keep responses brief and conversational since this is a voice call.`
       clearInterval(screenAnalysisIntervalRef.current)
       screenAnalysisIntervalRef.current = null
     }
+
+    if (demoIntervalRef.current) {
+      clearTimeout(demoIntervalRef.current)
+      demoIntervalRef.current = null
+    }
     
-    // Keep conversation history for export
     setState((prev) => ({
       ...prev,
       isConnected: false,
@@ -268,10 +266,7 @@ Keep responses brief and conversational since this is a voice call.`
   }, [])
 
   const clearHistory = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      conversationHistory: [],
-    }))
+    setState((prev) => ({ ...prev, conversationHistory: [] }))
   }, [])
 
   const toggleMute = useCallback(() => {
@@ -282,30 +277,22 @@ Keep responses brief and conversational since this is a voice call.`
     }
   }, [])
 
-  // Manually trigger screen analysis
   const requestScreenAnalysis = useCallback(async () => {
     const analysis = await analyzeScreenForContext()
     if (analysis && vapiRef.current && state.isConnected) {
       vapiRef.current.send({
         type: "add-message",
-        message: {
-          role: "system",
-          content: `[Screen Analysis Update]: ${analysis}`,
-        },
+        message: { role: "system", content: `[Screen Analysis Update]: ${analysis}` },
       })
     }
     return analysis
   }, [analyzeScreenForContext, state.isConnected])
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (vapiRef.current) {
-        vapiRef.current.stop()
-      }
-      if (screenAnalysisIntervalRef.current) {
-        clearInterval(screenAnalysisIntervalRef.current)
-      }
+      if (vapiRef.current) vapiRef.current.stop()
+      if (screenAnalysisIntervalRef.current) clearInterval(screenAnalysisIntervalRef.current)
+      if (demoIntervalRef.current) clearTimeout(demoIntervalRef.current)
     }
   }, [])
 

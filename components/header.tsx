@@ -52,6 +52,12 @@ export function Header() {
               Resources
             </Link>
             <Link
+              href="/goals"
+              className="text-sm text-white/70 transition-colors hover:text-white"
+            >
+              Goals
+            </Link>
+            <Link
               href="#"
               className="text-sm text-white/70 transition-colors hover:text-white"
             >

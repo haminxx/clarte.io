@@ -21,6 +21,7 @@ export default function Home() {
     transcript,
     error,
     conversationHistory,
+    isDemoMode,
     startCall,
     endCall,
     toggleMute,
@@ -184,6 +185,13 @@ export default function Home() {
                   <h3 className="mb-2 text-xl font-semibold text-white">
                     {isConnected ? "Call in Progress" : "Connecting..."}
                   </h3>
+
+                  {/* Demo mode indicator */}
+                  {isDemoMode && isConnected && (
+                    <div className="mb-2 inline-block rounded-full bg-amber-500/20 px-3 py-1 text-xs text-amber-400">
+                      Demo Mode - Configure VAPI keys for live calls
+                    </div>
+                  )}
 
                   <p className="text-sm text-white/60">
                     {isConnected

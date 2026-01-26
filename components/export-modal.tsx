@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { X, FileText, Calendar, CheckSquare, Download, Loader2, Copy, Check, FileSpreadsheet, FileJson, ExternalLink } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { X, FileText, Calendar, CheckSquare, Download, Loader2, Copy, Check, FileSpreadsheet, FileJson, ExternalLink, Target } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface ConversationMessage {
@@ -63,11 +64,19 @@ const exportOptions = [
 ]
 
 export function ExportModal({ isOpen, onClose, conversation }: ExportModalProps) {
+  const router = useRouter()
   const [selectedFormat, setSelectedFormat] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedContent, setGeneratedContent] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [includeScreenContext, setIncludeScreenContext] = useState(true)
+
+  const handleGoToGoals = () => {
+    // Save conversation to localStorage for the goals page
+    localStorage.setItem("clarte_conversation", JSON.stringify(conversation))
+    onClose()
+    router.push("/goals")
+  }
 
   const handleGenerate = async (format: string) => {
     setSelectedFormat(format)
@@ -161,6 +170,21 @@ export function ExportModal({ isOpen, onClose, conversation }: ExportModalProps)
         <div className="overflow-y-auto p-6" style={{ maxHeight: "calc(80vh - 160px)" }}>
           {!generatedContent ? (
             <>
+              {/* Visual Goals Dashboard Button */}
+              <button
+                type="button"
+                onClick={handleGoToGoals}
+                className="mb-6 w-full flex items-center gap-4 rounded-xl border-2 border-blue-500/50 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 p-4 text-left transition-all hover:from-blue-600/30 hover:to-indigo-600/30 hover:border-blue-500"
+              >
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-blue-500/30">
+                  <Target className="h-6 w-6 text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-white">View Goals Dashboard</h3>
+                  <p className="text-sm text-white/60">Visualize your timeline, track milestones, and download plans</p>
+                </div>
+              </button>
+
               {/* Screen context toggle */}
               <label className="mb-6 flex items-center gap-3 cursor-pointer">
                 <input
