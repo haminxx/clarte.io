@@ -31,35 +31,7 @@ export function FeaturesSection() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Human Voice Card */}
-          <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-medium text-white">Human Voice</h3>
-              <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5">
-                <div className="h-2 w-2 rounded-full bg-green-400" />
-                <span className="text-sm text-white/70">Victoria</span>
-              </div>
-            </div>
-            <Waveform variant="human" />
-            <div className="mt-4 flex items-center gap-4">
-              <Button
-                size="icon"
-                className="h-10 w-10 rounded-full bg-white text-black hover:bg-white/90"
-              >
-                <Play className="h-4 w-4" />
-              </Button>
-              <div className="text-left">
-                <p className="text-sm font-medium text-white">
-                  Latency under 100ms.
-                </p>
-                <p className="text-xs text-white/50">
-                  Responds faster than the blink of an eye.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* AI Agent Card */}
+          {/* AI Agent Card - Now on the left */}
           <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-6">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-medium text-white">Clarte Agent</h3>
@@ -82,6 +54,34 @@ export function FeaturesSection() {
                 </p>
                 <p className="text-xs text-white/50">
                   Names and terms rendered perfectly.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Human Voice Card - Now on the right */}
+          <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-medium text-white">Human Voice</h3>
+              <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5">
+                <div className="h-2 w-2 rounded-full bg-green-400" />
+                <span className="text-sm text-white/70">Victoria</span>
+              </div>
+            </div>
+            <Waveform variant="human" />
+            <div className="mt-4 flex items-center gap-4">
+              <Button
+                size="icon"
+                className="h-10 w-10 rounded-full bg-white text-black hover:bg-white/90"
+              >
+                <Play className="h-4 w-4" />
+              </Button>
+              <div className="text-left">
+                <p className="text-sm font-medium text-white">
+                  Latency under 100ms.
+                </p>
+                <p className="text-xs text-white/50">
+                  Responds faster than the blink of an eye.
                 </p>
               </div>
             </div>
