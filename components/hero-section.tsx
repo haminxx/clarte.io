@@ -11,9 +11,21 @@ interface HeroSectionProps {
 
 export function HeroSection({ onStartCall, isCallActive }: HeroSectionProps) {
   return (
-    <section className="relative min-h-screen overflow-hidden bg-[#1a1a1a] pt-16">
+    <section className="relative min-h-screen overflow-hidden bg-[#0a0a14] pt-16">
+      {/* Background gradient glow - blue/purple space theme */}
+      <div className="pointer-events-none absolute inset-0">
+        {/* Central blue glow */}
+        <div className="absolute left-1/2 top-1/2 h-[800px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-blue-600/20 via-indigo-500/10 to-transparent blur-3xl" />
+        {/* Secondary purple accent */}
+        <div className="absolute right-1/4 top-1/3 h-[400px] w-[400px] rounded-full bg-purple-600/10 blur-3xl" />
+        {/* Bottom horizon glow */}
+        <div className="absolute bottom-0 left-0 right-0 h-[300px] bg-gradient-to-t from-blue-900/20 via-transparent to-transparent" />
+        {/* Stars effect */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_0%,_#0a0a14_70%)]" />
+      </div>
+      
       {/* Dotted border frame */}
-      <div className="pointer-events-none absolute inset-4 border border-dashed border-white/20 md:inset-8" />
+      <div className="pointer-events-none absolute inset-4 border border-dashed border-white/10 md:inset-8" />
 
       <div className="relative z-10 mx-auto max-w-6xl px-6 pt-16 text-center">
         {/* Badge */}
