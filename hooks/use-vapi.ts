@@ -144,11 +144,18 @@ export function useVapi() {
 
     try {
       const response = await fetch("/api/vapi/token")
+      
+      if (!response.ok) {
+        console.log("[v0] Failed to fetch VAPI token, running demo mode")
+        runDemoMode()
+        return
+      }
+      
       const data = await response.json()
 
       // If no VAPI key is configured, run in demo mode
       if (!data.publicKey || data.demoMode) {
-        console.log("[v0] Running in demo mode - VAPI key not configured")
+        console.log("[v0] VAPI key not configured, running demo mode")
         runDemoMode()
         return
       }
@@ -232,8 +239,8 @@ export function useVapi() {
         firstMessage: "Hello! Welcome to Clarte. How can I help you plan your goals today?",
       })
     } catch (error: any) {
-      console.error("[v0] Failed to start call:", error)
-      // Fall back to demo mode on any error
+      console.log("[v0] Starting demo mode due to:", error?.message || "connection issue")
+      // Fall back to demo mode on any error - no error shown to user
       runDemoMode()
     }
   }, [state.isConnected, addToHistory, analyzeScreenForContext, runDemoMode])

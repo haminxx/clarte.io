@@ -1,6 +1,6 @@
 "use client"
 
-import { Phone, FileText, BookOpen, Play, Monitor } from "lucide-react"
+import { Phone, BookOpen, Play, Monitor } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface VoiceCardProps {
@@ -10,14 +10,14 @@ interface VoiceCardProps {
 
 export function VoiceCard({ onStartCall, isActive }: VoiceCardProps) {
   return (
-    <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#2a2a2a]/90 p-6 backdrop-blur-sm">
+    <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#2a2a2a]/95 p-6 shadow-2xl backdrop-blur-md">
       <div className="mb-6 flex items-center justify-between">
         <p className="text-white/80">
           Welcome to Clarte — your voice, reimagined.
         </p>
         <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5">
-          <div className={`h-2 w-2 rounded-full ${isActive ? "bg-green-400 animate-pulse" : "bg-green-400"}`} />
-          <span className="text-sm text-white/70">Jane</span>
+          <div className={`h-2 w-2 rounded-full ${isActive ? "bg-green-400 animate-pulse" : "bg-emerald-400"}`} />
+          <span className="text-sm text-white/70">{isActive ? "Active" : "Ready"}</span>
         </div>
       </div>
 
