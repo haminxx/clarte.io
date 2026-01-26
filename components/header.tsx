@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 
 export function Header() {
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-[#1a1a1a]/80 backdrop-blur-md">
+    <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-[#0a0a14]/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
         <div className="flex items-center gap-10">
           <Link href="/" className="flex items-center gap-2">
@@ -24,29 +24,30 @@ export function Header() {
               />
               <circle cx="16" cy="12" r="3" fill="white" />
             </svg>
+            <span className="font-semibold text-white">Clarte</span>
           </Link>
           
-          <nav className="hidden items-center gap-8 md:flex">
+          <nav className="hidden items-center gap-6 lg:flex">
             <Link
-              href="#"
+              href="/voices"
               className="text-sm text-white/70 transition-colors hover:text-white"
             >
               Voices
             </Link>
             <Link
-              href="#"
+              href="/api-reference"
               className="text-sm text-white/70 transition-colors hover:text-white"
             >
               API
             </Link>
             <Link
-              href="#"
+              href="/docs"
               className="text-sm text-white/70 transition-colors hover:text-white"
             >
               Docs
             </Link>
             <Link
-              href="#"
+              href="/resources"
               className="text-sm text-white/70 transition-colors hover:text-white"
             >
               Resources
@@ -58,7 +59,7 @@ export function Header() {
               Goals
             </Link>
             <Link
-              href="#"
+              href="/pricing"
               className="text-sm text-white/70 transition-colors hover:text-white"
             >
               Pricing
@@ -68,20 +69,24 @@ export function Header() {
 
         <div className="flex items-center gap-4">
           <Link
-            href="#"
+            href="/contact"
             className="hidden text-sm text-white/70 transition-colors hover:text-white sm:block"
           >
             Talk to Us
           </Link>
-          <Button
-            variant="outline"
-            className="border-white/20 bg-transparent text-white hover:bg-white/10"
-          >
-            Log in
-          </Button>
-          <Button className="bg-white text-black hover:bg-white/90">
-            Get Started
-          </Button>
+          <Link href="/auth/login">
+            <Button
+              variant="outline"
+              className="border-white/20 bg-transparent text-white hover:bg-white/10"
+            >
+              Log in
+            </Button>
+          </Link>
+          <Link href="/get-started">
+            <Button className="bg-white text-black hover:bg-white/90">
+              Get Started
+            </Button>
+          </Link>
         </div>
       </div>
     </header>
