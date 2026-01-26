@@ -11,9 +11,21 @@ interface HeroSectionProps {
 
 export function HeroSection({ onStartCall, isCallActive }: HeroSectionProps) {
   return (
-    <section className="relative min-h-screen overflow-hidden bg-[#1a1a1a] pt-16">
+    <section className="relative min-h-screen overflow-hidden bg-background pt-16">
+      {/* Background gradient glow - blue space theme */}
+      <div className="pointer-events-none absolute inset-0">
+        {/* Central blue glow */}
+        <div className="absolute left-1/2 top-1/2 h-[900px] w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-blue-600/25 via-indigo-600/15 to-transparent blur-3xl" />
+        {/* Secondary blue accent */}
+        <div className="absolute right-1/4 top-1/3 h-[500px] w-[500px] rounded-full bg-blue-500/10 blur-3xl" />
+        {/* Left accent */}
+        <div className="absolute left-1/4 bottom-1/3 h-[400px] w-[400px] rounded-full bg-indigo-600/10 blur-3xl" />
+        {/* Bottom horizon glow */}
+        <div className="absolute bottom-0 left-0 right-0 h-[400px] bg-gradient-to-t from-blue-900/30 via-indigo-900/10 to-transparent" />
+      </div>
+      
       {/* Dotted border frame */}
-      <div className="pointer-events-none absolute inset-4 border border-dashed border-white/20 md:inset-8" />
+      <div className="pointer-events-none absolute inset-4 border border-dashed border-white/10 md:inset-8" />
 
       <div className="relative z-10 mx-auto max-w-6xl px-6 pt-16 text-center">
         {/* Badge */}
@@ -51,12 +63,15 @@ export function HeroSection({ onStartCall, isCallActive }: HeroSectionProps) {
         </div>
       </div>
 
-      {/* Particle Orb Container */}
-      <div className="relative mx-auto h-[500px] w-full max-w-4xl">
-        <ParticleOrb />
+      {/* Particle Orb Container with Voice Card centered */}
+      <div className="relative mx-auto flex h-[500px] w-full max-w-4xl items-center justify-center">
+        {/* Orb centered behind the card */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <ParticleOrb />
+        </div>
         
-        {/* Voice Card positioned over the orb */}
-        <div className="absolute bottom-20 left-1/2 z-20 w-full max-w-lg -translate-x-1/2 transform px-4">
+        {/* Voice Card centered over the orb */}
+        <div className="relative z-20 w-full max-w-lg px-4">
           <VoiceCard onStartCall={onStartCall} isActive={isCallActive} />
         </div>
       </div>

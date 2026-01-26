@@ -13,14 +13,13 @@ import {
   Clock,
   Plus,
   Trash2,
-  Edit2,
   Save,
   X
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+import { Header } from "@/components/header"
 import type { ConversationMessage } from "@/hooks/use-vapi"
 
 interface Goal {
@@ -167,9 +166,16 @@ export default function GoalsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900">
-      {/* Header */}
-      <header className="border-b border-white/10 bg-black/20 backdrop-blur-md">
+    <div className="min-h-screen bg-[#0a0a14]">
+      {/* Background gradient */}
+      <div className="pointer-events-none fixed inset-0">
+        <div className="absolute left-1/2 top-1/3 h-[800px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-blue-600/15 via-indigo-500/10 to-transparent blur-3xl" />
+      </div>
+
+      <Header />
+
+      {/* Sub Header */}
+      <div className="relative z-10 border-b border-white/10 bg-[#0a0a14]/80 backdrop-blur-md pt-16">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
             <Link href="/">
@@ -201,12 +207,12 @@ export default function GoalsPage() {
             </Button>
           </div>
         </div>
-      </header>
+      </div>
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
+      <main className="relative z-10 mx-auto max-w-7xl px-6 py-8">
         {/* Summary Cards */}
         <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-4">
-          <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
+          <Card className="border-white/10 bg-[#1a1a2e]/50 backdrop-blur-sm">
             <CardContent className="flex items-center gap-4 p-6">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/20">
                 <Target className="h-6 w-6 text-blue-400" />
@@ -218,7 +224,7 @@ export default function GoalsPage() {
             </CardContent>
           </Card>
           
-          <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
+          <Card className="border-white/10 bg-[#1a1a2e]/50 backdrop-blur-sm">
             <CardContent className="flex items-center gap-4 p-6">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/20">
                 <Clock className="h-6 w-6 text-amber-400" />
@@ -232,7 +238,7 @@ export default function GoalsPage() {
             </CardContent>
           </Card>
           
-          <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
+          <Card className="border-white/10 bg-[#1a1a2e]/50 backdrop-blur-sm">
             <CardContent className="flex items-center gap-4 p-6">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/20">
                 <CheckCircle2 className="h-6 w-6 text-emerald-400" />
@@ -246,7 +252,7 @@ export default function GoalsPage() {
             </CardContent>
           </Card>
           
-          <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
+          <Card className="border-white/10 bg-[#1a1a2e]/50 backdrop-blur-sm">
             <CardContent className="flex items-center gap-4 p-6">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-500/20">
                 <Calendar className="h-6 w-6 text-purple-400" />
@@ -266,7 +272,7 @@ export default function GoalsPage() {
           <h2 className="text-lg font-semibold text-white">Your Goals</h2>
           <Button 
             onClick={() => setShowAddGoal(true)}
-            className="bg-white text-blue-900 hover:bg-white/90"
+            className="bg-white text-black hover:bg-white/90"
           >
             <Plus className="mr-2 h-4 w-4" />
             Add Goal
@@ -275,7 +281,7 @@ export default function GoalsPage() {
 
         {/* Add Goal Form */}
         {showAddGoal && (
-          <Card className="mb-6 border-white/10 bg-white/5 backdrop-blur-sm">
+          <Card className="mb-6 border-white/10 bg-[#1a1a2e]/50 backdrop-blur-sm">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <Input
@@ -303,7 +309,7 @@ export default function GoalsPage() {
         {/* Goals Grid */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {goals.map((goal) => (
-            <Card key={goal.id} className="border-white/10 bg-white/5 backdrop-blur-sm">
+            <Card key={goal.id} className="border-white/10 bg-[#1a1a2e]/50 backdrop-blur-sm">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -380,7 +386,7 @@ export default function GoalsPage() {
         {conversationData.length > 0 && (
           <div className="mt-12">
             <h2 className="mb-4 text-lg font-semibold text-white">Conversation Context</h2>
-            <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
+            <Card className="border-white/10 bg-[#1a1a2e]/50 backdrop-blur-sm">
               <CardContent className="p-6">
                 <div className="space-y-4 max-h-64 overflow-y-auto">
                   {conversationData.map((msg, i) => (
