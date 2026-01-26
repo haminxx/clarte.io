@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { Suspense } from "react"
 
 import { useEffect, useCallback, useState, useRef } from "react"
 import { Header } from "@/components/header"
