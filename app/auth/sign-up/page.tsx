@@ -60,23 +60,24 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0a0a14] px-4">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
       {/* Background gradient */}
       <div className="pointer-events-none fixed inset-0">
-        <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-blue-600/20 via-indigo-500/10 to-transparent blur-3xl" />
+        <div className="absolute left-1/2 top-1/2 h-[700px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-blue-600/25 via-indigo-600/15 to-transparent blur-3xl" />
+        <div className="absolute left-1/4 bottom-1/4 h-[400px] w-[400px] rounded-full bg-indigo-500/10 blur-3xl" />
       </div>
 
       <div className="relative z-10 w-full max-w-md">
-        <div className="rounded-2xl border border-white/10 bg-[#1a1a2e]/90 p-8 shadow-2xl backdrop-blur-md">
+        <div className="rounded-2xl border border-border bg-card/90 p-8 shadow-2xl backdrop-blur-md">
           <div className="mb-8 text-center">
             <Link href="/" className="inline-block">
-              <h1 className="text-2xl font-bold text-white">Clarte</h1>
+              <h1 className="text-2xl font-bold text-foreground">Clarte</h1>
             </Link>
-            <p className="mt-2 text-white/60">Create your account</p>
+            <p className="mt-2 text-muted-foreground">Create your account</p>
           </div>
 
           {error && (
-            <div className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-400">
+            <div className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
               {error}
             </div>
           )}
@@ -85,7 +86,7 @@ export default function SignUpPage() {
             <Button
               type="button"
               variant="outline"
-              className="w-full border-white/20 bg-transparent text-white hover:bg-white/10"
+              className="w-full border-border bg-transparent text-foreground hover:bg-secondary"
               onClick={() => handleOAuthSignUp("google")}
               disabled={loading}
             >
@@ -113,7 +114,7 @@ export default function SignUpPage() {
             <Button
               type="button"
               variant="outline"
-              className="w-full border-white/20 bg-transparent text-white hover:bg-white/10"
+              className="w-full border-border bg-transparent text-foreground hover:bg-secondary"
               onClick={() => handleOAuthSignUp("github")}
               disabled={loading}
             >
@@ -124,10 +125,10 @@ export default function SignUpPage() {
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/10" />
+              <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="bg-[#1a1a2e] px-4 text-white/40">or</span>
+              <span className="bg-card px-4 text-muted-foreground">or</span>
             </div>
           </div>
 
@@ -138,7 +139,7 @@ export default function SignUpPage() {
                 placeholder="Full name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="border-white/20 bg-white/5 text-white placeholder:text-white/40"
+                className="border-border bg-input text-foreground placeholder:text-muted-foreground"
                 required
               />
             </div>
@@ -148,7 +149,7 @@ export default function SignUpPage() {
                 placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="border-white/20 bg-white/5 text-white placeholder:text-white/40"
+                className="border-border bg-input text-foreground placeholder:text-muted-foreground"
                 required
               />
             </div>
@@ -158,14 +159,14 @@ export default function SignUpPage() {
                 placeholder="Password (min 6 characters)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="border-white/20 bg-white/5 text-white placeholder:text-white/40"
+                className="border-border bg-input text-foreground placeholder:text-muted-foreground"
                 minLength={6}
                 required
               />
             </div>
             <Button
               type="submit"
-              className="w-full bg-white text-black hover:bg-white/90"
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
               disabled={loading}
             >
               {loading ? (
@@ -177,9 +178,9 @@ export default function SignUpPage() {
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-white/40">
+          <p className="mt-6 text-center text-sm text-muted-foreground">
             Already have an account?{" "}
-            <Link href="/auth/login" className="text-white hover:underline">
+            <Link href="/auth/login" className="text-foreground hover:underline">
               Sign in
             </Link>
           </p>

@@ -11,17 +11,17 @@ interface HeroSectionProps {
 
 export function HeroSection({ onStartCall, isCallActive }: HeroSectionProps) {
   return (
-    <section className="relative min-h-screen overflow-hidden bg-[#0a0a14] pt-16">
-      {/* Background gradient glow - blue/purple space theme */}
+    <section className="relative min-h-screen overflow-hidden bg-background pt-16">
+      {/* Background gradient glow - blue space theme */}
       <div className="pointer-events-none absolute inset-0">
         {/* Central blue glow */}
-        <div className="absolute left-1/2 top-1/2 h-[800px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-blue-600/20 via-indigo-500/10 to-transparent blur-3xl" />
-        {/* Secondary purple accent */}
-        <div className="absolute right-1/4 top-1/3 h-[400px] w-[400px] rounded-full bg-purple-600/10 blur-3xl" />
+        <div className="absolute left-1/2 top-1/2 h-[900px] w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-blue-600/25 via-indigo-600/15 to-transparent blur-3xl" />
+        {/* Secondary blue accent */}
+        <div className="absolute right-1/4 top-1/3 h-[500px] w-[500px] rounded-full bg-blue-500/10 blur-3xl" />
+        {/* Left accent */}
+        <div className="absolute left-1/4 bottom-1/3 h-[400px] w-[400px] rounded-full bg-indigo-600/10 blur-3xl" />
         {/* Bottom horizon glow */}
-        <div className="absolute bottom-0 left-0 right-0 h-[300px] bg-gradient-to-t from-blue-900/20 via-transparent to-transparent" />
-        {/* Stars effect */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_0%,_#0a0a14_70%)]" />
+        <div className="absolute bottom-0 left-0 right-0 h-[400px] bg-gradient-to-t from-blue-900/30 via-indigo-900/10 to-transparent" />
       </div>
       
       {/* Dotted border frame */}

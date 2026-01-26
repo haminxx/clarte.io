@@ -141,14 +141,14 @@ export default function Home() {
   }, [uploadScreenshot, captureFrame, setScreenCaptureFunction])
 
   return (
-    <div className="min-h-screen bg-[#0a0a14]">
+    <div className="min-h-screen bg-background">
       <Header />
 
       <main>
         <HeroSection onStartCall={handleStartCall} isCallActive={isConnected} />
 
         {/* Company Logos */}
-        <div className="border-y border-white/10 bg-[#0a0a14]">
+        <div className="border-y border-border bg-background">
           <CompanyLogos />
         </div>
 
