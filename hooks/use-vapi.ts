@@ -52,7 +52,7 @@ export function useVapi() {
     captureFrameRef.current = fn
   }, [])
 
-  const analyzeScreenForContext = useCallback(async () => {
+  const analyzeScreenForContext = useCallback(async (includeInMessage: boolean = false) => {
     if (!captureFrameRef.current || !state.isConnected) return null
 
     try {
@@ -68,6 +68,7 @@ export function useVapi() {
             .slice(-5)
             .map((m) => `${m.role}: ${m.content}`)
             .join("\n"),
+          userMessage: includeInMessage ? "Analyze the current screen context for the ongoing conversation. Pay attention to what the user is working on, any visible content, UI elements, text, images, or applications shown on screen." : undefined,
         }),
       })
 
@@ -165,13 +166,32 @@ export function useVapi() {
       const vapi = new Vapi(data.publicKey)
       vapiRef.current = vapi
 
+      // Start periodic screen analysis if screen capture is available (works dynamically)
+      const startPeriodicAnalysis = () => {
+        if (screenAnalysisIntervalRef.current) {
+          clearInterval(screenAnalysisIntervalRef.current)
+        }
+        
+        screenAnalysisIntervalRef.current = setInterval(async () => {
+          // Check dynamically if screen capture is available
+          if (captureFrameRef.current && state.isConnected) {
+            const analysis = await analyzeScreenForContext()
+            if (analysis && vapiRef.current) {
+              vapiRef.current.send({
+                type: "add-message",
+                message: { role: "system", content: `[Screen Context Update]: ${analysis}` },
+              })
+            }
+          }
+        }, 5000)
+      }
+
       vapi.on("call-start", () => {
         setState((prev) => ({ ...prev, isConnected: true, isListening: true }))
         
-        if (withScreenShare && captureFrameRef.current) {
-          screenAnalysisIntervalRef.current = setInterval(async () => {
-            await analyzeScreenForContext()
-          }, 10000)
+        // Start periodic analysis if screen capture is available (check dynamically)
+        if (captureFrameRef.current) {
+          startPeriodicAnalysis()
         }
       })
 
@@ -198,17 +218,49 @@ export function useVapi() {
         setState((prev) => ({ ...prev, isSpeaking: false }))
       })
 
-      vapi.on("message", (message: any) => {
+      vapi.on("message", async (message: any) => {
         if (message.type === "transcript" && message.transcript) {
           setState((prev) => ({ ...prev, transcript: message.transcript }))
           
-          if (message.role === "assistant" || message.role === "user") {
-            addToHistory(message.role, message.transcript, lastScreenContextRef.current || undefined)
+          // When user speaks, immediately capture and analyze screen if sharing is active
+          // Check dynamically using captureFrameRef instead of withScreenShare flag
+          if (message.role === "user" && captureFrameRef.current) {
+            // Analyze screen immediately when user speaks
+            const screenAnalysis = await analyzeScreenForContext(true)
+            
+            if (screenAnalysis && vapiRef.current) {
+              // Send screen context as a system message right after user speaks
+              // This ensures the assistant has screen context for the next response
+              vapiRef.current.send({
+                type: "add-message",
+                message: { 
+                  role: "system", 
+                  content: `[Current Screen Context]: ${screenAnalysis}\n\nUser just said: "${message.transcript}"\n\nIMPORTANT: The user is speaking about what they see on their screen. Use the screen context above to provide relevant, contextual responses. Reference specific elements visible on screen when helpful. If the user asks about something on screen, respond directly about what you see.` 
+                },
+              })
+              
+              // Start periodic analysis if not already running
+              if (!screenAnalysisIntervalRef.current) {
+                startPeriodicAnalysis()
+              }
+              
+              // Add to history with screen context
+              addToHistory("user", message.transcript, screenAnalysis)
+            } else {
+              // If no screen analysis, just add normally
+              addToHistory("user", message.transcript, lastScreenContextRef.current || undefined)
+            }
+          } else if (message.role === "user") {
+            // User message without screen sharing
+            addToHistory("user", message.transcript, lastScreenContextRef.current || undefined)
+          } else if (message.role === "assistant") {
+            // Assistant messages
+            addToHistory("assistant", message.transcript, lastScreenContextRef.current || undefined)
           }
         }
         
         if (message.type === "function-call" && message.functionCall?.name === "analyzeScreen") {
-          analyzeScreenForContext().then((analysis) => {
+          analyzeScreenForContext(true).then((analysis) => {
             if (analysis && vapiRef.current) {
               vapiRef.current.send({
                 type: "add-message",
@@ -225,11 +277,22 @@ export function useVapi() {
         isInitializingRef.current = false
       })
 
-      const systemMessage = withScreenShare
-        ? `You are a helpful AI assistant for Clarte. You can see the user's screen and will receive screen analysis updates. Help users plan, organize, and achieve their goals. After the call, users can export the conversation as timelines, milestones, or documents.`
-        : `You are a helpful AI assistant for Clarte, a voice AI platform. Help users understand services and plan their projects. Keep responses brief and conversational.`
+      // Enhanced system message that always mentions screen capability
+      // The AI will be aware it can receive screen context dynamically
+      const systemMessage = `You are a helpful AI assistant for Clarte. You have the ability to see the user's screen in real-time when screen sharing is active. When users speak, you will receive their words along with a detailed analysis of what's currently on their screen. 
 
-      await vapi.start(data.assistantId || {
+IMPORTANT BEHAVIOR:
+- When you receive screen context updates, actively reference what you see on the user's screen
+- If the user mentions something visible on their screen, respond directly about it
+- Proactively comment on interesting or relevant elements you notice on their screen
+- Ask questions about what you see if it would be helpful
+- Use screen context to provide highly relevant, contextual assistance
+- Reference specific UI elements, text, images, or applications when helpful
+
+Help users plan, organize, and achieve their goals. After the call, users can export the conversation as timelines, milestones, or documents.`
+
+      // Configure assistant with screen analysis support
+      const assistantConfig: any = {
         model: {
           provider: "openai",
           model: "gpt-4o",
@@ -237,7 +300,16 @@ export function useVapi() {
         },
         voice: { provider: "11labs", voiceId: "21m00Tcm4TlvDq8ikWAM" },
         firstMessage: "Hello! Welcome to Clarte. How can I help you plan your goals today?",
-      })
+      }
+
+      // Log screen sharing status
+      if (withScreenShare) {
+        console.log("[v0] Screen sharing enabled at call start - screen context will be included in messages")
+      } else {
+        console.log("[v0] Screen sharing can be enabled during the call - screen context will be included automatically when active")
+      }
+
+      await vapi.start(data.assistantId || assistantConfig)
     } catch (error: any) {
       console.log("[v0] Starting demo mode due to:", error?.message || "connection issue")
       // Fall back to demo mode on any error - no error shown to user
@@ -285,7 +357,7 @@ export function useVapi() {
   }, [])
 
   const requestScreenAnalysis = useCallback(async () => {
-    const analysis = await analyzeScreenForContext()
+    const analysis = await analyzeScreenForContext(true)
     if (analysis && vapiRef.current && state.isConnected) {
       vapiRef.current.send({
         type: "add-message",
