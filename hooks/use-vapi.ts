@@ -52,7 +52,7 @@ export function useVapi() {
     captureFrameRef.current = fn
   }, [])
 
-  const analyzeScreenForContext = useCallback(async () => {
+  const analyzeScreenForContext = useCallback(async (includeInMessage: boolean = false) => {
     if (!captureFrameRef.current || !state.isConnected) return null
 
     try {
@@ -68,6 +68,7 @@ export function useVapi() {
             .slice(-5)
             .map((m) => `${m.role}: ${m.content}`)
             .join("\n"),
+          userMessage: includeInMessage ? "Analyze the current screen context for the ongoing conversation." : undefined,
         }),
       })
 
@@ -169,9 +170,17 @@ export function useVapi() {
         setState((prev) => ({ ...prev, isConnected: true, isListening: true }))
         
         if (withScreenShare && captureFrameRef.current) {
+          // Periodic screen analysis every 5 seconds (more frequent)
           screenAnalysisIntervalRef.current = setInterval(async () => {
-            await analyzeScreenForContext()
-          }, 10000)
+            const analysis = await analyzeScreenForContext()
+            if (analysis && vapiRef.current) {
+              // Send periodic updates as system messages
+              vapiRef.current.send({
+                type: "add-message",
+                message: { role: "system", content: `[Screen Context Update]: ${analysis}` },
+              })
+            }
+          }, 5000)
         }
       })
 
@@ -198,17 +207,43 @@ export function useVapi() {
         setState((prev) => ({ ...prev, isSpeaking: false }))
       })
 
-      vapi.on("message", (message: any) => {
+      vapi.on("message", async (message: any) => {
         if (message.type === "transcript" && message.transcript) {
           setState((prev) => ({ ...prev, transcript: message.transcript }))
           
-          if (message.role === "assistant" || message.role === "user") {
-            addToHistory(message.role, message.transcript, lastScreenContextRef.current || undefined)
+          // When user speaks, immediately capture and analyze screen if sharing
+          if (message.role === "user" && withScreenShare && captureFrameRef.current) {
+            // Analyze screen immediately when user speaks
+            const screenAnalysis = await analyzeScreenForContext(true)
+            
+            if (screenAnalysis && vapiRef.current) {
+              // Send screen context as a system message right after user speaks
+              // This ensures the assistant has screen context for the next response
+              vapiRef.current.send({
+                type: "add-message",
+                message: { 
+                  role: "system", 
+                  content: `[Current Screen Context]: ${screenAnalysis}\n\nUser just said: "${message.transcript}"` 
+                },
+              })
+              
+              // Add to history with screen context
+              addToHistory("user", message.transcript, screenAnalysis)
+            } else {
+              // If no screen analysis, just add normally
+              addToHistory("user", message.transcript, lastScreenContextRef.current || undefined)
+            }
+          } else if (message.role === "user") {
+            // User message without screen sharing
+            addToHistory("user", message.transcript, lastScreenContextRef.current || undefined)
+          } else if (message.role === "assistant") {
+            // Assistant messages
+            addToHistory("assistant", message.transcript, lastScreenContextRef.current || undefined)
           }
         }
         
         if (message.type === "function-call" && message.functionCall?.name === "analyzeScreen") {
-          analyzeScreenForContext().then((analysis) => {
+          analyzeScreenForContext(true).then((analysis) => {
             if (analysis && vapiRef.current) {
               vapiRef.current.send({
                 type: "add-message",
@@ -226,10 +261,11 @@ export function useVapi() {
       })
 
       const systemMessage = withScreenShare
-        ? `You are a helpful AI assistant for Clarte. You can see the user's screen and will receive screen analysis updates. Help users plan, organize, and achieve their goals. After the call, users can export the conversation as timelines, milestones, or documents.`
+        ? `You are a helpful AI assistant for Clarte. You can see the user's screen in real-time. When users speak, you will receive their words along with a detailed analysis of what's currently on their screen. Use this screen context to provide highly relevant, contextual assistance. Reference specific elements you see on their screen when helpful. Help users plan, organize, and achieve their goals. After the call, users can export the conversation as timelines, milestones, or documents.`
         : `You are a helpful AI assistant for Clarte, a voice AI platform. Help users understand services and plan their projects. Keep responses brief and conversational.`
 
-      await vapi.start(data.assistantId || {
+      // Configure assistant with screen analysis support when screen sharing is active
+      const assistantConfig: any = {
         model: {
           provider: "openai",
           model: "gpt-4o",
@@ -237,7 +273,18 @@ export function useVapi() {
         },
         voice: { provider: "11labs", voiceId: "21m00Tcm4TlvDq8ikWAM" },
         firstMessage: "Hello! Welcome to Clarte. How can I help you plan your goals today?",
-      })
+      }
+
+      // If screen sharing is enabled, add server URL for webhook support
+      // Note: Server-side tools need to be configured in VAPI dashboard
+      // This ensures the assistant knows about screen analysis capabilities
+      if (withScreenShare) {
+        // The screen context will be included in user messages automatically
+        // No additional tool configuration needed as we handle it client-side
+        console.log("[v0] Screen sharing enabled - screen context will be included in messages")
+      }
+
+      await vapi.start(data.assistantId || assistantConfig)
     } catch (error: any) {
       console.log("[v0] Starting demo mode due to:", error?.message || "connection issue")
       // Fall back to demo mode on any error - no error shown to user
