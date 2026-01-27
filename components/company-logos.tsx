@@ -3,7 +3,9 @@ export function CompanyLogos() {
     "VAPI",
     "Groq",
     "Deepgram",
-    "Vercel"
+    "Vercel",
+    "Github",
+    "Cursor"
   ]
 
   return (
