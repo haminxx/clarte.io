@@ -201,7 +201,13 @@ export function useVapi() {
       }
 
       vapi.on("call-start", async () => {
-        setState((prev) => ({ ...prev, isConnected: true, isListening: true }))
+        // In narration mode, disable microphone (mute it)
+        if (narrationModeRef.current && vapiRef.current) {
+          vapiRef.current.setMuted(true)
+          setState((prev) => ({ ...prev, isConnected: true, isListening: false }))
+        } else {
+          setState((prev) => ({ ...prev, isConnected: true, isListening: true }))
+        }
         
         // Start periodic analysis if screen capture is available (check dynamically)
         if (captureFrameRef.current) {
@@ -307,12 +313,12 @@ export function useVapi() {
         isInitializingRef.current = false
       })
 
-      // Enhanced system message - different for narration mode vs interactive mode
+      // Enhanced system message - different for each mode
       let systemMessage: string
       let firstMessage: string
       
       if (narrationModeRef.current) {
-        // Narration mode: AI continuously reads and narrates screen content
+        // Narration mode: AI continuously reads and narrates screen content, NO user interaction
         systemMessage = `You are a helpful AI narrator for Clarte. Your role is to continuously read and narrate what you see on the user's screen. You will receive real-time screen analysis updates every few seconds.
 
 NARRATION MODE BEHAVIOR:
@@ -321,26 +327,35 @@ NARRATION MODE BEHAVIOR:
 - Describe images, UI elements, and visual content
 - Narrate changes as they happen on screen
 - Speak naturally and conversationally, as if reading an article or document
-- Don't wait for user input - keep narrating as screen content updates
+- DO NOT interact with the user or ask questions
+- DO NOT wait for user input - keep narrating as screen content updates
 - Focus on the main content and important details
 - Use a clear, engaging narration style
+- The microphone is disabled - you will not receive any user input
 
-The user has enabled narration mode, so you should start narrating immediately when you receive screen context.`
+The user has enabled narration mode, so you should start narrating immediately when you receive screen context. Do not greet the user or ask how you can help - just start narrating the screen content.`
         
-        firstMessage = "I'll start narrating what I see on your screen. Let me begin..."
-      } else {
-        // Interactive mode: Normal conversation with optional screen context
-        systemMessage = `You are a helpful AI assistant for Clarte. You have the ability to see the user's screen in real-time when screen sharing is active. When users speak, you will receive their words along with a detailed analysis of what's currently on their screen. 
+        firstMessage = undefined // No first message - start narrating immediately
+      } else if (withScreenShare) {
+        // Voice with screen: Conversation while reading screen
+        systemMessage = `You are a helpful AI assistant for Clarte. You have the ability to see the user's screen in real-time while having a conversation. When users speak, you will receive their words along with a detailed analysis of what's currently on their screen. 
 
 IMPORTANT BEHAVIOR:
+- Actively read and reference what you see on the user's screen while conversing
 - When you receive screen context updates, actively reference what you see on the user's screen
 - If the user mentions something visible on their screen, respond directly about it
 - Proactively comment on interesting or relevant elements you notice on their screen
 - Ask questions about what you see if it would be helpful
 - Use screen context to provide highly relevant, contextual assistance
 - Reference specific UI elements, text, images, or applications when helpful
+- Continue having a natural conversation while being aware of the screen content
 
 Help users plan, organize, and achieve their goals. After the call, users can export the conversation as timelines, milestones, or documents.`
+        
+        firstMessage = "Hello! Welcome to Clarte. I can see your screen and I'm ready to help. How can I assist you today?"
+      } else {
+        // Voice only: Normal conversation without screen context
+        systemMessage = `You are a helpful AI assistant for Clarte. Help users plan, organize, and achieve their goals. After the call, users can export the conversation as timelines, milestones, or documents.`
         
         firstMessage = "Hello! Welcome to Clarte. How can I help you plan your goals today?"
       }
@@ -353,7 +368,11 @@ Help users plan, organize, and achieve their goals. After the call, users can ex
           messages: [{ role: "system", content: systemMessage }],
         },
         voice: { provider: "11labs", voiceId: "21m00Tcm4TlvDq8ikWAM" },
-        firstMessage: firstMessage,
+      }
+      
+      // Only add firstMessage if it's defined (not for narration mode)
+      if (firstMessage) {
+        assistantConfig.firstMessage = firstMessage
       }
 
       // Log screen sharing status
