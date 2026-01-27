@@ -51,7 +51,7 @@ export function HeroSection({ onStartCall, isCallActive }: HeroSectionProps) {
         </p>
 
         {/* CTA Buttons */}
-        <div className="mb-12 sm:mb-16 flex flex-wrap items-center justify-center gap-3 sm:gap-4 px-4">
+        <div className="mb-4 sm:mb-6 flex flex-wrap items-center justify-center gap-3 sm:gap-4 px-4">
           <Link href="/get-started">
             <Button className="bg-white text-black hover:bg-white/90">
               Get started
@@ -69,7 +69,7 @@ export function HeroSection({ onStartCall, isCallActive }: HeroSectionProps) {
       </div>
 
       {/* Particle Orb Container with Voice Card centered */}
-      <div className="relative mx-auto flex h-[400px] sm:h-[500px] w-full max-w-4xl items-center justify-center px-4">
+      <div className="relative mx-auto flex h-[400px] sm:h-[500px] w-full max-w-4xl items-center justify-center px-4 -mt-8 sm:-mt-12">
         {/* Orb centered behind the card */}
         <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
           <ParticleOrb />

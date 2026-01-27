@@ -18,22 +18,10 @@ export function FeaturesSection() {
           <br />
           Voice Intelligence
         </h2>
-        <p className="mx-auto mb-6 sm:mb-8 max-w-xl text-sm sm:text-base text-muted-foreground px-4">
+        <p className="mx-auto mb-8 sm:mb-12 max-w-xl text-sm sm:text-base text-muted-foreground px-4">
           Flawless speech precision, ultra-low latency, and human-level
           clarity — even in complex, high-velocity conversations.
         </p>
-
-        <div className="mb-12 sm:mb-16 flex flex-wrap items-center justify-center gap-3 sm:gap-4 px-4">
-          <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-            Get started
-          </Button>
-          <Button
-            variant="outline"
-            className="border-border bg-transparent text-foreground hover:bg-secondary"
-          >
-            Explore docs
-          </Button>
-        </div>
 
         <div className="grid gap-4 sm:gap-6 md:grid-cols-2 w-full">
           {/* AI Agent Card - Now on the left */}
