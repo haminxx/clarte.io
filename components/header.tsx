@@ -6,11 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
 
 const navLinks = [
-  { href: "/voices", label: "Voices" },
   { href: "/api-reference", label: "API" },
   { href: "/docs", label: "Docs" },
-  { href: "/resources", label: "Resources" },
-  { href: "/goals", label: "Goals" },
   { href: "/pricing", label: "Pricing" },
 ]
 
