@@ -20,8 +20,24 @@ const plans = [
     highlighted: false,
   },
   {
+    name: "Starter",
+    price: "$15",
+    period: "/month",
+    description: "For individuals and small projects",
+    features: [
+      "500 minutes/month",
+      "5 voice options",
+      "Standard API access",
+      "Email support",
+      "Basic analytics",
+    ],
+    cta: "Start Free Trial",
+    href: "/auth/sign-up",
+    highlighted: false,
+  },
+  {
     name: "Pro",
-    price: "$49",
+    price: "$30",
     period: "/month",
     description: "For growing businesses",
     features: [
@@ -94,7 +110,7 @@ export default function PricingPage() {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid gap-8 md:grid-cols-3">
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           {plans.map((plan) => (
             <div
               key={plan.name}
