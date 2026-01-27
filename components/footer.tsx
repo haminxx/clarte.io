@@ -7,25 +7,7 @@ export function Footer() {
         <div className="grid gap-8 md:grid-cols-4">
           {/* Brand */}
           <div className="md:col-span-1">
-            <Link href="/" className="flex items-center gap-2.5 mb-4">
-              <svg
-                width="32"
-                height="32"
-                viewBox="0 0 32 32"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="text-white"
-              >
-                <path
-                  d="M8 8L16 4L24 8V16L16 28L8 16V8Z"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  fill="none"
-                />
-                <circle cx="16" cy="12" r="3" fill="currentColor" />
-              </svg>
-              <span className="text-lg font-semibold text-white">Clarte</span>
-            </Link>
+            <p className="text-lg italic text-white/80">Your thoughts, refined</p>
           </div>
 
           {/* Main Links */}
