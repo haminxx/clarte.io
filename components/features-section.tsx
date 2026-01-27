@@ -6,24 +6,24 @@ import { Play } from "lucide-react"
 
 export function FeaturesSection() {
   return (
-    <section className="relative bg-card py-24">
+    <section className="relative bg-card py-12 sm:py-16 md:py-24 w-full overflow-x-hidden">
       {/* Subtle gradient overlay */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-1/2 top-0 h-[600px] w-[800px] -translate-x-1/2 rounded-full bg-gradient-to-b from-blue-600/10 via-transparent to-transparent blur-3xl" />
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute left-1/2 top-0 h-[400px] w-[600px] md:h-[600px] md:w-[800px] -translate-x-1/2 rounded-full bg-gradient-to-b from-blue-600/10 via-transparent to-transparent blur-3xl" />
       </div>
       
-      <div className="relative z-10 mx-auto max-w-6xl px-6 text-center">
-        <h2 className="mb-4 text-balance text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
+      <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 text-center w-full">
+        <h2 className="mb-4 text-balance text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight text-foreground px-2">
           Built for Real-Time
           <br />
           Voice Intelligence
         </h2>
-        <p className="mx-auto mb-8 max-w-xl text-muted-foreground">
+        <p className="mx-auto mb-6 sm:mb-8 max-w-xl text-sm sm:text-base text-muted-foreground px-4">
           Flawless speech precision, ultra-low latency, and human-level
           clarity — even in complex, high-velocity conversations.
         </p>
 
-        <div className="mb-16 flex flex-wrap items-center justify-center gap-4">
+        <div className="mb-12 sm:mb-16 flex flex-wrap items-center justify-center gap-3 sm:gap-4 px-4">
           <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
             Get started
           </Button>
@@ -35,7 +35,7 @@ export function FeaturesSection() {
           </Button>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-2 w-full">
           {/* AI Agent Card - Now on the left */}
           <div className="rounded-2xl border border-border bg-background p-6">
             <div className="mb-4 flex items-center justify-between">

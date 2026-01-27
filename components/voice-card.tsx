@@ -19,7 +19,7 @@ export function VoiceCard({ onStartCall, isActive }: VoiceCardProps) {
   }
 
   return (
-    <div className="w-full max-w-lg rounded-2xl border border-border bg-card/90 p-6 shadow-2xl backdrop-blur-md">
+    <div className="w-full max-w-lg rounded-2xl border border-border bg-card/90 p-4 sm:p-6 shadow-2xl backdrop-blur-md mx-auto">
       {/* Welcome section - on top */}
       <div className="mb-6 flex items-center justify-between">
         <p className="text-foreground/80">
@@ -33,7 +33,7 @@ export function VoiceCard({ onStartCall, isActive }: VoiceCardProps) {
 
       {/* Action buttons section - on bottom */}
       <div className="space-y-3">
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Button
             variant={selectedMode === "voice-only" ? "default" : "outline"}
             className={`flex items-center gap-2 ${

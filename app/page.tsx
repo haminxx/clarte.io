@@ -154,10 +154,10 @@ export default function Home() {
   }, [uploadScreenshot, captureFrame, setScreenCaptureFunction])
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       <Header />
 
-      <main>
+      <main className="overflow-x-hidden">
         <HeroSection onStartCall={handleStartCall} isCallActive={isConnected} />
 
         {/* Company Logos */}
@@ -170,8 +170,8 @@ export default function Home() {
 
       {/* Call UI Overlay */}
       {showCallUI && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#2a2a2a] p-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#2a2a2a] p-4 sm:p-6 md:p-8">
             {/* Call Active State */}
             {!callEnded ? (
               <>
@@ -234,7 +234,7 @@ export default function Home() {
                 </div>
 
                 {/* Control buttons */}
-                <div className="flex items-center justify-center gap-3 flex-wrap">
+                <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap px-2">
                   {isConnected && (
                     <>
                       {/* Mute button */}
