@@ -1,14 +1,23 @@
 "use client"
 
+import { useState } from "react"
 import { Phone, BookOpen, Play, Monitor } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface VoiceCardProps {
-  onStartCall?: (withScreenShare?: boolean) => void
+  onStartCall?: (mode: "voice-only" | "voice-with-screen" | "narrate-only") => void
   isActive?: boolean
 }
 
 export function VoiceCard({ onStartCall, isActive }: VoiceCardProps) {
+  const [selectedMode, setSelectedMode] = useState<"voice-only" | "voice-with-screen" | "narrate-only" | null>(null)
+
+  const handlePlay = () => {
+    if (selectedMode && onStartCall) {
+      onStartCall(selectedMode)
+    }
+  }
+
   return (
     <div className="w-full max-w-lg rounded-2xl border border-border bg-card/90 p-6 shadow-2xl backdrop-blur-md">
       {/* Welcome section - on top */}
@@ -23,38 +32,62 @@ export function VoiceCard({ onStartCall, isActive }: VoiceCardProps) {
       </div>
 
       {/* Action buttons section - on bottom */}
-      <div className="flex flex-wrap items-center gap-3">
-        <Button
-          variant="outline"
-          className="flex items-center gap-2 border-border bg-transparent text-foreground hover:bg-secondary"
-          onClick={() => onStartCall?.(false)}
-        >
-          <Phone className="h-4 w-4" />
-          Test a call
-        </Button>
-        <Button
-          variant="outline"
-          className="flex items-center gap-2 border-border bg-transparent text-foreground hover:bg-secondary"
-          onClick={() => onStartCall?.(true)}
-        >
-          <Monitor className="h-4 w-4" />
-          Call with screen
-        </Button>
-        <Button
-          variant="outline"
-          className="flex items-center gap-2 border-border bg-transparent text-foreground hover:bg-secondary"
-        >
-          <BookOpen className="h-4 w-4" />
-          Narrate an article
-        </Button>
-        <Button
-          size="icon"
-          className="ml-auto h-10 w-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
-          onClick={() => onStartCall?.(true)}
-          title="Start call with screen sharing"
-        >
-          <Play className="h-4 w-4" />
-        </Button>
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            variant={selectedMode === "voice-only" ? "default" : "outline"}
+            className={`flex items-center gap-2 ${
+              selectedMode === "voice-only"
+                ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                : "border-border bg-transparent text-foreground hover:bg-secondary"
+            }`}
+            onClick={() => setSelectedMode("voice-only")}
+          >
+            <Phone className="h-4 w-4" />
+            Test a call
+          </Button>
+          <Button
+            variant={selectedMode === "voice-with-screen" ? "default" : "outline"}
+            className={`flex items-center gap-2 ${
+              selectedMode === "voice-with-screen"
+                ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                : "border-border bg-transparent text-foreground hover:bg-secondary"
+            }`}
+            onClick={() => setSelectedMode("voice-with-screen")}
+          >
+            <Monitor className="h-4 w-4" />
+            Call with screen
+          </Button>
+          <Button
+            variant={selectedMode === "narrate-only" ? "default" : "outline"}
+            className={`flex items-center gap-2 ${
+              selectedMode === "narrate-only"
+                ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                : "border-border bg-transparent text-foreground hover:bg-secondary"
+            }`}
+            onClick={() => setSelectedMode("narrate-only")}
+          >
+            <BookOpen className="h-4 w-4" />
+            Narrate an article
+          </Button>
+        </div>
+        
+        {/* Play button */}
+        <div className="flex justify-end">
+          <Button
+            size="icon"
+            className={`h-10 w-10 rounded-full ${
+              selectedMode
+                ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                : "bg-muted text-muted-foreground cursor-not-allowed"
+            }`}
+            onClick={handlePlay}
+            disabled={!selectedMode || isActive}
+            title={selectedMode ? `Start ${selectedMode.replace("-", " ")}` : "Select an option first"}
+          >
+            <Play className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </div>
   )

@@ -47,6 +47,7 @@ export function useVapi() {
   const captureFrameRef = useRef<(() => Promise<string | null>) | null>(null)
   const lastScreenContextRef = useRef<string>("")
   const demoIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const narrationModeRef = useRef<boolean>(false)
 
   const setScreenCaptureFunction = useCallback((fn: () => Promise<string | null>) => {
     captureFrameRef.current = fn
@@ -137,9 +138,10 @@ export function useVapi() {
     demoIntervalRef.current = setTimeout(simulateConversation, 1000)
   }, [addToHistory])
 
-  const startCall = useCallback(async (withScreenShare: boolean = false) => {
+  const startCall = useCallback(async (withScreenShare: boolean = false, narrationMode: boolean = false) => {
     if (isInitializingRef.current || state.isConnected) return
 
+    narrationModeRef.current = narrationMode
     isInitializingRef.current = true
     setState((prev) => ({ ...prev, error: null, conversationHistory: [], isDemoMode: false }))
 
@@ -177,21 +179,49 @@ export function useVapi() {
           if (captureFrameRef.current && state.isConnected) {
             const analysis = await analyzeScreenForContext()
             if (analysis && vapiRef.current) {
-              vapiRef.current.send({
-                type: "add-message",
-                message: { role: "system", content: `[Screen Context Update]: ${analysis}` },
-              })
+              if (narrationMode) {
+                // In narration mode, send screen content as a user message to trigger narration
+                vapiRef.current.send({
+                  type: "add-message",
+                  message: { 
+                    role: "user", 
+                    content: `[Screen Update - Please narrate this]: ${analysis}` 
+                  },
+                })
+              } else {
+                // In interactive mode, send as system context
+                vapiRef.current.send({
+                  type: "add-message",
+                  message: { role: "system", content: `[Screen Context Update]: ${analysis}` },
+                })
+              }
             }
           }
-        }, 5000)
+        }, narrationMode ? 3000 : 5000) // More frequent updates for narration mode
       }
 
-      vapi.on("call-start", () => {
+      vapi.on("call-start", async () => {
         setState((prev) => ({ ...prev, isConnected: true, isListening: true }))
         
         // Start periodic analysis if screen capture is available (check dynamically)
         if (captureFrameRef.current) {
           startPeriodicAnalysis()
+          
+          // In narration mode, immediately analyze and start narrating
+          if (narrationModeRef.current) {
+            setTimeout(async () => {
+              const analysis = await analyzeScreenForContext(true)
+              if (analysis && vapiRef.current) {
+                vapiRef.current.send({
+                  type: "add-message",
+                  message: { 
+                    role: "user", 
+                    content: `[Initial Screen - Please narrate this content]: ${analysis}` 
+                  },
+                })
+              }
+            }, 2000) // Wait 2 seconds for call to fully initialize
+          }
         }
       })
 
@@ -277,9 +307,30 @@ export function useVapi() {
         isInitializingRef.current = false
       })
 
-      // Enhanced system message that always mentions screen capability
-      // The AI will be aware it can receive screen context dynamically
-      const systemMessage = `You are a helpful AI assistant for Clarte. You have the ability to see the user's screen in real-time when screen sharing is active. When users speak, you will receive their words along with a detailed analysis of what's currently on their screen. 
+      // Enhanced system message - different for narration mode vs interactive mode
+      let systemMessage: string
+      let firstMessage: string
+      
+      if (narrationModeRef.current) {
+        // Narration mode: AI continuously reads and narrates screen content
+        systemMessage = `You are a helpful AI narrator for Clarte. Your role is to continuously read and narrate what you see on the user's screen. You will receive real-time screen analysis updates every few seconds.
+
+NARRATION MODE BEHAVIOR:
+- Continuously describe what you see on the screen in a natural, conversational way
+- Read text content aloud as it appears
+- Describe images, UI elements, and visual content
+- Narrate changes as they happen on screen
+- Speak naturally and conversationally, as if reading an article or document
+- Don't wait for user input - keep narrating as screen content updates
+- Focus on the main content and important details
+- Use a clear, engaging narration style
+
+The user has enabled narration mode, so you should start narrating immediately when you receive screen context.`
+        
+        firstMessage = "I'll start narrating what I see on your screen. Let me begin..."
+      } else {
+        // Interactive mode: Normal conversation with optional screen context
+        systemMessage = `You are a helpful AI assistant for Clarte. You have the ability to see the user's screen in real-time when screen sharing is active. When users speak, you will receive their words along with a detailed analysis of what's currently on their screen. 
 
 IMPORTANT BEHAVIOR:
 - When you receive screen context updates, actively reference what you see on the user's screen
@@ -290,6 +341,9 @@ IMPORTANT BEHAVIOR:
 - Reference specific UI elements, text, images, or applications when helpful
 
 Help users plan, organize, and achieve their goals. After the call, users can export the conversation as timelines, milestones, or documents.`
+        
+        firstMessage = "Hello! Welcome to Clarte. How can I help you plan your goals today?"
+      }
 
       // Configure assistant with screen analysis support
       const assistantConfig: any = {
@@ -299,7 +353,7 @@ Help users plan, organize, and achieve their goals. After the call, users can ex
           messages: [{ role: "system", content: systemMessage }],
         },
         voice: { provider: "11labs", voiceId: "21m00Tcm4TlvDq8ikWAM" },
-        firstMessage: "Hello! Welcome to Clarte. How can I help you plan your goals today?",
+        firstMessage: firstMessage,
       }
 
       // Log screen sharing status

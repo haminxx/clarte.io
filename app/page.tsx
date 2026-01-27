@@ -79,20 +79,33 @@ export default function Home() {
     }
   }, [handleUserInteraction])
 
-  const handleStartCall = useCallback(async (withScreenShare: boolean = false) => {
+  const handleStartCall = useCallback(async (mode: "voice-only" | "voice-with-screen" | "narrate-only") => {
     setShowCallUI(true)
     setCallEnded(false)
 
-    if (withScreenShare) {
+    if (mode === "voice-only") {
+      // Voice conversation only, no screen share
+      startCall(false, false)
+    } else if (mode === "voice-with-screen") {
+      // Call with screen sharing
       const stream = await startScreenShare()
       if (stream) {
-        startCall(true)
+        startCall(true, false)
       } else {
         // If screen share was cancelled, start without it
-        startCall(false)
+        startCall(false, false)
       }
-    } else {
-      startCall(false)
+    } else if (mode === "narrate-only") {
+      // Screen share only - auto-narration mode
+      const stream = await startScreenShare()
+      if (stream) {
+        // Start call with screen share enabled for narration mode
+        startCall(true, true)
+      } else {
+        // If screen share was cancelled, can't proceed with narration
+        setShowCallUI(false)
+        alert("Screen sharing is required for narration mode")
+      }
     }
   }, [startCall, startScreenShare])
 
