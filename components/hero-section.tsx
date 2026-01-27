@@ -1,6 +1,7 @@
 
 "use client"
 
+import Link from "next/link"
 import { ParticleOrb } from "./particle-orb"
 import { VoiceCard } from "./voice-card"
 import { Button } from "@/components/ui/button"
@@ -52,15 +53,19 @@ export function HeroSection({ onStartCall, isCallActive }: HeroSectionProps) {
 
         {/* CTA Buttons */}
         <div className="mb-16 flex flex-wrap items-center justify-center gap-4">
-          <Button className="bg-white text-black hover:bg-white/90">
-            Get started
-          </Button>
-          <Button
-            variant="outline"
-            className="border-white/20 bg-transparent text-white hover:bg-white/10"
-          >
-            Explore docs
-          </Button>
+          <Link href="/get-started">
+            <Button className="bg-white text-black hover:bg-white/90">
+              Get started
+            </Button>
+          </Link>
+          <Link href="/docs">
+            <Button
+              variant="outline"
+              className="border-white/20 bg-transparent text-white hover:bg-white/10"
+            >
+              Explore docs
+            </Button>
+          </Link>
         </div>
       </div>
 

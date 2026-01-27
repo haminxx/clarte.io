@@ -1,10 +1,9 @@
 export function CompanyLogos() {
   const companies = [
-    "Sedgwick",
-    "Reddit",
-    "Calendly",
-    "OM1",
-    "Huckberry"
+    "VAPI",
+    "Groq",
+    "Deepgram",
+    "Vercel"
   ]
 
   return (
