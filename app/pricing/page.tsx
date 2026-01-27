@@ -1,4 +1,5 @@
 import { Header } from "@/components/header"
+import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Check } from "lucide-react"
@@ -190,6 +191,8 @@ export default function PricingPage() {
           </Link>
         </div>
       </main>
+
+      <Footer />
     </div>
   )
 }

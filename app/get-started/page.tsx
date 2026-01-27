@@ -1,4 +1,5 @@
 import { Header } from "@/components/header"
+import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowRight, Code, Headphones, Zap, CheckCircle } from "lucide-react"
@@ -175,6 +176,8 @@ await conversation.send('Hello, how can I help you today?');`}</code>
           </div>
         </div>
       </main>
+
+      <Footer />
     </div>
   )
 }

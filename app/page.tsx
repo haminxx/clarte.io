@@ -4,6 +4,7 @@ import React, { Suspense } from "react"
 
 import { useEffect, useCallback, useState, useRef } from "react"
 import { Header } from "@/components/header"
+import { Footer } from "@/components/footer"
 import { HeroSection } from "@/components/hero-section"
 import { CompanyLogos } from "@/components/company-logos"
 import { FeaturesSection } from "@/components/features-section"
@@ -443,6 +444,8 @@ export default function Home() {
         onClose={() => setShowExportModal(false)}
         conversation={conversationHistory}
       />
+
+      <Footer />
     </div>
   )
 }

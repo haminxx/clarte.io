@@ -1,4 +1,5 @@
 import { Header } from "@/components/header"
+import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Code, Copy, Terminal, Zap, Shield, Globe } from "lucide-react"
 
@@ -152,6 +153,8 @@ export default function APIReferencePage() {
           </div>
         </div>
       </main>
+
+      <Footer />
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { Footer } from "@/components/footer"
 import { LogOut, MessageSquare, Settings, User } from "lucide-react"
 
 async function signOut() {
@@ -137,6 +138,8 @@ export default async function DashboardPage() {
           </div>
         </div>
       </main>
+
+      <Footer />
     </div>
   )
 }

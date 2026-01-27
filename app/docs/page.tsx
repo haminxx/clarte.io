@@ -1,4 +1,5 @@
 import { Header } from "@/components/header"
+import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { BookOpen, Code, Zap, Settings, MessageSquare, Shield, ArrowRight } from "lucide-react"
@@ -136,6 +137,8 @@ export default function DocsPage() {
           </div>
         </div>
       </main>
+
+      <Footer />
     </div>
   )
 }

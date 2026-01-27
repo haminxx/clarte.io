@@ -2,11 +2,11 @@
 
 import { useState } from "react"
 import { Header } from "@/components/header"
+import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Mail, MessageSquare, Phone, MapPin, Loader2, CheckCircle } from "lucide-react"
-import Link from "next/link"
+import { Loader2, CheckCircle } from "lucide-react"
 
 export default function ContactPage() {
   const [loading, setLoading] = useState(false)
@@ -46,7 +46,7 @@ export default function ContactPage() {
           </p>
         </div>
 
-        <div className="grid gap-12 lg:grid-cols-2">
+        <div className="mx-auto max-w-2xl">
           {/* Contact Form */}
           <div className="rounded-2xl border border-white/10 bg-[#1a1a2e]/50 p-8">
             {submitted ? (
@@ -131,159 +131,10 @@ export default function ContactPage() {
               </form>
             )}
           </div>
-
-          {/* Contact Info */}
-          <div className="space-y-8">
-            <div>
-              <h2 className="mb-6 text-2xl font-bold text-white">Get in Touch</h2>
-              <div className="space-y-6">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10">
-                    <Mail className="h-6 w-6 text-blue-400" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-white">Email</p>
-                    <p className="text-white/60">hello@clarte.io</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10">
-                    <Phone className="h-6 w-6 text-blue-400" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-white">Phone</p>
-                    <p className="text-white/60">+1 (555) 123-4567</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10">
-                    <MapPin className="h-6 w-6 text-blue-400" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-white">Office</p>
-                    <p className="text-white/60">San Diego, CA</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10">
-                    <MessageSquare className="h-6 w-6 text-blue-400" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-white">Live Chat</p>
-                    <p className="text-white/60">Available Mon-Fri, 9am-5pm PT</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="relative z-10 border-t border-white/10 bg-[#0a0a14]/80 backdrop-blur-sm">
-        <div className="mx-auto max-w-7xl px-4 py-12">
-          <div className="grid gap-8 md:grid-cols-4">
-            {/* Brand */}
-            <div className="md:col-span-1">
-              <Link href="/" className="flex items-center gap-2.5 mb-4">
-                <svg
-                  width="32"
-                  height="32"
-                  viewBox="0 0 32 32"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="text-white"
-                >
-                  <path
-                    d="M8 8L16 4L24 8V16L16 28L8 16V8Z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    fill="none"
-                  />
-                  <circle cx="16" cy="12" r="3" fill="currentColor" />
-                </svg>
-                <span className="text-lg font-semibold text-white">Clarte</span>
-              </Link>
-              <p className="text-sm text-white/60">
-                Voice AI that runs at the speed of thought.
-              </p>
-            </div>
-
-            {/* Quick Links */}
-            <div>
-              <h3 className="mb-4 text-sm font-semibold text-white">Quick Links</h3>
-              <ul className="space-y-3">
-                <li>
-                  <Link href="/" className="text-sm text-white/60 hover:text-white transition-colors">
-                    Home
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/docs" className="text-sm text-white/60 hover:text-white transition-colors">
-                    Docs
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/api-reference" className="text-sm text-white/60 hover:text-white transition-colors">
-                    API
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/pricing" className="text-sm text-white/60 hover:text-white transition-colors">
-                    Pricing
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            {/* Resources */}
-            <div>
-              <h3 className="mb-4 text-sm font-semibold text-white">Resources</h3>
-              <ul className="space-y-3">
-                <li>
-                  <Link href="/get-started" className="text-sm text-white/60 hover:text-white transition-colors">
-                    Get Started
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/contact" className="text-sm text-white/60 hover:text-white transition-colors">
-                    Contact
-                  </Link>
-                </li>
-                <li>
-                  <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-sm text-white/60 hover:text-white transition-colors">
-                    GitHub
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Legal */}
-            <div>
-              <h3 className="mb-4 text-sm font-semibold text-white">Legal</h3>
-              <ul className="space-y-3">
-                <li>
-                  <Link href="/privacy" className="text-sm text-white/60 hover:text-white transition-colors">
-                    Privacy Policy
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/terms" className="text-sm text-white/60 hover:text-white transition-colors">
-                    Terms of Service
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Copyright */}
-          <div className="mt-8 border-t border-white/10 pt-8 text-center">
-            <p className="text-sm text-white/60">
-              © {new Date().getFullYear()} Clarte. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }
