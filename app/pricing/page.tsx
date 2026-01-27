@@ -33,7 +33,7 @@ const plans = [
     ],
     cta: "Start Free Trial",
     href: "/auth/sign-up",
-    highlighted: false,
+    highlighted: true,
   },
   {
     name: "Pro",
@@ -50,7 +50,7 @@ const plans = [
     ],
     cta: "Start Free Trial",
     href: "/auth/sign-up",
-    highlighted: true,
+    highlighted: false,
   },
   {
     name: "Enterprise",
