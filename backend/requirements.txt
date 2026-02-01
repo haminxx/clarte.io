@@ -1,6 +1,6 @@
 # Clarte Voice Agent - Pipecat + Daily + Gemini Multimodal Live
 # All API keys via env (DAILY_API_KEY, GEMINI_API_KEY in Render dashboard)
-pipecat-ai[daily,silero]>=0.0.50
+pipecat-ai[daily,silero,local-smart-turn-v3]>=0.0.50
 google-genai>=1.0.0
 google-cloud-speech>=2.20.0
 google-cloud-texttospeech>=2.16.0
