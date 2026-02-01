@@ -51,11 +51,10 @@ This document lists the **accounts and API keys** you need to run the new Direct
 ## 4. **Backend URL (frontend → Pipecat server)**
 
 - **What:** Next.js frontend calls the Python backend to create a session (room + token) and the bot joins that room.
+- **Important:** `NEXT_PUBLIC_PIPECAT_BACKEND_URL` is the **URL** of your backend (e.g. Render Web Service), **not** the Pipecat Cloud API key (`pk_...`). The Pipecat Cloud key is a separate credential for the backend if you use Pipecat Cloud; see `docs/ENV_SETUP_GUIDE.md`.
 - **Env (frontend):**
   - **Local:** In `.env.local`: `NEXT_PUBLIC_PIPECAT_BACKEND_URL=http://localhost:8000`
-  - **Production (Vercel):** In Vercel → Settings → Environment Variables, set:
-    - **Name:** `NEXT_PUBLIC_PIPECAT_BACKEND_URL`
-    - **Value:** Your Render Web Service URL, e.g. `https://YOUR-SERVICE-NAME.onrender.com` (no trailing slash). See `backend/RENDER_DEPLOY.md` for deploying the backend on Render.
+  - **Production (Firebase Hosting):** In `.env.local` before `npm run build`: `NEXT_PUBLIC_PIPECAT_BACKEND_URL=https://YOUR-SERVICE-NAME.onrender.com` (your Render URL, no trailing slash). Then run `npm run build` and `firebase deploy`. See `docs/ENV_SETUP_GUIDE.md` and `docs/FIREBASE_HOSTING_SETUP.md`.
 
 ---
 

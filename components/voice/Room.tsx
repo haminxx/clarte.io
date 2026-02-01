@@ -104,7 +104,15 @@ export function Room() {
 
       await call.join({ url: room_url, token })
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to join"
+      const raw = err instanceof Error ? err.message : "Failed to join"
+      const isNetworkError =
+        raw === "Failed to fetch" ||
+        raw.includes("NetworkError") ||
+        raw.includes("Load failed") ||
+        (err instanceof TypeError && err.message.includes("fetch"))
+      const message = isNetworkError
+        ? "Could not reach the voice server. Check your connection and that the backend is running (set NEXT_PUBLIC_PIPECAT_BACKEND_URL to your Render URL and rebuild the site)."
+        : raw
       setError(message)
       setStatus("error")
     }
