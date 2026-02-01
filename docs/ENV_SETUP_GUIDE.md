@@ -27,6 +27,8 @@
 4. **Check**  
    Open clarte.io (or your hosting URL), hard refresh (Ctrl+Shift+R). Click “Start voice call”. If it still says “Voice server not configured”, the deployed files are still from an old build — run step 3 again from the same folder where `.env.local` exists.
 
+**Why it was failing before:** The build runs a script that writes the backend URL into `public/backend-config.json`. That script now reads `.env.local` from the project root (with BOM/whitespace handling). If `.env.local` is missing or the variable name is wrong, the script writes `localhost`. **Production fallback:** The live site now uses a fallback URL (`https://clarte-backend.onrender.com`) when it’s on a production host and the build/config had localhost, so voice may work even without a fresh build. For CI (GitHub Actions): set repo secret `NEXT_PUBLIC_PIPECAT_BACKEND_URL` to your Render URL so the workflow build gets the correct URL.
+
 ---
 
 ## Quick: What you need for clarte.io

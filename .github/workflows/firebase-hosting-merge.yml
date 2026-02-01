@@ -21,6 +21,7 @@ jobs:
       - name: Build
         run: npm run build
         env:
+          # Required for voice: set repo secret NEXT_PUBLIC_PIPECAT_BACKEND_URL to your Render URL (e.g. https://clarte-backend.onrender.com)
           NEXT_PUBLIC_PIPECAT_BACKEND_URL: ${{ secrets.NEXT_PUBLIC_PIPECAT_BACKEND_URL }}
           
       - uses: FirebaseExtended/action-hosting-deploy@v0

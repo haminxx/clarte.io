@@ -11,6 +11,9 @@ import { Monitor, MonitorOff, PhoneOff, Loader2 } from "lucide-react"
 
 const BUILD_BACKEND_URL = process.env.NEXT_PUBLIC_PIPECAT_BACKEND_URL || "http://localhost:8000"
 
+/** Production fallback: used when build/config had localhost but site is on production. */
+const PRODUCTION_BACKEND_FALLBACK = "https://clarte-backend.onrender.com"
+
 /** True when the site is served from a public host (e.g. clarte.io), not localhost. */
 function isProductionOrigin(): boolean {
   if (typeof window === "undefined") return false
@@ -40,17 +43,29 @@ export function Room() {
   const [isScreenSharing, setIsScreenSharing] = useState(false)
   const callObjectRef = useRef<any>(null)
 
-  // At runtime, prefer backend URL from /backend-config.json (written at build from env)
+  // At runtime: load backend URL from /backend-config.json; on production, fallback if still localhost
   useEffect(() => {
+    let effectiveUrl = BUILD_BACKEND_URL
     fetch("/backend-config.json")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         const url = data?.backendUrl
-        if (url && typeof url === "string" && !isLocalhostUrl(url)) {
-          setBackendUrl(url.replace(/\/$/, ""))
+        if (url && typeof url === "string") {
+          const trimmed = String(url).trim().replace(/\/$/, "")
+          if (!isLocalhostUrl(trimmed)) {
+            effectiveUrl = trimmed
+            setBackendUrl(trimmed)
+          }
+        }
+        if (isProductionOrigin() && isLocalhostUrl(effectiveUrl)) {
+          setBackendUrl(PRODUCTION_BACKEND_FALLBACK)
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        if (isProductionOrigin() && isLocalhostUrl(BUILD_BACKEND_URL)) {
+          setBackendUrl(PRODUCTION_BACKEND_FALLBACK)
+        }
+      })
       .finally(() => setConfigLoaded(true))
   }, [])
   const localVideoRef = useRef<HTMLVideoElement>(null)
@@ -162,7 +177,7 @@ export function Room() {
   return (
     <div className="rounded-2xl border border-border bg-card/90 p-6 shadow-2xl backdrop-blur-md max-w-lg mx-auto">
       <div className="mb-6 flex items-center justify-between">
-        <p className="text-foreground/80">Clarte Voice AI Agent</p>
+        <p className="text-foreground/80">Test - Clarte Voice AI Agent</p>
         <div className="flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5">
           <span className="text-sm text-muted-foreground">
             {status === "joined" ? "In call" : status === "joining" ? "Joining…" : status === "creating" ? "Creating…" : "Ready"}
@@ -239,7 +254,7 @@ export function Room() {
       </div>
 
       <p className="mt-4 text-xs text-muted-foreground">
-        Share your screen so the Gemini bot can see it in real time (&lt;1s latency).
+        Share your screen and Clarte will see it in real time (&lt; 1,000ms latency).
       </p>
     </div>
   )
