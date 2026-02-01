@@ -7,7 +7,11 @@
 const fs = require("fs");
 const path = require("path");
 
-const projectRoot = path.resolve(__dirname, "..");
+// Project root: prefer directory containing package.json (cwd when npm run build), else script's parent
+const scriptParent = path.resolve(__dirname, "..");
+const cwd = process.cwd();
+const projectRoot =
+  fs.existsSync(path.join(cwd, "package.json")) ? cwd : scriptParent;
 
 function loadEnvFile(fileName) {
   const filePath = path.join(projectRoot, fileName);
@@ -20,7 +24,7 @@ function loadEnvFile(fileName) {
       if (!trimmed || trimmed.startsWith("#")) continue;
       const eq = trimmed.indexOf("=");
       if (eq <= 0) continue;
-      const key = trimmed.slice(0, eq).trim();
+      const key = trimmed.slice(0, eq).trim().replace(/\uFEFF/g, ""); // strip BOM from key
       let value = trimmed.slice(eq + 1).trim().replace(/\r$/, ""); // trim and strip \r (Windows)
       if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
         value = value.slice(1, -1).trim();
