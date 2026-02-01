@@ -1,19 +1,11 @@
-import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
+/**
+ * Firebase Auth: OAuth redirect lands here. With signInWithPopup we don't use this;
+ * if you switch to signInWithRedirect, handle getRedirectResult() on a page that loads after redirect.
+ */
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
-  const code = searchParams.get("code")
   const next = searchParams.get("next") ?? "/dashboard"
-
-  if (code) {
-    const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
-      return NextResponse.redirect(`${origin}${next}`)
-    }
-  }
-
-  // Return to auth error page if code exchange fails
-  return NextResponse.redirect(`${origin}/auth/error`)
+  return NextResponse.redirect(`${origin}${next}`)
 }

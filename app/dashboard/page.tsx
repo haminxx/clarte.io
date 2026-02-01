@@ -1,41 +1,78 @@
-import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
+"use client"
+
+import { useEffect, useState } from "react"
+import { getFirebaseAuth, getFirebaseFirestore } from "@/lib/firebase"
+import { signOut, onAuthStateChanged, type User } from "firebase/auth"
+import { collection, query, where, orderBy, limit, getDocs } from "firebase/firestore"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Footer } from "@/components/footer"
-import { LogOut, MessageSquare, Settings, User } from "lucide-react"
+import { LogOut, MessageSquare, Settings, User as UserIcon } from "lucide-react"
 
-async function signOut() {
-  "use server"
-  const supabase = await createClient()
-  await supabase.auth.signOut()
-  redirect("/")
+interface ConversationDoc {
+  id: string
+  title?: string
+  updated_at?: { toDate?: () => Date }
 }
 
-export default async function DashboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+export default function DashboardPage() {
+  const [user, setUser] = useState<User | null>(null)
+  const [conversations, setConversations] = useState<ConversationDoc[]>([])
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
+  const auth = getFirebaseAuth()
+  const db = getFirebaseFirestore()
 
-  if (!user) {
-    redirect("/auth/login")
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u)
+      if (!u) {
+        router.replace("/auth/login")
+        return
+      }
+      const q = query(
+        collection(db, "conversations"),
+        where("user_id", "==", u.uid),
+        orderBy("updated_at", "desc"),
+        limit(10)
+      )
+      getDocs(q)
+        .then((snap) => {
+          setConversations(
+            snap.docs.map((d) => ({
+              id: d.id,
+              ...d.data(),
+              updated_at: d.data().updated_at,
+            })) as ConversationDoc[]
+          )
+        })
+        .catch(() => setConversations([]))
+        .finally(() => setLoading(false))
+    })
+    return () => unsub()
+  }, [auth, db, router])
+
+  const handleSignOut = async () => {
+    await signOut(auth)
+    router.replace("/")
+    router.refresh()
   }
 
-  // Fetch user's conversations
-  const { data: conversations } = await supabase
-    .from("conversations")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("updated_at", { ascending: false })
-    .limit(10)
+  if (loading || !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#0a0a14]">
+        <p className="text-white/60">Loading...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0a14]">
-      {/* Background gradient */}
       <div className="pointer-events-none fixed inset-0">
         <div className="absolute left-1/2 top-1/3 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-blue-600/10 via-indigo-500/5 to-transparent blur-3xl" />
       </div>
 
-      {/* Header */}
       <header className="relative z-10 border-b border-white/10 bg-[#0a0a14]/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
           <Link href="/" className="text-xl font-bold text-white">
@@ -43,17 +80,20 @@ export default async function DashboardPage() {
           </Link>
           <div className="flex items-center gap-4">
             <span className="text-sm text-white/60">{user.email}</span>
-            <form action={signOut}>
-              <Button type="submit" variant="outline" size="sm" className="border-white/20 bg-transparent text-white hover:bg-white/10">
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign Out
-              </Button>
-            </form>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="border-white/20 bg-transparent text-white hover:bg-white/10"
+              onClick={handleSignOut}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign Out
+            </Button>
           </div>
         </div>
       </header>
 
-      {/* Main content */}
       <main className="relative z-10 mx-auto max-w-7xl px-4 py-12">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white">Welcome back</h1>
@@ -61,7 +101,6 @@ export default async function DashboardPage() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-3">
-          {/* Quick Actions */}
           <div className="rounded-2xl border border-white/10 bg-[#1a1a2e]/50 p-6">
             <h2 className="mb-4 text-lg font-semibold text-white">Quick Actions</h2>
             <div className="space-y-3">
@@ -76,16 +115,15 @@ export default async function DashboardPage() {
                 Settings
               </Button>
               <Button variant="outline" className="w-full justify-start border-white/20 bg-transparent text-white hover:bg-white/10">
-                <User className="mr-2 h-4 w-4" />
+                <UserIcon className="mr-2 h-4 w-4" />
                 Edit Profile
               </Button>
             </div>
           </div>
 
-          {/* Recent Conversations */}
           <div className="md:col-span-2 rounded-2xl border border-white/10 bg-[#1a1a2e]/50 p-6">
             <h2 className="mb-4 text-lg font-semibold text-white">Recent Conversations</h2>
-            {conversations && conversations.length > 0 ? (
+            {conversations.length > 0 ? (
               <div className="space-y-3">
                 {conversations.map((conv) => (
                   <div
@@ -95,7 +133,7 @@ export default async function DashboardPage() {
                     <div>
                       <p className="font-medium text-white">{conv.title || "Untitled Conversation"}</p>
                       <p className="text-sm text-white/40">
-                        {new Date(conv.updated_at).toLocaleDateString()}
+                        {conv.updated_at?.toDate?.()?.toLocaleDateString?.() ?? "—"}
                       </p>
                     </div>
                     <Button size="sm" variant="outline" className="border-white/20 bg-transparent text-white hover:bg-white/10">
@@ -118,11 +156,10 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* Stats */}
         <div className="mt-8 grid gap-6 md:grid-cols-4">
           <div className="rounded-xl border border-white/10 bg-[#1a1a2e]/50 p-6">
             <p className="text-sm text-white/40">Total Conversations</p>
-            <p className="mt-2 text-3xl font-bold text-white">{conversations?.length || 0}</p>
+            <p className="mt-2 text-3xl font-bold text-white">{conversations.length}</p>
           </div>
           <div className="rounded-xl border border-white/10 bg-[#1a1a2e]/50 p-6">
             <p className="text-sm text-white/40">Minutes Used</p>

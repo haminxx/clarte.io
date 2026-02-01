@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clarte - Voice Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.9em;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        
+        .status.listening {
+            background: #e3f2fd;
+            color: #1976d2;
+            border: 2px solid #1976d2;
+        }
+        
+        .status.processing {
+            background: #fff3e0;
+            color: #f57c00;
+            border: 2px solid #f57c00;
+        }
+        
+        .status.ready {
+            background: #e8f5e9;
+            color: #388e3c;
+            border: 2px solid #388e3c;
+        }
+        
+        .button {
+            width: 100%;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin-bottom: 15px;
+        }
+        
+        .button.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .button.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .button.primary:active {
+            transform: translateY(0);
+        }
+        
+        .button.secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+        
+        .button.secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .conversation {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 10px;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            max-width: 80%;
+        }
+        
+        .message.user {
+            background: #e3f2fd;
+            margin-left: auto;
+            text-align: right;
+        }
+        
+        .message.assistant {
+            background: #f3e5f5;
+        }
+        
+        .message-label {
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-bottom: 5px;
+            opacity: 0.7;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎙️ Clarte Voice</h1>
+        <p class="subtitle">Microphone → LLM → ElevenLabs TTS</p>
+        
+        <div id="status" class="status ready">Ready to listen</div>
+        
+        <button id="startBtn" class="button primary">Start Listening</button>
+        <button id="stopBtn" class="button secondary hidden">Stop Listening</button>
+        
+        <div id="conversation" class="conversation hidden"></div>
+        <div id="error" class="error hidden"></div>
+    </div>
+
+    <script>
+        // Configuration - Update with your backend URL
+        const BACKEND_URL = 'http://localhost:8000'; // Change to your backend URL
+        
+        let recognition = null;
+        let isListening = false;
+        
+        // Check browser support
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        
+        if (!SpeechRecognition) {
+            showError('Speech recognition not supported in this browser. Use Chrome, Edge, or Safari.');
+        } else {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+            
+            recognition.onstart = () => {
+                isListening = true;
+                updateStatus('Listening... Speak now!', 'listening');
+                document.getElementById('startBtn').classList.add('hidden');
+                document.getElementById('stopBtn').classList.remove('hidden');
+            };
+            
+            recognition.onresult = async (event) => {
+                const transcript = event.results[0][0].transcript;
+                console.log('User said:', transcript);
+                
+                // Add user message to conversation
+                addMessage('user', transcript);
+                
+                // Stop listening
+                recognition.stop();
+                updateStatus('Processing...', 'processing');
+                
+                // Send to backend
+                try {
+                    const response = await sendToBackend(transcript);
+                    
+                    if (response.success) {
+                        addMessage('assistant', response.reply);
+                        
+                        // Play ElevenLabs audio
+                        if (response.audio_url) {
+                            playAudio(response.audio_url);
+                        }
+                        
+                        updateStatus('Ready to listen', 'ready');
+                    } else {
+                        showError(response.error || 'Failed to get response');
+                        updateStatus('Ready to listen', 'ready');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showError('Error communicating with backend: ' + error.message);
+                    updateStatus('Ready to listen', 'ready');
+                }
+            };
+            
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                isListening = false;
+                updateStatus('Ready to listen', 'ready');
+                document.getElementById('startBtn').classList.remove('hidden');
+                document.getElementById('stopBtn').classList.add('hidden');
+                
+                if (event.error === 'no-speech') {
+                    showError('No speech detected. Try again.');
+                } else if (event.error === 'not-allowed') {
+                    showError('Microphone permission denied. Please allow microphone access.');
+                } else {
+                    showError('Speech recognition error: ' + event.error);
+                }
+            };
+            
+            recognition.onend = () => {
+                isListening = false;
+                if (document.getElementById('status').textContent !== 'Processing...') {
+                    updateStatus('Ready to listen', 'ready');
+                    document.getElementById('startBtn').classList.remove('hidden');
+                    document.getElementById('stopBtn').classList.add('hidden');
+                }
+            };
+        }
+        
+        // Button handlers
+        document.getElementById('startBtn').addEventListener('click', () => {
+            if (recognition && !isListening) {
+                document.getElementById('conversation').classList.remove('hidden');
+                recognition.start();
+            }
+        });
+        
+        document.getElementById('stopBtn').addEventListener('click', () => {
+            if (recognition && isListening) {
+                recognition.stop();
+            }
+        });
+        
+        // Functions
+        function updateStatus(text, className) {
+            const status = document.getElementById('status');
+            status.textContent = text;
+            status.className = 'status ' + className;
+        }
+        
+        function addMessage(role, text) {
+            const conversation = document.getElementById('conversation');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + role;
+            
+            const label = document.createElement('div');
+            label.className = 'message-label';
+            label.textContent = role === 'user' ? 'You' : 'Clarte';
+            
+            const content = document.createElement('div');
+            content.textContent = text;
+            
+            messageDiv.appendChild(label);
+            messageDiv.appendChild(content);
+            conversation.appendChild(messageDiv);
+            
+            // Scroll to bottom
+            conversation.scrollTop = conversation.scrollHeight;
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+            
+            setTimeout(() => {
+                errorDiv.classList.add('hidden');
+            }, 5000);
+        }
+        
+        async function sendToBackend(text) {
+            const response = await fetch(`${BACKEND_URL}/api/chat`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text: text })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            return await response.json();
+        }
+        
+        function playAudio(audioUrl) {
+            const audio = new Audio(audioUrl);
+            audio.play().catch(error => {
+                console.error('Error playing audio:', error);
+                showError('Could not play audio: ' + error.message);
+            });
+        }
+        
+        // Request microphone permission on page load
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(() => {
+                    console.log('Microphone permission granted');
+                })
+                .catch((error) => {
+                    console.error('Microphone permission denied:', error);
+                    showError('Microphone permission is required. Please allow microphone access.');
+                });
+        }
+    </script>
+</body>
+</html>
