@@ -35,6 +35,41 @@ interface SessionResponse {
   room_name: string
 }
 
+const SESSION_FETCH_TIMEOUT_MS = 60000 // 60s for Render cold start
+const SESSION_FETCH_RETRIES = 2 // initial + 1 retry
+
+async function fetchSessionWithRetry(
+  backendUrl: string,
+  retriesLeft: number = SESSION_FETCH_RETRIES
+): Promise<SessionResponse> {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), SESSION_FETCH_TIMEOUT_MS)
+  try {
+    const res = await fetch(`${backendUrl}/session`, {
+      method: "POST",
+      signal: controller.signal,
+    })
+    clearTimeout(timeoutId)
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(text || `Session failed: ${res.status}`)
+    }
+    const data = (await res.json()) as SessionResponse
+    return data
+  } catch (err) {
+    clearTimeout(timeoutId)
+    const isAbort = err instanceof Error && err.name === "AbortError"
+    const isNetwork =
+      err instanceof TypeError ||
+      (err instanceof Error && (err.message === "Failed to fetch" || err.message.includes("Load failed")))
+    if ((isAbort || isNetwork) && retriesLeft > 0) {
+      await new Promise((r) => setTimeout(r, 1500)) // brief delay before retry
+      return fetchSessionWithRetry(backendUrl, retriesLeft - 1)
+    }
+    throw err
+  }
+}
+
 export function Room() {
   const [backendUrl, setBackendUrl] = useState(BUILD_BACKEND_URL)
   const [configLoaded, setConfigLoaded] = useState(false)
@@ -122,21 +157,22 @@ export function Room() {
     setError(null)
 
     try {
-      const res = await fetch(`${backendUrl}/session`, { method: "POST" })
-      if (!res.ok) {
-        const text = await res.text()
-        throw new Error(text || "Failed to create session")
-      }
-      const { room_url, token }: SessionResponse = await res.json()
+      const { room_url, token } = await fetchSessionWithRetry(backendUrl)
 
       setStatus("joining")
 
-      const { createCallObject } = await import("@daily-co/daily-js")
+      // @daily-co/daily-js exports default (DailyCallFactory); named createCallObject doesn't exist
+      const dailyModule = await import("@daily-co/daily-js")
+      const Daily = (dailyModule as { default?: { createCallObject: (opts: object) => unknown } }).default ?? dailyModule
+      const createCallObject = (Daily as { createCallObject?: (opts: object) => unknown }).createCallObject
+      if (typeof createCallObject !== "function") {
+        throw new Error("Daily.co SDK failed to load (createCallObject not found)")
+      }
       const call = createCallObject({
         audioSource: true,
         videoSource: true,
         subscribeToTracksAutomatically: true,
-      })
+      }) as any
       callObjectRef.current = call
 
       call.on("joined-meeting", () => {
@@ -161,7 +197,9 @@ export function Room() {
       const message = isNetworkError
         ? isProductionWithoutBackend
           ? "VOICE_SERVER_NOT_CONFIGURED"
-          : "Could not reach the voice server. Check your connection and that the backend is running (set NEXT_PUBLIC_PIPECAT_BACKEND_URL to your Render URL and rebuild the site)."
+          : "Could not reach the voice server. The backend may be starting (Render cold start can take up to a minute). Check your connection and that the backend is running at " +
+            (backendUrl.replace(/^https?:\/\//, "").split("/")[0] || "your Render URL") +
+            ". Try again in a moment."
         : raw
       setError(message)
       setStatus("error")

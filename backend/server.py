@@ -91,10 +91,12 @@ async def lifespan(app: FastAPI):
     _bot_tasks.clear()
 
 
-# CORS: allow Vercel frontend and local dev
+# CORS: allow frontend origins (Firebase Hosting + custom domain + local dev)
 _ALLOWED_ORIGINS = [
     "https://www.clarte.io",
     "https://clarte.io",
+    "https://clarte-73f7d.web.app",
+    "https://clarte-73f7d.firebaseapp.com",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
