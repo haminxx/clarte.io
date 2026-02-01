@@ -4,6 +4,31 @@
 
 ---
 
+## Step-by-step: Voice backend on clarte.io (if you see "Voice server not configured")
+
+1. **Get your Render backend URL**  
+   Render Dashboard → your Web Service → copy the URL (e.g. `https://clarte-backend.onrender.com`). No trailing slash.
+
+2. **Put it in `.env.local` in the project root**  
+   Same folder as `package.json`. Create the file if it doesn’t exist. Add exactly:
+   ```bash
+   NEXT_PUBLIC_PIPECAT_BACKEND_URL=https://YOUR-ACTUAL-SERVICE.onrender.com
+   ```
+   No quotes, no spaces, no trailing slash. Replace with your real URL (e.g. `https://clarte-backend.onrender.com`).
+
+3. **Build and deploy**  
+   From the project root run:
+   ```bash
+   npm run build
+   firebase deploy
+   ```
+   **Why both?** The build reads `.env.local` and writes the URL into the site (and into `public/backend-config.json`). The live site only gets the new URL after you run `npm run build` and then deploy. Redeploying without rebuilding will not change the URL.
+
+4. **Check**  
+   Open clarte.io (or your hosting URL), hard refresh (Ctrl+Shift+R). Click “Start voice call”. If it still says “Voice server not configured”, the deployed files are still from an old build — run step 3 again from the same folder where `.env.local` exists.
+
+---
+
 ## Quick: What you need for clarte.io
 
 | Goal | What you need |

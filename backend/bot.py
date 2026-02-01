@@ -5,6 +5,8 @@ Video frames and audio flow in a single WebRTC stream for <1s latency.
 
 Required env vars (set in Render dashboard or .env):
   GEMINI_API_KEY or GOOGLE_API_KEY - Google AI Studio / Gemini API key
+
+Tuning: system prompt, voice, VAD, and adding features → see docs/VOICE_AI_TUNING.md
 """
 import asyncio
 import os

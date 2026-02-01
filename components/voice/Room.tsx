@@ -9,7 +9,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Monitor, MonitorOff, PhoneOff, Loader2 } from "lucide-react"
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_PIPECAT_BACKEND_URL || "http://localhost:8000"
+const BUILD_BACKEND_URL = process.env.NEXT_PUBLIC_PIPECAT_BACKEND_URL || "http://localhost:8000"
 
 /** True when the site is served from a public host (e.g. clarte.io), not localhost. */
 function isProductionOrigin(): boolean {
@@ -22,6 +22,10 @@ function isProductionOrigin(): boolean {
   }
 }
 
+function isLocalhostUrl(url: string): boolean {
+  return url.startsWith("http://localhost") || url.startsWith("http://127.0.0.1")
+}
+
 interface SessionResponse {
   room_url: string
   token: string
@@ -29,10 +33,26 @@ interface SessionResponse {
 }
 
 export function Room() {
+  const [backendUrl, setBackendUrl] = useState(BUILD_BACKEND_URL)
+  const [configLoaded, setConfigLoaded] = useState(false)
   const [status, setStatus] = useState<"idle" | "creating" | "joining" | "joined" | "error">("idle")
   const [error, setError] = useState<string | null>(null)
   const [isScreenSharing, setIsScreenSharing] = useState(false)
   const callObjectRef = useRef<any>(null)
+
+  // At runtime, prefer backend URL from /backend-config.json (written at build from env)
+  useEffect(() => {
+    fetch("/backend-config.json")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        const url = data?.backendUrl
+        if (url && typeof url === "string" && !isLocalhostUrl(url)) {
+          setBackendUrl(url.replace(/\/$/, ""))
+        }
+      })
+      .catch(() => {})
+      .finally(() => setConfigLoaded(true))
+  }, [])
   const localVideoRef = useRef<HTMLVideoElement>(null)
   const remoteVideoRef = useRef<HTMLVideoElement>(null)
 
@@ -87,7 +107,7 @@ export function Room() {
     setError(null)
 
     try {
-      const res = await fetch(`${BACKEND_URL}/session`, { method: "POST" })
+      const res = await fetch(`${backendUrl}/session`, { method: "POST" })
       if (!res.ok) {
         const text = await res.text()
         throw new Error(text || "Failed to create session")
@@ -121,7 +141,7 @@ export function Room() {
         raw.includes("NetworkError") ||
         raw.includes("Load failed") ||
         (err instanceof TypeError && err.message.includes("fetch"))
-      const usedLocalhost = BACKEND_URL.startsWith("http://localhost") || BACKEND_URL.startsWith("http://127.0.0.1")
+      const usedLocalhost = isLocalhostUrl(backendUrl)
       const isProductionWithoutBackend = typeof window !== "undefined" && isProductionOrigin() && usedLocalhost
       const message = isNetworkError
         ? isProductionWithoutBackend
@@ -131,7 +151,7 @@ export function Room() {
       setError(message)
       setStatus("error")
     }
-  }, [leaveCall])
+  }, [leaveCall, backendUrl])
 
   useEffect(() => {
     return () => {
@@ -142,7 +162,7 @@ export function Room() {
   return (
     <div className="rounded-2xl border border-border bg-card/90 p-6 shadow-2xl backdrop-blur-md max-w-lg mx-auto">
       <div className="mb-6 flex items-center justify-between">
-        <p className="text-foreground/80">Clarte Voice — Direct Multimodal (Pipecat + Daily + Gemini)</p>
+        <p className="text-foreground/80">Clarte Voice AI Agent</p>
         <div className="flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5">
           <span className="text-sm text-muted-foreground">
             {status === "joined" ? "In call" : status === "joining" ? "Joining…" : status === "creating" ? "Creating…" : "Ready"}
@@ -150,26 +170,19 @@ export function Room() {
         </div>
       </div>
 
-      {error && (
-        <div className="mb-4 space-y-2">
-          {error === "VOICE_SERVER_NOT_CONFIGURED" ? (
-            <>
-              <p className="text-sm font-medium text-destructive">Voice server is not configured for this site.</p>
-              <p className="text-sm text-muted-foreground">
-                The site was built without your backend URL, so it is trying to reach localhost. To fix:
-              </p>
-              <ul className="list-inside list-disc text-sm text-muted-foreground space-y-1">
-                <li>Create a backend on Render (see <code className="text-foreground">docs/RENDER_DEPLOY.md</code>)</li>
-                <li>In the project root, add to <code className="text-foreground">.env.local</code>:<br />
-                  <code className="text-foreground text-xs">NEXT_PUBLIC_PIPECAT_BACKEND_URL=https://YOUR-SERVICE.onrender.com</code>
-                </li>
-                <li>Run <code className="text-foreground">npm run build</code> then redeploy (e.g. <code className="text-foreground">firebase deploy</code>)</li>
-              </ul>
-              <p className="text-xs text-muted-foreground">Details: <code className="text-foreground">docs/ENV_SETUP_GUIDE.md</code></p>
-            </>
-          ) : (
-            <p className="text-sm text-destructive">{error}</p>
-          )}
+      {error && error !== "VOICE_SERVER_NOT_CONFIGURED" && (
+        <p className="mb-4 text-sm text-destructive">{error}</p>
+      )}
+      {error === "VOICE_SERVER_NOT_CONFIGURED" && configLoaded && (
+        <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 text-sm">
+          <p className="font-medium text-amber-700 dark:text-amber-400">Voice server not configured</p>
+          <p className="mt-2 text-muted-foreground">Do this once, then rebuild and redeploy:</p>
+          <ol className="mt-2 list-decimal list-inside space-y-1 text-muted-foreground">
+            <li>In the project root (same folder as <code className="text-foreground">package.json</code>), create or edit <code className="text-foreground">.env.local</code>.</li>
+            <li>Add one line (no quotes): <code className="text-foreground text-xs">NEXT_PUBLIC_PIPECAT_BACKEND_URL=https://YOUR-SERVICE.onrender.com</code> — use your real Render URL.</li>
+            <li>Run <code className="text-foreground">npm run build</code> then <code className="text-foreground">firebase deploy</code>.</li>
+          </ol>
+          <p className="mt-2 text-xs text-muted-foreground">The build writes this URL into the site; redeploying without rebuilding will not fix it. See <code className="text-foreground">docs/ENV_SETUP_GUIDE.md</code>.</p>
         </div>
       )}
 
