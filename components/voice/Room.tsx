@@ -11,6 +11,17 @@ import { Monitor, MonitorOff, PhoneOff, Loader2 } from "lucide-react"
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_PIPECAT_BACKEND_URL || "http://localhost:8000"
 
+/** True when the site is served from a public host (e.g. clarte.io), not localhost. */
+function isProductionOrigin(): boolean {
+  if (typeof window === "undefined") return false
+  try {
+    const host = window.location?.hostname ?? ""
+    return host !== "localhost" && host !== "127.0.0.1"
+  } catch {
+    return false
+  }
+}
+
 interface SessionResponse {
   room_url: string
   token: string
@@ -110,8 +121,12 @@ export function Room() {
         raw.includes("NetworkError") ||
         raw.includes("Load failed") ||
         (err instanceof TypeError && err.message.includes("fetch"))
+      const usedLocalhost = BACKEND_URL.startsWith("http://localhost") || BACKEND_URL.startsWith("http://127.0.0.1")
+      const isProductionWithoutBackend = typeof window !== "undefined" && isProductionOrigin() && usedLocalhost
       const message = isNetworkError
-        ? "Could not reach the voice server. Check your connection and that the backend is running (set NEXT_PUBLIC_PIPECAT_BACKEND_URL to your Render URL and rebuild the site)."
+        ? isProductionWithoutBackend
+          ? "VOICE_SERVER_NOT_CONFIGURED"
+          : "Could not reach the voice server. Check your connection and that the backend is running (set NEXT_PUBLIC_PIPECAT_BACKEND_URL to your Render URL and rebuild the site)."
         : raw
       setError(message)
       setStatus("error")
@@ -136,7 +151,26 @@ export function Room() {
       </div>
 
       {error && (
-        <p className="mb-4 text-sm text-destructive">{error}</p>
+        <div className="mb-4 space-y-2">
+          {error === "VOICE_SERVER_NOT_CONFIGURED" ? (
+            <>
+              <p className="text-sm font-medium text-destructive">Voice server is not configured for this site.</p>
+              <p className="text-sm text-muted-foreground">
+                The site was built without your backend URL, so it is trying to reach localhost. To fix:
+              </p>
+              <ul className="list-inside list-disc text-sm text-muted-foreground space-y-1">
+                <li>Create a backend on Render (see <code className="text-foreground">docs/RENDER_DEPLOY.md</code>)</li>
+                <li>In the project root, add to <code className="text-foreground">.env.local</code>:<br />
+                  <code className="text-foreground text-xs">NEXT_PUBLIC_PIPECAT_BACKEND_URL=https://YOUR-SERVICE.onrender.com</code>
+                </li>
+                <li>Run <code className="text-foreground">npm run build</code> then redeploy (e.g. <code className="text-foreground">firebase deploy</code>)</li>
+              </ul>
+              <p className="text-xs text-muted-foreground">Details: <code className="text-foreground">docs/ENV_SETUP_GUIDE.md</code></p>
+            </>
+          ) : (
+            <p className="text-sm text-destructive">{error}</p>
+          )}
+        </div>
       )}
 
       <div className="flex flex-wrap items-center gap-3">

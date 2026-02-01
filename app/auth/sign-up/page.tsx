@@ -11,6 +11,7 @@ import {
 } from "firebase/auth"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { getAuthErrorMessage } from "@/lib/firebase-auth-errors"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Mail, Github, Loader2 } from "lucide-react"
@@ -26,6 +27,10 @@ export default function SignUpPage() {
 
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!auth) {
+      setError("Firebase is not configured.")
+      return
+    }
     setLoading(true)
     setError(null)
     try {
@@ -36,7 +41,7 @@ export default function SignUpPage() {
       router.push("/auth/sign-up-success")
       router.refresh()
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Sign up failed")
+      setError(getAuthErrorMessage(err))
     } finally {
       setLoading(false)
     }
@@ -56,7 +61,7 @@ export default function SignUpPage() {
       router.push("/auth/sign-up-success")
       router.refresh()
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Sign up failed")
+      setError(getAuthErrorMessage(err))
     } finally {
       setLoading(false)
     }

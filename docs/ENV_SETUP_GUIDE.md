@@ -4,6 +4,15 @@
 
 ---
 
+## Quick: What you need for clarte.io
+
+| Goal | What you need |
+|------|----------------|
+| **Voice AI works** | 1) Backend on Render with `DAILY_API_KEY` and `GEMINI_API_KEY`. 2) In project root `.env.local`: `NEXT_PUBLIC_PIPECAT_BACKEND_URL=https://YOUR-SERVICE.onrender.com`. 3) Run `npm run build` then redeploy (e.g. `firebase deploy`). |
+| **Login page works** | Firebase is configured with a fallback for the Clarte project; login/sign-up should work on clarte.io. To use a different project, set all `NEXT_PUBLIC_FIREBASE_*` in `.env.local` and rebuild. |
+
+---
+
 ## 1. NEXT_PUBLIC_PIPECAT_BACKEND_URL (frontend)
 
 | Key | Value | Notes |

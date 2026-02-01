@@ -10,6 +10,7 @@ import {
 } from "firebase/auth"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { getAuthErrorMessage } from "@/lib/firebase-auth-errors"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Mail, Github, Loader2 } from "lucide-react"
@@ -35,7 +36,7 @@ export default function LoginPage() {
       router.push("/dashboard")
       router.refresh()
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Sign in failed")
+      setError(getAuthErrorMessage(err))
     } finally {
       setLoading(false)
     }
@@ -55,7 +56,7 @@ export default function LoginPage() {
       router.push("/dashboard")
       router.refresh()
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Sign in failed")
+      setError(getAuthErrorMessage(err))
     } finally {
       setLoading(false)
     }
