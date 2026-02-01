@@ -2,6 +2,9 @@
 Clarte Voice Agent - Pipecat Pipeline
 Direct Multimodal Live: DailyTransport -> SileroVAD -> GeminiMultimodalLiveService
 Video frames and audio flow in a single WebRTC stream for <1s latency.
+
+Required env vars (set in Render dashboard or .env):
+  GEMINI_API_KEY or GOOGLE_API_KEY - Google AI Studio / Gemini API key
 """
 import asyncio
 import os

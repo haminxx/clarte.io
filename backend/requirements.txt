@@ -1,4 +1,5 @@
 # Clarte Voice Agent - Pipecat + Daily + Gemini Multimodal Live
+# All API keys via env (DAILY_API_KEY, GEMINI_API_KEY in Render dashboard)
 pipecat-ai[daily]>=0.0.50
 google-genai>=1.0.0
 firebase-admin>=6.0.0

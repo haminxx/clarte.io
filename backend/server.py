@@ -1,6 +1,10 @@
 """
 Clarte Backend - Creates Daily rooms and runs the Pipecat bot.
 POST /session -> create room + token, start bot, return { room_url, token }.
+
+Required env vars (set in Render dashboard or .env):
+  DAILY_API_KEY - Daily.co API key (create rooms + meeting tokens)
+Optional: CORS_ORIGINS - comma-separated extra origins for CORS
 """
 import asyncio
 import os
@@ -87,10 +91,20 @@ async def lifespan(app: FastAPI):
     _bot_tasks.clear()
 
 
+# CORS: allow Vercel frontend and local dev
+_ALLOWED_ORIGINS = [
+    "https://www.clarte.io",
+    "https://clarte.io",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+if os.getenv("CORS_ORIGINS"):
+    _ALLOWED_ORIGINS.extend(o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip())
+
 app = FastAPI(title="Clarte Backend", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
