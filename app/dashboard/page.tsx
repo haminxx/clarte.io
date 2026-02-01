@@ -25,10 +25,19 @@ export default function DashboardPage() {
   const db = getFirebaseFirestore()
 
   useEffect(() => {
+    if (!auth) {
+      setLoading(false)
+      router.replace("/auth/login")
+      return
+    }
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u)
       if (!u) {
         router.replace("/auth/login")
+        return
+      }
+      if (!db) {
+        setLoading(false)
         return
       }
       const q = query(
@@ -54,9 +63,21 @@ export default function DashboardPage() {
   }, [auth, db, router])
 
   const handleSignOut = async () => {
+    if (!auth) return
     await signOut(auth)
     router.replace("/")
     router.refresh()
+  }
+
+  if (!auth) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#0a0a14]">
+        <div className="text-center text-white/60">
+          <p>Firebase is not configured.</p>
+          <Link href="/" className="mt-4 inline-block text-white underline">Back to home</Link>
+        </div>
+      </div>
+    )
   }
 
   if (loading || !user) {

@@ -24,6 +24,10 @@ export default function LoginPage() {
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!auth) {
+      setError("Firebase is not configured.")
+      return
+    }
     setLoading(true)
     setError(null)
     try {
@@ -38,6 +42,10 @@ export default function LoginPage() {
   }
 
   const handleOAuthLogin = async (provider: "google" | "github") => {
+    if (!auth) {
+      setError("Firebase is not configured.")
+      return
+    }
     setLoading(true)
     setError(null)
     try {
@@ -51,6 +59,17 @@ export default function LoginPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (!auth) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="rounded-2xl border border-border bg-card/90 p-8 text-center">
+          <p className="text-muted-foreground">Firebase is not configured. Set NEXT_PUBLIC_FIREBASE_* in your environment.</p>
+          <Link href="/" className="mt-4 inline-block text-foreground underline">Back to home</Link>
+        </div>
+      </div>
+    )
   }
 
   return (

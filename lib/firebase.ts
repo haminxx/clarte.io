@@ -16,11 +16,19 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 }
 
-let firebaseApp: FirebaseApp
-let firebaseAuth: Auth
-let firestoreDb: Firestore
+/** Only initialize when API key is set (avoids build/SSG errors when env is missing). */
+function isFirebaseConfigured(): boolean {
+  return Boolean(firebaseConfig.apiKey && firebaseConfig.projectId)
+}
+
+let firebaseApp: FirebaseApp | null = null
+let firebaseAuth: Auth | null = null
+let firestoreDb: Firestore | null = null
 
 function getFirebase(): FirebaseApp {
+  if (!isFirebaseConfigured()) {
+    throw new Error("Firebase is not configured. Set NEXT_PUBLIC_FIREBASE_* env vars.")
+  }
   if (getApps().length === 0) {
     firebaseApp = initializeApp(firebaseConfig)
   } else {
@@ -29,7 +37,8 @@ function getFirebase(): FirebaseApp {
   return firebaseApp
 }
 
-export function getFirebaseAuth(): Auth {
+export function getFirebaseAuth(): Auth | null {
+  if (!isFirebaseConfigured()) return null
   if (!firebaseAuth) {
     const app = getFirebase()
     firebaseAuth = getAuth(app)
@@ -37,12 +46,15 @@ export function getFirebaseAuth(): Auth {
   return firebaseAuth
 }
 
-export function getFirebaseFirestore(): Firestore {
+export function getFirebaseFirestore(): Firestore | null {
+  if (!isFirebaseConfigured()) return null
   if (!firestoreDb) {
     const app = getFirebase()
     firestoreDb = getFirestore(app)
   }
   return firestoreDb
 }
+
+export { isFirebaseConfigured }
 
 export { getFirebase as getFirebaseApp }
