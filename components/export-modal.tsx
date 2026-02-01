@@ -94,6 +94,10 @@ export function ExportModal({ isOpen, onClose, conversation }: ExportModalProps)
         }),
       })
 
+      if (!response.ok && response.status === 404) {
+        throw new Error("Export is not available on this deployment (static hosting).")
+      }
+
       const data = await response.json()
 
       if (data.error) {
