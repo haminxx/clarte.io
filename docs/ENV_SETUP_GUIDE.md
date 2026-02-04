@@ -1,33 +1,34 @@
 # Clarte: Environment Variables – Where and What
 
-**Important:** `NEXT_PUBLIC_PIPECAT_BACKEND_URL` is the **URL** of your backend (e.g. your Render Web Service), **not** the Pipecat Cloud API key. The Pipecat Cloud API key (`pk_...`) is a separate credential used on the **backend** if you use Pipecat Cloud; it is **not** the value for `NEXT_PUBLIC_PIPECAT_BACKEND_URL`.
+Voice is powered by **VAPI.ai** (no backend required). Auth and data use **Firebase**.
 
 ---
 
-## Step-by-step: Voice backend on clarte.io (if you see "Voice server not configured")
+## Step-by-step: Voice (VAPI) on clarte.io
 
-1. **Get your Render backend URL**  
-   Render Dashboard → your Web Service → copy the URL (e.g. `https://clarte-backend.onrender.com`). No trailing slash.
+1. **Get your VAPI public key and assistant ID**  
+   [VAPI Dashboard](https://dashboard.vapi.ai) → **Keys** (copy **Public key**) → **Assistants** (create or open an assistant, copy its **ID**).
 
-2. **Put it in `.env.local` in the project root**  
-   Same folder as `package.json`. Create the file if it doesn’t exist. Add exactly:
+2. **Put them in `.env.local` in the project root**  
+   Same folder as `package.json`. Create the file if it doesn’t exist:
    ```bash
-   NEXT_PUBLIC_PIPECAT_BACKEND_URL=https://YOUR-ACTUAL-SERVICE.onrender.com
+   NEXT_PUBLIC_VAPI_PUBLIC_KEY=your_public_key
+   NEXT_PUBLIC_VAPI_ASSISTANT_ID=your_assistant_id
    ```
-   No quotes, no spaces, no trailing slash. Replace with your real URL (e.g. `https://clarte-backend.onrender.com`).
+   No quotes, no spaces. Use the **public** key only (safe for the browser).
 
 3. **Build and deploy**  
-   From the project root run:
+   From the project root:
    ```bash
    npm run build
    firebase deploy
    ```
-   **Why both?** The build reads `.env.local` and writes the URL into the site (and into `public/backend-config.json`). The live site only gets the new URL after you run `npm run build` and then deploy. Redeploying without rebuilding will not change the URL.
+   The build inlines these values; redeploying without rebuilding will not update them.
 
 4. **Check**  
-   Open clarte.io (or your hosting URL), hard refresh (Ctrl+Shift+R). Click “Start voice call”. If it still says “Voice server not configured”, the deployed files are still from an old build — run step 3 again from the same folder where `.env.local` exists.
+   Open your site, hard refresh (Ctrl+Shift+R). Click “Start voice call”. If it says “VAPI is not configured”, the build didn’t have the env vars — run step 3 again.
 
-**Why it was failing before:** The build runs a script that writes the backend URL into `public/backend-config.json`. That script now reads `.env.local` from the project root (with BOM/whitespace handling). If `.env.local` is missing or the variable name is wrong, the script writes `localhost`. **Production fallback:** The live site now uses a fallback URL (`https://clarte-backend.onrender.com`) when it’s on a production host and the build/config had localhost, so voice may work even without a fresh build. For CI (GitHub Actions): set repo secret `NEXT_PUBLIC_PIPECAT_BACKEND_URL` to your Render URL so the workflow build gets the correct URL.
+See **docs/VAPI_SETUP.md** for more detail.
 
 ---
 
@@ -35,62 +36,34 @@
 
 | Goal | What you need |
 |------|----------------|
-| **Voice AI works** | 1) Backend on Render with `DAILY_API_KEY` and `GEMINI_API_KEY`. 2) In project root `.env.local`: `NEXT_PUBLIC_PIPECAT_BACKEND_URL=https://YOUR-SERVICE.onrender.com`. 3) Run `npm run build` then redeploy (e.g. `firebase deploy`). |
-| **Login page works** | Firebase is configured with a fallback for the Clarte project; login/sign-up should work on clarte.io. To use a different project, set all `NEXT_PUBLIC_FIREBASE_*` in `.env.local` and rebuild. |
+| **Voice AI works** | In project root `.env.local`: `NEXT_PUBLIC_VAPI_PUBLIC_KEY` and `NEXT_PUBLIC_VAPI_ASSISTANT_ID` (from VAPI Dashboard). Then `npm run build` and redeploy. |
+| **Login page works** | Firebase is configured with a fallback for the Clarte project. To use a different project, set all `NEXT_PUBLIC_FIREBASE_*` in `.env.local` and rebuild. |
 
 ---
 
-## 1. NEXT_PUBLIC_PIPECAT_BACKEND_URL (frontend)
+## 1. VAPI (voice – frontend only)
 
 | Key | Value | Notes |
 |-----|--------|--------|
-| `NEXT_PUBLIC_PIPECAT_BACKEND_URL` | **Your backend URL** (no trailing slash) | e.g. `https://clarte-pipecat.onrender.com` — the URL of your Render Web Service, **not** the Pipecat API key |
+| `NEXT_PUBLIC_VAPI_PUBLIC_KEY` | Your VAPI **public** key | From dashboard.vapi.ai → Keys. Safe for browser. |
+| `NEXT_PUBLIC_VAPI_ASSISTANT_ID` | ID of the assistant to use | From dashboard.vapi.ai → Assistants (create or copy ID). |
 
-**Where to set:** In **`.env.local`** in the project root **before** running `npm run build`, so the static site is built with this URL. Then deploy the `out/` folder to Firebase.
-
-**Where to get the value:** Render Dashboard → your Web Service → copy the **URL** at the top (e.g. `https://clarte-pipecat.onrender.com`).
-
----
-
-## 2. Pipecat Cloud API key (backend, optional)
-
-If you use **Pipecat Cloud** (hosted session API), the key goes on the **backend** (e.g. Render env), not in the frontend:
-
-| Key | Value | Where |
-|-----|--------|--------|
-| `PIPECAT_API_KEY` or similar | Your Pipecat Cloud key (e.g. `pk_...`) | Render → Environment (backend only) |
-
-**Current Clarte setup:** The backend on Render creates Daily rooms and runs the Pipecat bot **in-process**; it does **not** call Pipecat Cloud’s API. So you do **not** need to set the `pk_` key for the current “Start voice call” flow. You only need:
-
-- **Frontend:** `NEXT_PUBLIC_PIPECAT_BACKEND_URL` = your **Render Web Service URL**.
-- **Backend (Render):** `DAILY_API_KEY`, `GEMINI_API_KEY` (and `google-cloud-texttospeech` in `requirements.txt` for deploy).
+**Where to set:** In **`.env.local`** in the project root **before** `npm run build`. For CI (e.g. GitHub Actions), set repo secrets with the same names.
 
 ---
 
-## 3. Render.com (backend only)
-
-**Where:** Render Dashboard → your Web Service → **Environment**
-
-| Key | Value |
-|-----|--------|
-| `DAILY_API_KEY` | Your Daily.co API key |
-| `GEMINI_API_KEY` | Your Google AI Studio API key |
-
----
-
-## 4. Firebase (frontend build)
+## 2. Firebase (frontend build)
 
 Set in **`.env.local`** before `npm run build` (see FIREBASE_HOSTING_SETUP.md):
 
-- `NEXT_PUBLIC_PIPECAT_BACKEND_URL` = Render URL (above).
 - `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`, `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID` = from Firebase Console → Project settings → Your apps → Web app.
 
 ---
 
-## 5. Summary
+## 3. Summary
 
 | Variable | Meaning | Where to set |
 |----------|----------|----------------|
-| `NEXT_PUBLIC_PIPECAT_BACKEND_URL` | **Backend URL** (e.g. `https://xxx.onrender.com`) | `.env.local` before build |
-| Pipecat Cloud key (`pk_...`) | API key for Pipecat Cloud | Backend env only (not used in current Clarte backend) |
-| `DAILY_API_KEY`, `GEMINI_API_KEY` | Backend API keys | Render → Environment |
+| `NEXT_PUBLIC_VAPI_PUBLIC_KEY` | VAPI public key (voice) | `.env.local` or CI secrets |
+| `NEXT_PUBLIC_VAPI_ASSISTANT_ID` | VAPI assistant ID (voice) | `.env.local` or CI secrets |
+| `NEXT_PUBLIC_FIREBASE_*` | Firebase config (auth/dashboard) | `.env.local` before build |
