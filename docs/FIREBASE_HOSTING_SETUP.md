@@ -1,6 +1,6 @@
 # Host Clarte on Firebase (instead of Vercel)
 
-You can host the Next.js frontend on **Firebase Hosting** (static) or **Firebase App Hosting**. The Pipecat voice backend stays on Render.com.
+You can host the Next.js frontend on **Firebase Hosting** (static) or **Firebase App Hosting**. The voice pipeline is the **voice-agent** (LiveKit + Python); deploy the token server (e.g. Render) and set `NEXT_PUBLIC_VOICE_AGENT_URL` and `NEXT_PUBLIC_LIVEKIT_URL`.
 
 ---
 
@@ -41,7 +41,8 @@ This creates or updates **`.firebaserc`** with your project id. You only need to
 **Windows (PowerShell):**
 
 ```powershell
-$env:NEXT_PUBLIC_PIPECAT_BACKEND_URL = "https://YOUR-RENDER-SERVICE.onrender.com"
+$env:NEXT_PUBLIC_LIVEKIT_URL = "wss://your-project.livekit.cloud"
+$env:NEXT_PUBLIC_VOICE_AGENT_URL = "https://YOUR-TOKEN-SERVER.onrender.com"
 $env:NEXT_PUBLIC_FIREBASE_API_KEY = "your-firebase-api-key"
 $env:NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN = "your-project.firebaseapp.com"
 $env:NEXT_PUBLIC_FIREBASE_PROJECT_ID = "your-project-id"
@@ -53,9 +54,10 @@ $env:NEXT_PUBLIC_FIREBASE_APP_ID = "your-app-id"
 **macOS / Linux (bash):**
 
 ```bash
-export NEXT_PUBLIC_PIPECAT_BACKEND_URL="https://YOUR-RENDER-SERVICE.onrender.com"
+export NEXT_PUBLIC_LIVEKIT_URL="wss://your-project.livekit.cloud"
+export NEXT_PUBLIC_VOICE_AGENT_URL="https://YOUR-TOKEN-SERVER.onrender.com"
 export NEXT_PUBLIC_FIREBASE_API_KEY="your-firebase-api-key"
-# ... same keys as above
+# ... same Firebase keys as above
 ```
 
 Or use a **`.env.local`** file in the project root (do not commit it; it’s in `.gitignore`). Then run `npm run build`; Next.js will read `.env.local` when building.
@@ -79,7 +81,7 @@ When it finishes, the CLI shows your Hosting URL, e.g.:
 
 - **Hosting URL:** `https://<project-id>.web.app`
 
-Open that URL to see your site. Voice (“Start voice call”) will work if you set `NEXT_PUBLIC_PIPECAT_BACKEND_URL` to your Render backend URL before building.
+Open that URL to see your site. Voice (“Start voice call”) will work if you set `NEXT_PUBLIC_LIVEKIT_URL` and `NEXT_PUBLIC_VOICE_AGENT_URL` before building and run the voice-agent (agent + token server).
 
 ### 6. (Optional) Add a custom domain
 
@@ -114,7 +116,7 @@ Best if you want **SSR, API routes, and dynamic routes** without changing the ap
 
 ## Option B: Static export to Firebase Hosting (classic)
 
-Use this if you prefer **Firebase Hosting** (static files only). The repo is already configured: **`next.config.mjs`** has `output: "export"` and **`firebase.json`** has `public: "out"`. API routes have been removed for static export; the voice flow still uses your Render backend.
+Use this if you prefer **Firebase Hosting** (static files only). The repo is already configured: **`next.config.mjs`** has `output: "export"` and **`firebase.json`** has `public: "out"`. API routes have been removed for static export; the voice flow uses your voice-agent token server and LiveKit.
 
 ### 1. Enable static export in Next.js
 
@@ -159,7 +161,7 @@ Your site will be at `https://<project-id>.web.app` and `https://<project-id>.fi
 ### Notes for static export
 
 - **API routes** (e.g. `app/api/export/route.ts`) are **not** supported with `output: "export"`. Remove or stub them, or use Option A (App Hosting).
-- Voice: **Start voice call** still works: the frontend calls your **Render** backend (`NEXT_PUBLIC_PIPECAT_BACKEND_URL`), so no backend is needed on Firebase for that.
+- Voice: **Start voice call** works: the frontend gets a token from your voice-agent token server and connects to LiveKit; no backend is needed on Firebase for that.
 
 ---
 
@@ -177,4 +179,4 @@ Your site will be at `https://<project-id>.web.app` and `https://<project-id>.fi
 
 1. **DNS**: Point your domain (e.g. `www.clarte.io`) to Firebase Hosting (see Hosting → Add custom domain for the records).
 2. **Vercel**: You can leave the project in place or delete it; traffic will go to Firebase once DNS is updated.
-3. **Backend**: No change – Render remains the Pipecat backend; set `NEXT_PUBLIC_PIPECAT_BACKEND_URL` in Firebase (App Hosting env or build env for static).
+3. **Voice**: Deploy the voice-agent token server (e.g. Render); set `NEXT_PUBLIC_LIVEKIT_URL` and `NEXT_PUBLIC_VOICE_AGENT_URL` in Firebase (App Hosting env or build env for static).
