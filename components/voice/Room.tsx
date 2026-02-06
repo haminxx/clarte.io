@@ -7,7 +7,8 @@
 import React, { useCallback, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { PhoneOff, Loader2 } from "lucide-react"
-import { LiveKitRoom, RoomAudioRenderer } from "@livekit/components-react"
+import { LiveKitRoom, RoomAudioRenderer, TrackToggle } from "@livekit/components-react"
+import { Track } from "livekit-client"
 
 const LIVEKIT_URL = process.env.NEXT_PUBLIC_LIVEKIT_URL ?? ""
 const VOICE_AGENT_URL = process.env.NEXT_PUBLIC_VOICE_AGENT_URL ?? ""
@@ -72,10 +73,13 @@ export function Room() {
           <div className="flex flex-col gap-2">
             <p className="text-sm text-muted-foreground">In call — speak to the agent. Agent uses local knowledge + Exa research.</p>
             <RoomAudioRenderer />
-            <Button variant="destructive" className="flex items-center gap-2 w-fit" onClick={disconnect}>
-              <PhoneOff className="h-4 w-4" />
-              End call
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <TrackToggle source={Track.Source.ScreenShare} className="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4" />
+              <Button variant="destructive" className="flex items-center gap-2 w-fit" onClick={disconnect}>
+                <PhoneOff className="h-4 w-4" />
+                End call
+              </Button>
+            </div>
           </div>
         </LiveKitRoom>
       </div>

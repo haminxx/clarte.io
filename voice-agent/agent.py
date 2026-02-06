@@ -33,6 +33,17 @@ def _get_db():
 class Assistant(Agent):
     """Voice assistant with fast path (local DB) and research path (Exa)."""
 
+    def __init__(self) -> None:
+        super().__init__(
+            instructions=(
+                "You are a fast, helpful voice assistant. "
+                "1. If the user asks a simple question, answer immediately. "
+                "2. If they ask for recent news or deep data, use the 'research_topic' tool. "
+                "3. While researching, say something like 'Checking that for you...' to fill the silence. "
+                "4. Use 'identify_industry_local' for industry context when relevant."
+            ),
+        )
+
     @function_tool()
     async def research_topic(self, context: RunContext, query: str) -> str:
         """
@@ -56,17 +67,8 @@ class Assistant(Agent):
 
 
 def _create_session(ctx: agents.JobContext) -> AgentSession:
-    model = openai.realtime.RealtimeModel(
-        voice="alloy",
-        instructions=(
-            "You are a fast, helpful voice assistant. "
-            "1. If the user asks a simple question, answer immediately. "
-            "2. If they ask for recent news or deep data, use the 'research_topic' tool. "
-            "3. While researching, say something like 'Checking that for you...' to fill the silence. "
-            "4. Use 'identify_industry_local' for industry context when relevant."
-        ),
-        temperature=0.6,
-    )
+    # RealtimeModel does not accept 'instructions'; pass them via Agent(instructions=...) above.
+    model = openai.realtime.RealtimeModel(voice="alloy", temperature=0.6)
     return AgentSession(llm=model)
 
 
@@ -75,7 +77,8 @@ server = AgentServer()
 
 @server.rtc_session()
 async def entrypoint(ctx: agents.JobContext) -> None:
-    await ctx.connect(auto_subscribe=agents.AutoSubscribe.AUDIO_ONLY)
+    # Subscribe to audio and video so we receive screen share when user shares.
+    await ctx.connect(auto_subscribe=agents.AutoSubscribe.SUBSCRIBE_ALL)
     session = _create_session(ctx)
     await session.start(
         room=ctx.room,
