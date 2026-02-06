@@ -65,8 +65,12 @@ export function Room() {
     }
     setStatus("starting")
     setError(null)
+    const url = `${VOICE_AGENT_URL.replace(/\/$/, "")}/token`
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 90_000)
     try {
-      const res = await fetch(`${VOICE_AGENT_URL.replace(/\/$/, "")}/token`)
+      const res = await fetch(url, { signal: controller.signal })
+      clearTimeout(timeoutId)
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
         throw new Error(err.detail || res.statusText || "Failed to get token")
@@ -76,8 +80,18 @@ export function Room() {
       setRoomName(data.room)
       setStatus("active")
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to start call"
-      setError(message)
+      clearTimeout(timeoutId)
+      if (err instanceof Error && err.name === "AbortError") {
+        setError("Server is taking too long (it may be waking up). Please try again in a moment.")
+      } else {
+        const message = err instanceof Error ? err.message : "Failed to start call"
+        const isNetworkError = message.toLowerCase().includes("failed to fetch") || message.toLowerCase().includes("network")
+        setError(
+          isNetworkError
+            ? "Could not reach the voice server. It may be waking up (try again in 30–60 seconds) or check your connection."
+            : message
+        )
+      }
       setStatus("error")
     }
   }, [])
@@ -145,7 +159,7 @@ export function Room() {
       <div className="mb-4 flex flex-wrap gap-3">
         <button
           type="button"
-          onClick={() => setVoiceSelected(true)}
+          onClick={() => setVoiceSelected(!voiceSelected)}
           className={`flex flex-1 min-w-[120px] items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-medium transition-colors ${
             voiceSelected
               ? "border-primary bg-primary/10 text-primary"

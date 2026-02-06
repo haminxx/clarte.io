@@ -55,3 +55,51 @@ Do **not** add `NEXT_PUBLIC_*` or `PORT` here; the frontend URLs go in GitHub / 
 ## 5. Free tier note
 
 On the free tier, the service may spin down after inactivity. The first request after that can take 30–60 seconds (cold start). For production, consider a paid plan so the service stays warm.
+
+---
+
+## 6. Health check (recommended)
+
+In Render → your service → **Settings** → **Health Check Path**, set:
+
+- **Health Check Path:** `/` or `/health`
+
+The token server exposes both so Render gets a 200 instead of 404 and is less likely to treat the service as unhealthy.
+
+---
+
+## 7. Troubleshooting: "Failed to fetch"
+
+**Cause:** On Render free tier the service **spins down** when idle. When you click "Call", the first request goes to a sleeping instance. Cold start can take **30–60+ seconds**. The browser may give up or report "Failed to fetch" before the server responds.
+
+**Fixes applied in the repo:**
+
+1. **Token server** – Added `GET /` and `GET /health` returning 200 so Render health checks don’t see 404 (which can trigger restarts or “unhealthy” state).
+2. **Frontend** – Token request now has a **90-second timeout** and shows “Starting… (server may take up to a minute on first use)”. On timeout or network error, the UI shows a message that the server may be waking up and suggests trying again.
+3. **Render** – Set **Health Check Path** to `/` or `/health` in the service settings so the service is marked healthy.
+
+**If it still fails:** Wait 30–60 seconds after opening the page, then click Call again. For always-on behavior, use a paid Render plan or the free keep-warm option below.
+
+---
+
+## 8. Keep the server running 24/7 (free)
+
+Render’s free tier **spins down** the service after **~15 minutes** of no traffic. You can keep it awake for free by having something hit your server every 10–15 minutes so it never goes idle.
+
+**Option A: UptimeRobot (free, no code)**
+
+1. Go to [uptimerobot.com](https://uptimerobot.com) and create a free account.
+2. Add a **HTTP(s) Monitor**:
+   - **URL:** `https://YOUR-SERVICE-NAME.onrender.com/health` (e.g. `https://clarte-io.onrender.com/health`)
+   - **Monitoring interval:** 5 minutes (free tier allows this).
+3. UptimeRobot will request that URL every 5 minutes. Render will see traffic and won’t spin down your service, so it effectively stays up 24/7.
+
+**Option B: cron-job.org (free)**
+
+1. Go to [cron-job.org](https://cron-job.org) and create a free account.
+2. Create a new cron job:
+   - **URL:** `https://YOUR-SERVICE-NAME.onrender.com/health`
+   - **Schedule:** Every 10 or 15 minutes.
+3. Save. The job will ping your server on that schedule and keep it from sleeping.
+
+**Note:** This only keeps the service *awake*. Render free tier still has other limits (e.g. memory, build minutes). For guaranteed 24/7 with no spin-down at all, use a paid Render plan.

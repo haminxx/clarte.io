@@ -34,6 +34,18 @@ app.add_middleware(
 )
 
 
+@app.get("/")
+def root():
+    """Root route for Render health checks (avoids 404 and unnecessary restarts)."""
+    return {"status": "ok", "service": "clarte-voice-token"}
+
+
+@app.get("/health")
+def health():
+    """Explicit health check for load balancers and Render."""
+    return {"status": "ok"}
+
+
 def create_token(room: str, identity: str) -> str:
     from livekit.api import AccessToken, VideoGrants
 
