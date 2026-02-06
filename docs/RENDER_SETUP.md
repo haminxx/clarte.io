@@ -58,13 +58,14 @@ On the free tier, the service may spin down after inactivity. The first request 
 
 ---
 
-## 6. Health check (recommended)
+## 6. Health check (required for stability)
 
-In Render → your service → **Settings** → **Health Check Path**, set:
+Render sends **HEAD** requests to the root by default. The token server now responds to **HEAD** on `/` and `/health` with **200** (no body). Without this, Render gets **405 Method Not Allowed** and may restart the service repeatedly.
 
-- **Health Check Path:** `/` or `/health`
+In Render → your service → **Settings**:
 
-The token server exposes both so Render gets a 200 instead of 404 and is less likely to treat the service as unhealthy.
+- **Health Check Path:** `/health` (or `/`)
+- **Health Check Interval:** If available, set to **5 minutes** or higher to reduce load and memory churn on free tier.
 
 ---
 
@@ -103,3 +104,64 @@ Render’s free tier **spins down** the service after **~15 minutes** of no traf
 3. Save. The job will ping your server on that schedule and keep it from sleeping.
 
 **Note:** This only keeps the service *awake*. Render free tier still has other limits (e.g. memory, build minutes). For guaranteed 24/7 with no spin-down at all, use a paid Render plan.
+
+---
+
+## 9. Memory (free tier limit and what to do)
+
+**Why you see "exceeded memory"**
+
+- Render **free tier** gives a small amount of RAM (e.g. **512 MB**). Your service runs:
+  - **Main process:** FastAPI (token server) — light.
+  - **Subprocess:** LiveKit agent + OpenAI plugin + audio/video libs (`av`, etc.) — **heavy** (often 400 MB–1 GB+).
+- One container runs both, so total usage can exceed 512 MB and Render will kill or restart the service.
+
+**Ways to manage or fix it**
+
+| Option | What to do |
+|--------|------------|
+| **1. Upgrade Render (paid)** | Easiest fix. In Render → your service → **Settings** → change **Instance Type** to a plan with **1 GB or more** RAM (e.g. Starter). Paid plans also avoid spin-down and give more stable performance. |
+| **2. Reduce keep-warm frequency** | If you use UptimeRobot/cron to ping `/health`, set the interval to **10–15 minutes** instead of 5. Fewer requests mean slightly less churn; it won’t fix high baseline memory but can reduce extra spikes. |
+| **3. Don’t ping too often** | Avoid pinging every 1–2 minutes. That can add load and not help memory. |
+| **4. Run only the token server on free tier** | You could run the **token server** (light) on Render free and run the **agent** elsewhere (e.g. a paid VPS, or another provider with more RAM). That requires two deploys and the agent URL configured for LiveKit. |
+
+**Optimizations applied in the repo (to stay closer to 512 MB):**
+
+- **Lazy-load heavy modules:** `db` (qdrant-client) and `tools_exa` (exa-py) are imported only when their tools are first used, not at agent startup. This defers tens of MB until a user triggers research or local lookup.
+- **Noise cancellation optional:** The `livekit-plugins-noise-cancellation` package is **not** installed by default (commented out in `requirements.txt`). The agent runs without it; if you add it back, noise cancellation is enabled automatically. Saves ~50–100 MB on free tier.
+- **Health routes:** `GET/HEAD /` and `/health` avoid 405 and reduce unnecessary restarts.
+
+**Summary:** With these changes, the service has a better chance of fitting in 512 MB under light use. Under load or with many tools in use, you may still need a **paid instance with more RAM** for stability.
+
+---
+
+## 10. Do you need Render? MCP and sub‑1s latency
+
+**Is Render necessary?**
+
+- **For this setup (LiveKit + voice agent in the cloud):** You need *some* server that:
+  - Serves **tokens** (HTTP).
+  - Runs the **LiveKit agent** as a **long‑running process** that accepts jobs from LiveKit over WebSockets.
+- Render is one way to host that. Alternatives: **Fly.io**, **Railway**, **a small VPS** (DigitalOcean, etc.), or **paid Render**. The agent must be a persistent process (or scale-to-zero that wakes on demand); it can’t be “serverless” in the usual sense because LiveKit expects a worker to be connected.
+
+**MCP (Model Context Protocol)**
+
+- **MCP** is for **tools and context** that a model can call (APIs, data sources, etc.). It doesn’t replace the need for a **voice pipeline**.
+- You can:
+  - Keep the **voice agent** on Render (or another host) to handle LiveKit and OpenAI Realtime.
+  - Run an **MCP server** somewhere else (e.g. your machine, a serverless function, or a small service) that the agent or the model calls for tools/knowledge.
+- So: MCP is **in addition to** the voice host, not a substitute for it.
+
+**Sub‑1s response time**
+
+- To get **below ~1 second** response time you need:
+  - **No cold start** — the agent must already be running (paid/warm instance or keep-warm pings).
+  - **Enough RAM/CPU** — so the process isn’t throttled or killed (free tier often fails here).
+- So for sub‑1s, plan on either:
+  - A **paid / larger instance** (e.g. Render with more RAM, or a small VPS), or
+  - A **free keep-warm** setup plus accepting that **memory limits on free tier** may still cause restarts or OOM.
+
+**Should you pay?**
+
+- **Use free tier** if: You’re okay with possible memory restarts, cold starts, and retrying sometimes.
+- **Use a paid plan** (e.g. Render with 1 GB+ RAM) if: You want the voice agent stable, no OOM, and better chance of sub‑1s when the instance is warm.

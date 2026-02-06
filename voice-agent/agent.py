@@ -1,6 +1,7 @@
 """
 MAIN BRAIN: LiveKit Agent entry point.
 Speech-first: OpenAI Realtime + Clarifying Observer persona + local DB + Exa research.
+Optimized for 512 MB: lazy-load db/tools, optional noise cancellation.
 """
 import asyncio
 import json
@@ -8,10 +9,13 @@ import os
 from dotenv import load_dotenv
 from livekit import agents, rtc
 from livekit.agents import Agent, AgentServer, AgentSession, room_io, function_tool, RunContext
-from livekit.plugins import openai, noise_cancellation
+from livekit.plugins import openai
 
-from db import get_client, init_db, load_knowledge_base, lookup
-from tools_exa import research_topic as exa_research
+# Optional: saves ~50–100 MB on free tier; add livekit-plugins-noise-cancellation to requirements to enable
+try:
+    from livekit.plugins import noise_cancellation as _noise_cancellation
+except ImportError:
+    _noise_cancellation = None
 
 load_dotenv()
 
@@ -55,6 +59,7 @@ Example: "Hmm... looking at that budget layout... what's the one number there yo
 def _get_db():
     global _db_client
     if _db_client is None:
+        from db import get_client, init_db, load_knowledge_base
         _db_client = get_client()
         try:
             kb = load_knowledge_base()
@@ -76,6 +81,7 @@ class Assistant(Agent):
         Look up specific industry data or recent news not in local memory.
         Call when the user asks about a topic we don't know locally. Use Exa fast search.
         """
+        from tools_exa import research_topic as exa_research
         print(f"🔎 Researching via Exa: {query}")
         return exa_research(query)
 
@@ -84,6 +90,7 @@ class Assistant(Agent):
         """
         Identify the industry from the user's screen or question. Fast path: check local DB first.
         """
+        from db import lookup
         print(f"⚡ Checking Local DB for: {keywords}")
         db = _get_db()
         result = lookup(db, keywords)
@@ -106,18 +113,19 @@ async def entrypoint(ctx: agents.JobContext) -> None:
     # Subscribe to audio and video so we receive screen share when user shares.
     await ctx.connect(auto_subscribe=agents.AutoSubscribe.SUBSCRIBE_ALL)
     session = _create_session(ctx)
+    room_options_kw = {}
+    if _noise_cancellation is not None:
+        room_options_kw["audio_input"] = room_io.AudioInputOptions(
+            noise_cancellation=lambda params: (
+                _noise_cancellation.BVCTelephony()
+                if params.participant.kind == rtc.ParticipantKind.PARTICIPANT_KIND_SIP
+                else _noise_cancellation.BVC()
+            ),
+        )
     await session.start(
         room=ctx.room,
         agent=Assistant(),
-        room_options=room_io.RoomOptions(
-            audio_input=room_io.AudioInputOptions(
-                noise_cancellation=lambda params: (
-                    noise_cancellation.BVCTelephony()
-                    if params.participant.kind == rtc.ParticipantKind.PARTICIPANT_KIND_SIP
-                    else noise_cancellation.BVC()
-                ),
-            ),
-        ),
+        room_options=room_io.RoomOptions(**room_options_kw),
     )
     # Give frontend a moment to set participant metadata (displayName), then greet by name.
     async def _greet_by_name() -> None:

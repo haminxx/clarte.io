@@ -8,8 +8,9 @@ import uuid
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, Response
 
 load_dotenv()
 
@@ -34,16 +35,20 @@ app.add_middleware(
 )
 
 
-@app.get("/")
-def root():
-    """Root route for Render health checks (avoids 404 and unnecessary restarts)."""
-    return {"status": "ok", "service": "clarte-voice-token"}
+@app.api_route("/", methods=["GET", "HEAD"])
+def root(request: Request):
+    """Root route for Render health checks. HEAD must return 200 with no body (FastAPI does not auto-support HEAD on GET)."""
+    if request.method == "HEAD":
+        return Response(status_code=200)
+    return JSONResponse(content={"status": "ok", "service": "clarte-voice-token"})
 
 
-@app.get("/health")
-def health():
-    """Explicit health check for load balancers and Render."""
-    return {"status": "ok"}
+@app.api_route("/health", methods=["GET", "HEAD"])
+def health(request: Request):
+    """Health check for load balancers and Render."""
+    if request.method == "HEAD":
+        return Response(status_code=200)
+    return JSONResponse(content={"status": "ok"})
 
 
 def create_token(room: str, identity: str) -> str:

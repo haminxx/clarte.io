@@ -6,7 +6,7 @@
  */
 import React, { useCallback, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { PhoneOff, Loader2, Phone, Monitor } from "lucide-react"
+import { PhoneOff, Loader2, Phone, Monitor, Video } from "lucide-react"
 import { LiveKitRoom, RoomAudioRenderer, TrackToggle, useLocalParticipant } from "@livekit/components-react"
 import { Track } from "livekit-client"
 import { getFirebaseAuth } from "@/lib/firebase"
@@ -49,6 +49,7 @@ export function Room() {
   const [error, setError] = useState<string | null>(null)
   const [voiceSelected, setVoiceSelected] = useState(true)
   const [screenShareSelected, setScreenShareSelected] = useState(false)
+  const [cameraOnSelected, setCameraOnSelected] = useState(false)
 
   const disconnect = useCallback(() => {
     setToken(null)
@@ -66,38 +67,51 @@ export function Room() {
     setStatus("starting")
     setError(null)
     const url = `${VOICE_AGENT_URL.replace(/\/$/, "")}/token`
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 90_000)
-    try {
-      const res = await fetch(url, { signal: controller.signal })
-      clearTimeout(timeoutId)
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.detail || res.statusText || "Failed to get token")
+    const timeoutMs = 90_000
+
+    const fetchToken = (signal: AbortSignal): Promise<{ token: string; room: string }> =>
+      fetch(url, { signal })
+        .then(async (res) => {
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}))
+            throw new Error(err.detail || res.statusText || "Failed to get token")
+          }
+          return res.json() as Promise<{ token: string; room: string }>
+        })
+
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+      try {
+        const data = await fetchToken(controller.signal)
+        clearTimeout(timeoutId)
+        setToken(data.token)
+        setRoomName(data.room)
+        setStatus("active")
+        return
+      } catch (err) {
+        clearTimeout(timeoutId)
+        if (attempt === 0) {
+          await new Promise((r) => setTimeout(r, 4000))
+          continue
+        }
+        if (err instanceof Error && err.name === "AbortError") {
+          setError("Server is taking too long (it may be waking up). Please try again in a moment.")
+        } else {
+          const message = err instanceof Error ? err.message : "Failed to start call"
+          const isNetworkError = message.toLowerCase().includes("failed to fetch") || message.toLowerCase().includes("network")
+          setError(
+            isNetworkError
+              ? "Could not reach the voice server. It may be waking up (try again in 30–60 seconds) or check your connection."
+              : message
+          )
+        }
+        setStatus("error")
       }
-      const data = (await res.json()) as { token: string; room: string }
-      setToken(data.token)
-      setRoomName(data.room)
-      setStatus("active")
-    } catch (err) {
-      clearTimeout(timeoutId)
-      if (err instanceof Error && err.name === "AbortError") {
-        setError("Server is taking too long (it may be waking up). Please try again in a moment.")
-      } else {
-        const message = err instanceof Error ? err.message : "Failed to start call"
-        const isNetworkError = message.toLowerCase().includes("failed to fetch") || message.toLowerCase().includes("network")
-        setError(
-          isNetworkError
-            ? "Could not reach the voice server. It may be waking up (try again in 30–60 seconds) or check your connection."
-            : message
-        )
-      }
-      setStatus("error")
     }
   }, [])
 
   const configured = Boolean(LIVEKIT_URL && VOICE_AGENT_URL)
-  const useScreenShare = screenShareSelected
 
   if (token && roomName) {
     return (
@@ -107,7 +121,7 @@ export function Room() {
           serverUrl={LIVEKIT_URL}
           connect={true}
           audio={true}
-          video={useScreenShare}
+          video={cameraOnSelected}
           onDisconnected={disconnect}
           onError={(e) => {
             setError(e?.message ?? "Connection error")
@@ -155,12 +169,12 @@ export function Room() {
       )}
       {error && <p className="mb-4 text-sm text-destructive">{error}</p>}
 
-      {/* Selectable options: Voice call (default) + Screen share */}
+      {/* Selectable options: Voice call | Screen share (in-call toggle) | Camera on */}
       <div className="mb-4 flex flex-wrap gap-3">
         <button
           type="button"
           onClick={() => setVoiceSelected(!voiceSelected)}
-          className={`flex flex-1 min-w-[120px] items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-medium transition-colors ${
+          className={`flex flex-1 min-w-[100px] items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-medium transition-colors ${
             voiceSelected
               ? "border-primary bg-primary/10 text-primary"
               : "border-border bg-card hover:bg-muted/50 text-muted-foreground"
@@ -172,7 +186,7 @@ export function Room() {
         <button
           type="button"
           onClick={() => setScreenShareSelected(!screenShareSelected)}
-          className={`flex flex-1 min-w-[120px] items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-medium transition-colors ${
+          className={`flex flex-1 min-w-[100px] items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-medium transition-colors ${
             screenShareSelected
               ? "border-primary bg-primary/10 text-primary"
               : "border-border bg-card hover:bg-muted/50 text-muted-foreground"
@@ -180,6 +194,18 @@ export function Room() {
         >
           <Monitor className="h-4 w-4 shrink-0" />
           Screen share
+        </button>
+        <button
+          type="button"
+          onClick={() => setCameraOnSelected(!cameraOnSelected)}
+          className={`flex flex-1 min-w-[100px] items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-medium transition-colors ${
+            cameraOnSelected
+              ? "border-primary bg-primary/10 text-primary"
+              : "border-border bg-card hover:bg-muted/50 text-muted-foreground"
+          }`}
+        >
+          <Video className="h-4 w-4 shrink-0" />
+          Camera on
         </button>
       </div>
 
@@ -194,7 +220,7 @@ export function Room() {
         {status === "starting" && (
           <Button disabled className="flex items-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Starting…
+            Starting… (may take up to a minute; will retry once)
           </Button>
         )}
         {status === "error" && (

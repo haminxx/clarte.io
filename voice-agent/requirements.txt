@@ -1,5 +1,6 @@
+# Keep deps minimal for Render 512 MB free tier. Do not add noise-cancellation unless on paid plan.
 livekit-agents[openai]~=1.3
-livekit-plugins-noise-cancellation~=0.2
+# livekit-plugins-noise-cancellation~=0.2  # omit on free tier to save ~50-100 MB RAM
 exa-py
 python-dotenv
 qdrant-client
