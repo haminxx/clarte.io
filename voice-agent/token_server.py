@@ -8,7 +8,7 @@ import uuid
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
@@ -39,7 +39,13 @@ def create_token(room: str, identity: str) -> str:
 
     token = AccessToken(api_key=LIVEKIT_API_KEY, api_secret=LIVEKIT_API_SECRET)
     token.with_identity(identity).with_grants(
-        VideoGrants(room_join=True, room=room, can_publish=True, can_subscribe=True)
+        VideoGrants(
+            room_join=True,
+            room=room,
+            can_publish=True,
+            can_subscribe=True,
+            can_update_own_metadata=True,
+        )
     )
     return token.to_jwt()
 
