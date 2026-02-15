@@ -1,18 +1,31 @@
-# Clarte Voice Agent (Speech-First)
+# Clarte Voice Agent
 
-LiveKit agent: OpenAI Realtime + local Qdrant DB (fast path) + Exa (research path). See project root **docs/VOICE_AGENT_SETUP.md** for full setup.
+LiveKit agent using OpenAI Realtime API + Exa. Runs with a token server so the frontend can get LiveKit tokens.
 
-## Quick run
+## Local
 
-```bash
-pip install -r requirements.txt
-# Set .env (copy from .env.example): LIVEKIT_*, OPENAI_API_KEY, EXA_API_KEY
+1. Copy `.env.example` to `.env` and set:
+   - `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`
+   - `OPENAI_API_KEY`, `EXA_API_KEY`
+2. Install: `pip install -r requirements.txt` (or `uv sync` if using uv)
+3. **Option A – Agent only:** `python agent.py dev`
+4. **Option B – Token server + agent (like Render):** `python start_render.py` (serves token server on port 8080, agent in background)
 
-# Terminal 1: agent
-python agent.py dev
+Frontend: set `NEXT_PUBLIC_VOICE_AGENT_URL=http://localhost:8080` and `NEXT_PUBLIC_LIVEKIT_URL=<your LiveKit URL>`.
 
-# Terminal 2: token server (for frontend)
-uvicorn token_server:app --host 0.0.0.0 --port 8080
-```
+## Render
 
-Frontend needs `NEXT_PUBLIC_LIVEKIT_URL` and `NEXT_PUBLIC_VOICE_AGENT_URL` (token server base URL).
+1. Create a **Web Service**, connect this repo.
+2. **Root Directory:** `voice-agent`
+3. **Build Command:** `pip install -r requirements.txt`
+4. **Start Command:** `python start_render.py`
+5. **Environment** (in Render dashboard):
+   - `LIVEKIT_URL` (e.g. `wss://clarte-nrk5tnrq.livekit.cloud`)
+   - `LIVEKIT_API_KEY` (secret)
+   - `LIVEKIT_API_SECRET` (secret)
+   - `OPENAI_API_KEY` (secret)
+   - `EXA_API_KEY` (secret)
+
+After deploy, copy the Render URL (e.g. `https://your-service.onrender.com`) and set:
+- **Frontend** `.env.local`: `NEXT_PUBLIC_VOICE_AGENT_URL=https://your-service.onrender.com` (no trailing slash)
+- **GitHub** → Settings → Secrets → Actions: add `NEXT_PUBLIC_VOICE_AGENT_URL` and `NEXT_PUBLIC_LIVEKIT_URL` so the built site can connect.

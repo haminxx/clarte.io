@@ -10,12 +10,12 @@ import { getAuth, type Auth } from "firebase/auth"
 import { getFirestore, type Firestore } from "firebase/firestore"
 
 const clarteFallback = {
-  apiKey: "AIzaSyD2Nb6YBvHDoh1njR6HzpnsJRq0fqEMcrg",
-  authDomain: "clarte-73f7d.firebaseapp.com",
-  projectId: "clarte-73f7d",
-  storageBucket: "clarte-73f7d.firebasestorage.app",
-  messagingSenderId: "288047330224",
-  appId: "1:288047330224:web:7a4d7c2138abfae4be5c75",
+  apiKey: "AIzaSyAElfJYllj4ZTl1n08Imz5f7DLakygKhVg",
+  authDomain: "clarte-8aece.firebaseapp.com",
+  projectId: "clarte-8aece",
+  storageBucket: "clarte-8aece.firebasestorage.app",
+  messagingSenderId: "698398127871",
+  appId: "1:698398127871:web:6de36f026d1f7a9b01feca",
 }
 
 const firebaseConfig = {

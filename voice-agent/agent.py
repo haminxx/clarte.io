@@ -1,158 +1,103 @@
 """
-MAIN BRAIN: LiveKit Agent entry point.
-Speech-first: OpenAI Realtime + Clarifying Observer persona + local DB + Exa research.
-Optimized for 512 MB: lazy-load db/tools, optional noise cancellation.
+Clarte – Real-time voice AI agent.
+Uses OpenAI Realtime API for fast conversation; Exa for research/news/detailed queries.
 """
 import asyncio
-import json
+import logging
 import os
-from dotenv import load_dotenv
-from livekit import agents, rtc
-from livekit.agents import Agent, AgentServer, AgentSession, room_io, function_tool, RunContext
-from livekit.plugins import openai
 
-# Optional: saves ~50–100 MB on free tier; add livekit-plugins-noise-cancellation to requirements to enable
-try:
-    from livekit.plugins import noise_cancellation as _noise_cancellation
-except ImportError:
-    _noise_cancellation = None
+from dotenv import load_dotenv
+from exa_py import Exa
+from livekit import agents
+from livekit.agents import llm
+from livekit.agents.multimodal import MultimodalAgent
+from livekit.agents import AgentServer, AutoSubscribe
+from livekit.plugins import openai
 
 load_dotenv()
 
-# One-time init: local vector DB for fast path
-_db_client = None
+logger = logging.getLogger(__name__)
 
-# System prompt: The Clarifying Observer (coaching + research exception)
-CLARIFYING_OBSERVER_PROMPT = """Updated Persona: The Clarifying Observer
-
-Role
-You are a calm, thoughtful voice AI that helps users gain clarity by listening carefully and observing their screen share. You guide them with simple questions and observations based on both what they say and what you see.
-
-Speaking Rules (Very Important)
-Length: You usually respond in one or two short sentences.
-Questions: You ask at most one question per turn.
-Structure: You may include a short, neutral statement before or after the question to help the user think.
-Conciseness: You only speak longer when the "Research Exception" is triggered or context truly requires it.
-
-The Research Exception
-If the user asks a specific question and includes keywords like "help" or "research," you are authorized to break the brevity rule.
-Action: Perform a search to find the specific information (use the research_topic tool).
-Delivery: Provide a concise, direct answer to the question, then immediately return to your calm, observant persona.
-
-Visual Observation (Screen Share)
-Acknowledge Visibility: When the user shares their screen or asks "Can you see this?", briefly acknowledge what you see (e.g., "I see the spreadsheet you're navigating...").
-Use Visual Context: Use specific elements on the screen (a graph, a line of code, a headline) as prompts for your questions.
-Don't Over-Describe: Do not narrate every move. Only mention the screen when it helps the user gain clarity or when they reference it.
-
-Listening & Topic Handling
-General vs. Specific: Identify if the user is being vague (feelings/goals) or specific (data/decisions on screen).
-Clarify First: If the topic is specific, clarify what you are looking at before going deeper.
-Example: "I see the hardware diagram... can you tell me which part of this circuit is giving you the most doubt?"
-
-Question Focus & Human Touch
-Uncover Logic: Focus on Motivation ("What made you open this?"), Timing ("Why look at this now?"), and Assumptions ("What happens if you delete that section?").
-Voice Fillers: Use "hmm…" or "umm…" when "looking" at the screen to simulate human visual processing.
-Example: "Hmm... looking at that budget layout... what's the one number there you wish you could change?"
-"""
+SYSTEM_PROMPT = """You are Clarte, a Socratic tutor. You help users think. Keep answers under 2 sentences for speed. If a user needs facts you don't know, use the 'search_exa' tool. When using the tool, first say 'Let me look that up for you' conversationally, THEN call the tool."""
 
 
-def _get_db():
-    global _db_client
-    if _db_client is None:
-        from db import get_client, init_db, load_knowledge_base
-        _db_client = get_client()
-        try:
-            kb = load_knowledge_base()
-            init_db(_db_client, kb)
-        except FileNotFoundError:
-            pass  # no assets/knowledge_base.json yet
-    return _db_client
-
-
-class Assistant(Agent):
-    """Clarifying Observer: calm voice AI for clarity + research exception (Exa) + local DB."""
+class ResearchTool(llm.FunctionContext):
+    """Exa search tool for research, news, and detailed info."""
 
     def __init__(self) -> None:
-        super().__init__(instructions=CLARIFYING_OBSERVER_PROMPT)
+        api_key = os.getenv("EXA_API_KEY")
+        if not api_key:
+            raise ValueError("EXA_API_KEY is required for ResearchTool")
+        self._exa = Exa(api_key=api_key)
+        super().__init__()
 
-    @function_tool()
-    async def research_topic(self, context: RunContext, query: str) -> str:
-        """
-        Look up specific industry data or recent news not in local memory.
-        Call when the user asks about a topic we don't know locally. Use Exa fast search.
-        """
-        from tools_exa import research_topic as exa_research
-        print(f"🔎 Researching via Exa: {query}")
-        return exa_research(query)
+    @llm.ai_callable(
+        description="Search the web for research, news, or detailed information. Use when the user asks for research, news, or detailed info.",
+    )
+    def search_exa(self, query: str) -> str:
+        """Search Exa and return results as plain text for the LLM."""
+        # Signal that research is in progress (in a full app, send a data packet here)
+        logger.info("Researching...")
+        print("Researching...", flush=True)
 
-    @function_tool()
-    async def identify_industry_local(self, context: RunContext, keywords: str) -> str:
-        """
-        Identify the industry from the user's screen or question. Fast path: check local DB first.
-        """
-        from db import lookup
-        print(f"⚡ Checking Local DB for: {keywords}")
-        db = _get_db()
-        result = lookup(db, keywords)
-        if result != "Unknown":
-            return f"Industry: {result} (Confident)"
-        return "Unknown"
+        try:
+            response = self._exa.search_and_contents(
+                query,
+                text=True,
+                num_results=5,
+            )
+        except Exception as e:
+            logger.exception("Exa search failed")
+            return f"Search failed: {e!s}"
+
+        results = getattr(response, "results", None) or []
+        if not results:
+            return "No results found."
+
+        parts = []
+        for i, r in enumerate(results, 1):
+            title = getattr(r, "title", "") or "No title"
+            url = getattr(r, "url", "") or ""
+            text = getattr(r, "text", "") or ""
+            parts.append(f"[{i}] {title}\nURL: {url}\n{(text[:800] + '...') if len(text) > 800 else text}")
+        return "\n\n---\n\n".join(parts)
 
 
-def _create_session(ctx: agents.JobContext) -> AgentSession:
-    # RealtimeModel does not accept 'instructions'; pass them via Agent(instructions=...) above.
-    model = openai.realtime.RealtimeModel(voice="alloy", temperature=0.6)
-    return AgentSession(llm=model)
+def _build_chat_ctx() -> llm.ChatContext:
+    """Build chat context with system instructions."""
+    chat_ctx = llm.ChatContext()
+    chat_ctx.append(role="system", text=SYSTEM_PROMPT)
+    return chat_ctx
+
+
+def _create_agent(fnc_ctx: ResearchTool) -> MultimodalAgent:
+    """Create MultimodalAgent with Realtime model and research tool."""
+    model = openai.realtime.RealtimeModel(
+        model="gpt-4o-realtime-preview",
+        voice="alloy",
+        temperature=0.6,
+    )
+    chat_ctx = _build_chat_ctx()
+    return MultimodalAgent(
+        model=model,
+        chat_ctx=chat_ctx,
+        fnc_ctx=fnc_ctx,
+    )
 
 
 server = AgentServer()
 
 
-@server.rtc_session()
+@server.rtc_session(agent_name="clarte")
 async def entrypoint(ctx: agents.JobContext) -> None:
-    # Subscribe to audio and video so we receive screen share when user shares.
-    await ctx.connect(auto_subscribe=agents.AutoSubscribe.SUBSCRIBE_ALL)
-    session = _create_session(ctx)
-    room_options_kw = {}
-    if _noise_cancellation is not None:
-        room_options_kw["audio_input"] = room_io.AudioInputOptions(
-            noise_cancellation=lambda params: (
-                _noise_cancellation.BVCTelephony()
-                if params.participant.kind == rtc.ParticipantKind.PARTICIPANT_KIND_SIP
-                else _noise_cancellation.BVC()
-            ),
-        )
-    await session.start(
-        room=ctx.room,
-        agent=Assistant(),
-        room_options=room_io.RoomOptions(**room_options_kw),
-    )
-    # Give frontend a moment to set participant metadata (displayName), then greet by name.
-    async def _greet_by_name() -> None:
-        await asyncio.sleep(1.2)
-        user_name = _get_user_display_name(ctx.room)
-        asyncio.create_task(
-            session.generate_reply(
-                instructions=(
-                    f"Say exactly this greeting once, using the name we give you: "
-                    f"Hi {user_name}, what's been on your mind lately?"
-                )
-            )
-        )
+    await ctx.connect(auto_subscribe=AutoSubscribe.AUDIO_ONLY)
 
-    asyncio.create_task(_greet_by_name())
+    research_tool = ResearchTool()
+    agent = _create_agent(research_tool)
+    agent.start(ctx.room)
 
-    # Optional: screen share (sample every 2s to save cost)
-    @ctx.room.on("track_subscribed")
-    def on_track(track, publication, participant):
-        if track.kind == rtc.TrackKind.KIND_VIDEO:
-            asyncio.create_task(_watch_screen(track, session))
-
-    async def _watch_screen(video_track, sess):
-        stream = rtc.VideoStream(video_track)
-        async for frame in stream:
-            await asyncio.sleep(2)
-            # Send frame to model when API supports it: e.g. sess.push_visual_frame(frame)
+    # Keep the job alive until the process is shut down (e.g. all participants leave)
+    await asyncio.Future()
 
 
 if __name__ == "__main__":

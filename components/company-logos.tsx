@@ -1,9 +1,7 @@
 export function CompanyLogos() {
   const companies = [
-    "LiveKit",
     "Groq",
     "Deepgram",
-    "Vercel",
     "Github",
     "Cursor"
   ]
