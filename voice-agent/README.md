@@ -2,6 +2,18 @@
 
 LiveKit agent using OpenAI Realtime API + Exa. Runs with a token server so the frontend can get LiveKit tokens.
 
+## Environment check (frontend vs backend)
+
+| Variable | Where | Used by |
+|----------|--------|---------|
+| **NEXT_PUBLIC_LIVEKIT_URL** | Frontend (e.g. `.env.local`, GitHub Actions secrets) | Browser – which LiveKit server to connect to (e.g. `wss://xxx.livekit.cloud`) |
+| **NEXT_PUBLIC_VOICE_AGENT_URL** | Frontend (e.g. `.env.local`, GitHub Actions secrets) | Browser – where to get the token (e.g. `https://your-app.onrender.com`, no trailing slash) |
+| **LIVEKIT_URL** | Backend only (`voice-agent/.env` or Render env) | Agent + token server – same WebSocket URL as above |
+| **LIVEKIT_API_KEY**, **LIVEKIT_API_SECRET** | Backend only (never in frontend) | Token server + agent – to issue tokens and register with LiveKit |
+| **OPENAI_API_KEY**, **EXA_API_KEY** | Backend only (never in frontend) | Agent – Realtime API and Exa search |
+
+Frontend vars are baked in at **build time** (Next.js). Backend vars are read at **runtime** by the Python process.
+
 ## Local
 
 1. Copy `.env.example` to `.env` and set:

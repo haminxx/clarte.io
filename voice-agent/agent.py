@@ -90,11 +90,27 @@ server = AgentServer()
 
 @server.rtc_session(agent_name="clarte")
 async def entrypoint(ctx: agents.JobContext) -> None:
+    print("[Clarte Agent] entrypoint started", flush=True)
+    logger.info("entrypoint started")
+
     await ctx.connect(auto_subscribe=AutoSubscribe.AUDIO_ONLY)
+    print("[Clarte Agent] connected to room", flush=True)
+
+    room = ctx.room
+
+    @room.on("participant_connected")
+    def on_participant_connected(participant, *_):
+        print(f"[Clarte Agent] User Joined! participant={participant.identity}", flush=True)
+        logger.info("participant_connected: %s", participant.identity)
 
     research_tool = ResearchTool()
+    print("[Clarte Agent] ResearchTool created", flush=True)
     agent = _create_agent(research_tool)
-    agent.start(ctx.room)
+    print("[Clarte Agent] MultimodalAgent created (OpenAI Realtime)", flush=True)
+    # Log existing participants (user may already be in the room when agent joins)
+    for pid, p in room.remote_participants.items():
+        print(f"[Clarte Agent] Existing participant in room: {p.identity}", flush=True)
+    agent.start(room)
 
     # Keep the job alive until the process is shut down (e.g. all participants leave)
     await asyncio.Future()

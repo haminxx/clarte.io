@@ -7,10 +7,49 @@
 import React, { useCallback, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { PhoneOff, Loader2, Phone } from "lucide-react"
-import { LiveKitRoom, RoomAudioRenderer } from "@livekit/components-react"
+import { LiveKitRoom, RoomAudioRenderer, useLocalParticipant } from "@livekit/components-react"
 
 const LIVEKIT_URL = process.env.NEXT_PUBLIC_LIVEKIT_URL ?? ""
 const VOICE_AGENT_URL = process.env.NEXT_PUBLIC_VOICE_AGENT_URL ?? ""
+
+/** Inner content so we can use useLocalParticipant inside LiveKitRoom. */
+function RoomInner({ onDisconnect }: { onDisconnect: () => void }) {
+  const { localParticipant, isMicrophoneEnabled, microphoneTrack } = useLocalParticipant()
+
+  React.useEffect(() => {
+    console.log("[Clarte Voice] Mic state:", {
+      isMicrophoneEnabled,
+      hasMicTrack: !!microphoneTrack,
+      micPublicationKind: microphoneTrack?.kind,
+    })
+  }, [isMicrophoneEnabled, microphoneTrack])
+
+  React.useEffect(() => {
+    if (!localParticipant) return
+    const enableMic = async () => {
+      try {
+        await localParticipant.setMicrophoneEnabled(true)
+        console.log("[Clarte Voice] Microphone explicitly enabled")
+      } catch (e) {
+        console.warn("[Clarte Voice] Failed to enable microphone:", e)
+      }
+    }
+    enableMic()
+  }, [localParticipant])
+
+  return (
+    <div className="flex flex-col items-center gap-4 py-4">
+      <RoomAudioRenderer />
+      <p className="text-sm text-muted-foreground">
+        In call with Clarte {!isMicrophoneEnabled && "(mic off — check permissions)"}
+      </p>
+      <Button variant="outline" size="sm" onClick={onDisconnect} className="gap-2">
+        <PhoneOff className="h-4 w-4" />
+        End call
+      </Button>
+    </div>
+  )
+}
 
 export function Room() {
   const [token, setToken] = useState<string | null>(null)
@@ -65,22 +104,16 @@ export function Room() {
           connect={true}
           audio={true}
           video={false}
-          onDisconnected={disconnect}
+          onConnected={() => {
+            console.log("[Clarte Voice] LiveKit room connected")
+          }}
+          onDisconnected={() => {
+            console.log("[Clarte Voice] LiveKit room disconnected")
+            disconnect()
+          }}
           className="rounded-2xl overflow-hidden"
         >
-          <div className="flex flex-col items-center gap-4 py-4">
-            <RoomAudioRenderer />
-            <p className="text-sm text-muted-foreground">In call with Clarte</p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={disconnect}
-              className="gap-2"
-            >
-              <PhoneOff className="h-4 w-4" />
-              End call
-            </Button>
-          </div>
+          <RoomInner onDisconnect={disconnect} />
         </LiveKitRoom>
       </div>
     )
