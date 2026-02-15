@@ -2,15 +2,18 @@
 
 /**
  * Clarte Voice – LiveKit + Clarte agent.
- * Fetches token from voice-agent (Render), connects to LiveKit; agent joins and speaks.
+ * Fetches token from Next.js /api/token, connects to LiveKit; agent joins and speaks.
  */
 import React, { useCallback, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { PhoneOff, Loader2, Phone } from "lucide-react"
 import { LiveKitRoom, RoomAudioRenderer, useLocalParticipant } from "@livekit/components-react"
 
+/** Phase 2: Fail fast if LiveKit URL is not set (client env inlined at build). */
 const LIVEKIT_URL = process.env.NEXT_PUBLIC_LIVEKIT_URL ?? ""
-const VOICE_AGENT_URL = process.env.NEXT_PUBLIC_VOICE_AGENT_URL ?? ""
+if (typeof window === "undefined" && !LIVEKIT_URL) {
+  throw new Error("Missing NEXT_PUBLIC_LIVEKIT_URL")
+}
 
 /** Inner content so we can use useLocalParticipant inside LiveKitRoom. */
 function RoomInner({ onDisconnect }: { onDisconnect: () => void }) {
@@ -65,35 +68,64 @@ export function Room() {
   }, [])
 
   const startCall = useCallback(async () => {
-    if (!LIVEKIT_URL || !VOICE_AGENT_URL) {
-      setError("Voice calls aren't configured yet. Add a Render Web Service for the voice agent and set the URL in your deployment environment.")
+    if (!LIVEKIT_URL) {
+      setError("Voice is not configured. Set NEXT_PUBLIC_LIVEKIT_URL in your environment.")
       setStatus("error")
       return
     }
     setStatus("starting")
     setError(null)
-    const url = `${VOICE_AGENT_URL.replace(/\/$/, "")}/token`
+    console.log("[Clarte Voice] Requesting token...")
     try {
-      const res = await fetch(url, {
+      const res = await fetch("/api/token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       })
+      const raw = await res.text()
+      console.log("[Clarte Voice] Token response status:", res.status, "body length:", raw.length)
       if (!res.ok) {
-        const text = await res.text()
-        throw new Error(text || `Token request failed: ${res.status}`)
+        let errMsg = raw || `Token request failed: ${res.status}`
+        try {
+          const parsed = JSON.parse(raw) as { error?: string }
+          if (parsed?.error) errMsg = parsed.error
+        } catch {
+          // use raw
+        }
+        setError(errMsg)
+        setStatus("error")
+        return
       }
-      const data = (await res.json()) as { token: string; room: string }
-      setToken(data.token)
-      setRoomName(data.room)
+      let data: { token?: string; room?: string }
+      try {
+        data = JSON.parse(raw) as { token?: string; room?: string }
+      } catch {
+        setError("Invalid token response")
+        setStatus("error")
+        return
+      }
+      const receivedToken = data?.token ?? null
+      const receivedRoom = data?.room ?? null
+      if (!receivedToken || receivedToken.trim() === "") {
+        console.error("[Clarte Voice] Token is empty")
+        if (typeof window !== "undefined") alert("Error: Token is empty")
+        setError("Token is empty")
+        setStatus("error")
+        return
+      }
+      console.log("[Clarte Voice] Token received successfully, room:", receivedRoom)
+      setToken(receivedToken)
+      setRoomName(receivedRoom ?? `room-${Date.now()}`)
       setStatus("active")
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to get token")
+      const message = e instanceof Error ? e.message : "Failed to get token"
+      console.error("[Clarte Voice] Token fetch failed:", e)
+      setError(message)
       setStatus("error")
     }
   }, [])
 
-  const configured = Boolean(LIVEKIT_URL && VOICE_AGENT_URL)
+  const configured = Boolean(LIVEKIT_URL)
 
   if (status === "active" && token && roomName) {
     return (
@@ -111,6 +143,7 @@ export function Room() {
             console.log("[Clarte Voice] LiveKit room disconnected")
             disconnect()
           }}
+          onError={(e) => console.error("LiveKit Error:", e)}
           className="rounded-2xl overflow-hidden"
         >
           <RoomInner onDisconnect={disconnect} />
@@ -149,7 +182,7 @@ export function Room() {
         </Button>
         {!configured && (
           <p className="text-xs text-muted-foreground text-center max-w-xs">
-            Voice calls need a Render Web Service (token server). See docs/NEXT_STEPS.md or docs/SETUP_CHECKLIST.md.
+            Set NEXT_PUBLIC_LIVEKIT_URL (and LIVEKIT_API_KEY / LIVEKIT_API_SECRET on the server) to enable voice.
           </p>
         )}
       </div>
