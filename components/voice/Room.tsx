@@ -27,7 +27,7 @@ export function Room() {
 
   const startCall = useCallback(async () => {
     if (!LIVEKIT_URL || !VOICE_AGENT_URL) {
-      setError("Voice not configured. Set NEXT_PUBLIC_LIVEKIT_URL and NEXT_PUBLIC_VOICE_AGENT_URL.")
+      setError("Voice calls aren't configured yet. Add a Render Web Service for the voice agent and set the URL in your deployment environment.")
       setStatus("error")
       return
     }
@@ -115,8 +115,8 @@ export function Room() {
           {status === "starting" ? "Connecting…" : "Start call"}
         </Button>
         {!configured && (
-          <p className="text-xs text-muted-foreground text-center">
-            Set NEXT_PUBLIC_LIVEKIT_URL and NEXT_PUBLIC_VOICE_AGENT_URL (token server).
+          <p className="text-xs text-muted-foreground text-center max-w-xs">
+            Voice calls need a Render Web Service (token server). See docs/NEXT_STEPS.md or docs/SETUP_CHECKLIST.md.
           </p>
         )}
       </div>
