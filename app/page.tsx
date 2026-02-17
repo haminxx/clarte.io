@@ -1,6 +1,10 @@
 "use client"
 
 import React from "react"
+
+if (typeof window !== "undefined" && !process.env.NEXT_PUBLIC_LIVEKIT_URL) {
+  console.warn("[Clarte] NEXT_PUBLIC_LIVEKIT_URL is undefined. Voice calls may not work.")
+}
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { HeroSection } from "@/components/hero-section"
