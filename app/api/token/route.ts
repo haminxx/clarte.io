@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server"
 import { AccessToken } from "livekit-server-sdk"
+import { RoomAgentDispatch, RoomConfiguration } from "@livekit/protocol"
 
 /**
  * Phase 2: Fail fast if LiveKit URL is not configured (server env not used here,
  * but we validate token-generation env so the frontend gets a clear 500 message).
+ * Includes RoomAgentDispatch so LiveKit dispatches the "clarte" agent when the user joins.
  */
 const apiKey = process.env.LIVEKIT_API_KEY
 const apiSecret = process.env.LIVEKIT_API_SECRET
@@ -27,6 +29,7 @@ export async function POST() {
       )
     }
 
+    console.log("[Token API] Generating token...")
     const identity = `user-${Math.random().toString(36).slice(2, 10)}`
     const roomName = `clarte-${Math.random().toString(36).slice(2, 14)}`
 
@@ -35,10 +38,16 @@ export async function POST() {
       name: identity,
     })
     at.addGrant({ roomJoin: true, room: roomName })
+    at.roomConfig = new RoomConfiguration({
+      agents: [
+        new RoomAgentDispatch({
+          agentName: "clarte",
+        }),
+      ],
+    })
 
     const token = await at.toJwt()
-
-    console.log("[Token API] Token generated successfully")
+    console.log("[Token API] Token created")
     return NextResponse.json({ token, room: roomName })
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e)

@@ -46,13 +46,23 @@ def get_token(body: Optional[TokenRequest] = Body(None)):
     room_name = body.room_name if body else None
 
     try:
-        from livekit.api import AccessToken, VideoGrants
+        from livekit.api import (
+            AccessToken,
+            RoomAgentDispatch,
+            RoomConfiguration,
+            VideoGrants,
+        )
 
         at = AccessToken(api_key=LIVEKIT_API_KEY, api_secret=LIVEKIT_API_SECRET)
         at.with_identity(identity or str(uuid.uuid4()))
         at.with_name(identity or "user")
         room = room_name or f"clarte-{uuid.uuid4().hex[:12]}"
         at.with_grants(VideoGrants(room_join=True, room=room))
+        at.with_room_config(
+            RoomConfiguration(
+                agents=[RoomAgentDispatch(agent_name="clarte")],
+            ),
+        )
 
         return {"token": at.to_jwt(), "room": room}
     except Exception as e:
