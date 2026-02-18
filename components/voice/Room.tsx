@@ -60,6 +60,9 @@ function RoomInner({ onDisconnect }: { onDisconnect: () => void }) {
   // Diagnostic: log mic state and remote participants (agent)
   React.useEffect(() => {
     const remote = participants.filter((p) => p !== localParticipant)
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/363e9ab2-528b-4bb8-8b5a-1ca9564ffd54',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Room.tsx:RoomInner',message:'room state',data:{isMicrophoneEnabled,hasMicTrack:!!microphoneTrack,remoteCount:remote.length,remoteIdentities:remote.map((p)=>p.identity)},timestamp:Date.now(),hypothesisId:'H5'})}).catch(()=>{});
+    // #endregion
     if (process.env.NODE_ENV === "development") {
       console.log("[Clarte Voice] Room state:", {
         isMicrophoneEnabled,
@@ -73,6 +76,9 @@ function RoomInner({ onDisconnect }: { onDisconnect: () => void }) {
   React.useEffect(() => {
     if (!room) return
     const onTrackSubscribed = (track: unknown, publication: unknown, participant: { identity: string }) => {
+      // #region agent log
+      fetch('http://127.0.0.1:7243/ingest/363e9ab2-528b-4bb8-8b5a-1ca9564ffd54',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Room.tsx:trackSubscribed',message:'track subscribed',data:{identity:participant.identity,kind:(track as { kind?: string })?.kind},timestamp:Date.now(),hypothesisId:'H5'})}).catch(()=>{});
+      // #endregion
       if (process.env.NODE_ENV === "development") {
         console.log("[Clarte Voice] Track subscribed:", participant.identity, (track as { kind?: string })?.kind)
       }
@@ -177,6 +183,9 @@ export function Room() {
         setStatus("error")
         return
       }
+      // #region agent log
+      fetch('http://127.0.0.1:7243/ingest/363e9ab2-528b-4bb8-8b5a-1ca9564ffd54',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Room.tsx:startCall',message:'token received',data:{hasToken:!!receivedToken,room:receivedRoom??`room-${Date.now()}`},timestamp:Date.now(),hypothesisId:'H5'})}).catch(()=>{});
+      // #endregion
       setToken(receivedToken)
       setRoomName(receivedRoom ?? `room-${Date.now()}`)
       setStatus("active")

@@ -54,7 +54,7 @@ Service ID you created: `srv-d692mn0gjchc73dfcivg`.
    - `LIVEKIT_URL` = `wss://clarte-nrk5tnrq.livekit.cloud`
    - `LIVEKIT_API_KEY` = (your LiveKit API key, mark Secret)
    - `LIVEKIT_API_SECRET` = (your LiveKit API secret, mark Secret)
-   - `OPENAI_API_KEY` = (your OpenAI key, mark Secret)
+   - `OPENAI_API_KEY` = (your OpenAI key for Realtime API, mark Secret) — **Render only** (agent runs here)
    - `EXA_API_KEY` = (your Exa key, mark Secret)
 3. **Build & Deploy**:
    - **Root Directory:** `voice-agent`

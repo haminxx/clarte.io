@@ -47,7 +47,7 @@ Frontend: set `NEXT_PUBLIC_VOICE_AGENT_URL=http://localhost:8080` and `NEXT_PUBL
    - `LIVEKIT_URL` (e.g. `wss://clarte-nrk5tnrq.livekit.cloud`)
    - `LIVEKIT_API_KEY` (secret)
    - `LIVEKIT_API_SECRET` (secret)
-   - `OPENAI_API_KEY` (secret)
+   - `OPENAI_API_KEY` (secret) — **Render only** (not needed in GitHub; agent runs on Render)
    - `EXA_API_KEY` (secret)
 
 After deploy, copy the Render URL (e.g. `https://your-service.onrender.com`) and set:
