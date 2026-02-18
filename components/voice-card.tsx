@@ -6,10 +6,10 @@ import type { LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { CallMode, TierPreset } from "@/components/voice/Room"
 
-const CALL_MODES: { id: CallMode; icon: LucideIcon; label: string }[] = [
-  { id: "voice-only", icon: Phone, label: "Call only" },
-  { id: "voice-with-screen", icon: Monitor, label: "Call + screen" },
-  { id: "voice-with-screen-camera", icon: Video, label: "Call + screen + camera" },
+const CALL_OPTIONS: { id: "call" | "screenShare" | "camera"; icon: LucideIcon; label: string }[] = [
+  { id: "call", icon: Phone, label: "Call" },
+  { id: "screenShare", icon: Monitor, label: "Screen share" },
+  { id: "camera", icon: Video, label: "Camera" },
 ]
 
 const TIER_OPTIONS: { id: TierPreset; icon: LucideIcon; label: string }[] = [
@@ -19,19 +19,45 @@ const TIER_OPTIONS: { id: TierPreset; icon: LucideIcon; label: string }[] = [
   { id: "tier3", icon: Lightbulb, label: "Informative" },
 ]
 
+/** Derive CallMode from multi-select options. Call is required. */
+function toCallMode(call: boolean, screenShare: boolean, camera: boolean): CallMode | null {
+  if (!call) return null
+  if (screenShare && camera) return "voice-with-screen-camera"
+  if (screenShare) return "voice-with-screen"
+  if (camera) return "voice-with-camera"
+  return "voice-only"
+}
+
 interface VoiceCardProps {
   onStartCall?: (mode: CallMode, tier: TierPreset) => void
   isActive?: boolean
 }
 
 export function VoiceCard({ onStartCall, isActive }: VoiceCardProps) {
-  const [selectedMode, setSelectedMode] = useState<CallMode | null>(null)
+  const [call, setCall] = useState(true)
+  const [screenShare, setScreenShare] = useState(false)
+  const [camera, setCamera] = useState(false)
   const [selectedTier, setSelectedTier] = useState<TierPreset>("auto")
 
+  const mode = toCallMode(call, screenShare, camera)
+  const canStart = mode !== null
+
+  const toggle = (id: "call" | "screenShare" | "camera") => {
+    if (id === "call") setCall((c) => !c)
+    else if (id === "screenShare") setScreenShare((s) => !s)
+    else setCamera((c) => !c)
+  }
+
   const handlePlay = () => {
-    if (selectedMode && onStartCall) {
-      onStartCall(selectedMode, selectedTier)
+    if (canStart && mode && onStartCall) {
+      onStartCall(mode, selectedTier)
     }
+  }
+
+  const isSelected = (id: "call" | "screenShare" | "camera") => {
+    if (id === "call") return call
+    if (id === "screenShare") return screenShare
+    return camera
   }
 
   return (
@@ -49,17 +75,17 @@ export function VoiceCard({ onStartCall, isActive }: VoiceCardProps) {
       <div className="space-y-3">
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Call mode</p>
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          {CALL_MODES.map(({ id, icon: Icon, label }) => (
+          {CALL_OPTIONS.map(({ id, icon: Icon, label }) => (
             <Button
               key={id}
-              variant={selectedMode === id ? "default" : "outline"}
+              variant={isSelected(id) ? "default" : "outline"}
               size="sm"
               className={`flex items-center gap-2 ${
-                selectedMode === id
+                isSelected(id)
                   ? "bg-primary text-primary-foreground hover:bg-primary/90"
                   : "border-border bg-transparent text-foreground hover:bg-secondary"
               }`}
-              onClick={() => setSelectedMode(id)}
+              onClick={() => toggle(id)}
             >
               <Icon className="h-4 w-4" />
               {label}
@@ -91,13 +117,13 @@ export function VoiceCard({ onStartCall, isActive }: VoiceCardProps) {
           <Button
             size="icon"
             className={`h-10 w-10 rounded-full ${
-              selectedMode
+              canStart
                 ? "bg-primary text-primary-foreground hover:bg-primary/90"
                 : "bg-muted text-muted-foreground cursor-not-allowed"
             }`}
             onClick={handlePlay}
-            disabled={!selectedMode || isActive}
-            title={selectedMode ? `Start ${selectedMode.replace(/-/g, " ")}` : "Select call mode first"}
+            disabled={!canStart || isActive}
+            title={canStart ? `Start ${mode?.replace(/-/g, " ") ?? ""}` : "Select Call to start"}
           >
             <Play className="h-4 w-4" />
           </Button>

@@ -12,7 +12,7 @@ import { PhoneOff, Loader2, Phone, Monitor, Video } from "lucide-react"
 import { LiveKitRoom, RoomAudioRenderer, useLocalParticipant, useParticipants, useRoomContext } from "@livekit/components-react"
 import { useKrispNoiseFilter } from "@livekit/components-react/krisp"
 
-export type CallMode = "voice-only" | "voice-with-screen" | "voice-with-screen-camera"
+export type CallMode = "voice-only" | "voice-with-screen" | "voice-with-screen-camera" | "voice-with-camera"
 export type TierPreset = "auto" | "tier1" | "tier2" | "tier3"
 
 /** Phase 2: Fail fast if LiveKit URL is not set (client env inlined at build). */
@@ -214,7 +214,7 @@ export function Room({ mode = "voice-only", tier = "auto", autoStart = false, on
   const [error, setError] = useState<string | null>(null)
 
   const withScreen = mode === "voice-with-screen" || mode === "voice-with-screen-camera"
-  const withCamera = mode === "voice-with-screen-camera"
+  const withCamera = mode === "voice-with-screen-camera" || mode === "voice-with-camera"
 
   const disconnect = useCallback(() => {
     setToken(null)

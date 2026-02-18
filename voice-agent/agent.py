@@ -184,7 +184,7 @@ VALID_VOICES = {"alloy", "ash", "ballad", "coral", "echo", "marin", "sage", "shi
 @server.rtc_session(agent_name="clarte")
 async def entrypoint(ctx: agents.JobContext) -> None:
     logger.info("entrypoint started")
-    await ctx.connect(auto_subscribe=AutoSubscribe.AUDIO_AND_VIDEO)
+    await ctx.connect(auto_subscribe=AutoSubscribe.SUBSCRIBE_ALL)
     room = ctx.room
 
     @room.on("participant_connected")
