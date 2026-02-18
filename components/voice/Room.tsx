@@ -14,19 +14,6 @@ import { LiveKitRoom, RoomAudioRenderer, useLocalParticipant, useParticipants, u
 const LIVEKIT_URL = process.env.NEXT_PUBLIC_LIVEKIT_URL ?? ""
 const VOICE_AGENT_URL = process.env.NEXT_PUBLIC_VOICE_AGENT_URL ?? ""
 
-/** OpenAI Realtime API voice options with gender labels for UI. */
-const VOICE_OPTIONS = [
-  { id: "marin", label: "Marin", gender: "Feminine" },
-  { id: "shimmer", label: "Shimmer", gender: "Feminine" },
-  { id: "coral", label: "Coral", gender: "Feminine" },
-  { id: "sage", label: "Sage", gender: "Feminine" },
-  { id: "echo", label: "Echo", gender: "Masculine" },
-  { id: "ash", label: "Ash", gender: "Masculine" },
-  { id: "cedar", label: "Cedar", gender: "Masculine" },
-  { id: "verse", label: "Verse", gender: "Masculine" },
-  { id: "ballad", label: "Ballad", gender: "Masculine" },
-  { id: "alloy", label: "Alloy", gender: "Neutral" },
-] as const
 if (typeof window === "undefined" && !LIVEKIT_URL) {
   throw new Error("Missing NEXT_PUBLIC_LIVEKIT_URL")
 }
@@ -101,7 +88,6 @@ export function Room() {
   const [roomName, setRoomName] = useState<string | null>(null)
   const [status, setStatus] = useState<"idle" | "starting" | "active" | "error">("idle")
   const [error, setError] = useState<string | null>(null)
-  const [selectedVoice, setSelectedVoice] = useState<string>("marin")
 
   const disconnect = useCallback(() => {
     setToken(null)
@@ -141,7 +127,7 @@ export function Room() {
       const res = await fetch(tokenUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ voice: selectedVoice }),
+        body: JSON.stringify({ voice: "marin" }),
       })
       const raw = await res.text()
       if (!res.ok) {
@@ -181,7 +167,7 @@ export function Room() {
       setError(message)
       setStatus("error")
     }
-  }, [selectedVoice])
+  }, [])
 
   const configured = Boolean(LIVEKIT_URL)
 
@@ -225,22 +211,6 @@ export function Room() {
         {error && (
           <p className="text-sm text-destructive text-center">{error}</p>
         )}
-        <div className="w-full max-w-xs space-y-2">
-          <label className="text-xs font-medium text-muted-foreground">
-            Voice
-          </label>
-          <select
-            value={selectedVoice}
-            onChange={(e) => setSelectedVoice(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-          >
-            {VOICE_OPTIONS.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.label} ({v.gender})
-              </option>
-            ))}
-          </select>
-        </div>
         <Button
           onClick={startCall}
           disabled={!configured || status === "starting"}

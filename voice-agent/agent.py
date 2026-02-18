@@ -9,15 +9,9 @@ import os
 
 from dotenv import load_dotenv
 from exa_py import Exa
-from livekit import agents, rtc
-from livekit.agents import Agent, AgentServer, AgentSession, AutoSubscribe, RunContext, function_tool, room_io
+from livekit import agents
+from livekit.agents import Agent, AgentServer, AgentSession, AutoSubscribe, RunContext, function_tool
 from livekit.plugins import openai
-
-try:
-    from livekit.plugins import noise_cancellation
-    _HAS_NOISE_CANCEL = True
-except ImportError:
-    _HAS_NOISE_CANCEL = False
 
 load_dotenv()
 
@@ -90,13 +84,6 @@ server = AgentServer()
 VALID_VOICES = {"alloy", "ash", "ballad", "coral", "echo", "marin", "sage", "shimmer", "verse", "cedar"}
 
 
-def _noise_cancellation(params) -> "noise_cancellation.NoiseCancellation":
-    """Use telephony NC for SIP, BVC for standard participants."""
-    if params.participant.kind == rtc.ParticipantKind.PARTICIPANT_KIND_SIP:
-        return noise_cancellation.BVCTelephony()
-    return noise_cancellation.BVC()
-
-
 @server.rtc_session(agent_name="clarte")
 async def entrypoint(ctx: agents.JobContext) -> None:
     logger.info("entrypoint started")
@@ -128,15 +115,10 @@ async def entrypoint(ctx: agents.JobContext) -> None:
     session = AgentSession(
         llm=openai.realtime.RealtimeModel(model="gpt-realtime", voice=voice),
     )
-    room_opts = None
-    if _HAS_NOISE_CANCEL:
-        room_opts = room_io.RoomOptions(
-            audio_input=room_io.AudioInputOptions(noise_cancellation=_noise_cancellation),
-        )
+    logger.info("Starting session with OpenAI Realtime API (model=gpt-realtime, voice=%s)", voice)
     await session.start(
         room=room,
         agent=ClarteAgent(),
-        room_options=room_opts,
     )
     await session.generate_reply(
         instructions="Greet the user. Say: Hello, how's it going?"

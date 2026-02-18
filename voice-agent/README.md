@@ -41,7 +41,7 @@ Frontend: set `NEXT_PUBLIC_VOICE_AGENT_URL=http://localhost:8080` and `NEXT_PUBL
 
 1. Create a **Web Service**, connect this repo.
 2. **Root Directory:** `voice-agent`
-3. **Build Command:** `pip install -r requirements.txt && python agent.py download-files`
+3. **Build Command:** `pip install -r requirements.txt`
 4. **Start Command:** `python -u start_render.py` (the `-u` flag ensures unbuffered logs)
 5. **Environment** (in Render dashboard):
    - `PYTHONUNBUFFERED=1` (ensures agent logs appear in Render logs)
@@ -55,7 +55,7 @@ After deploy, copy the Render URL (e.g. `https://your-service.onrender.com`) and
 - **Frontend** `.env.local`: `NEXT_PUBLIC_VOICE_AGENT_URL=https://your-service.onrender.com` (no trailing slash)
 - **GitHub** → Settings → Secrets → Actions: add `NEXT_PUBLIC_VOICE_AGENT_URL` and `NEXT_PUBLIC_LIVEKIT_URL` so the built site can connect.
 
-**Note:** `runtime.txt` pins Python 3.12 (LiveKit requires Python < 3.14). The build runs `download-files` for noise cancellation models.
+**Note:** `runtime.txt` pins Python 3.12 (LiveKit requires Python < 3.14). Noise cancellation is disabled to reduce memory usage on Render.
 
 ## Troubleshooting
 
@@ -63,6 +63,7 @@ After deploy, copy the Render URL (e.g. `https://your-service.onrender.com`) and
 
 1. **Render logs** – Render Dashboard → your service → Logs. Start a call and watch for:
    - `entrypoint started` → agent received the job
+   - `Starting session with OpenAI Realtime API` → Realtime API in use
    - `participant_connected` → agent sees the user
    - `track_subscribed` → agent is receiving your audio
    - Any `ERROR`, `Exception`, or `OpenAI` messages
@@ -74,3 +75,5 @@ After deploy, copy the Render URL (e.g. `https://your-service.onrender.com`) and
 4. **OpenAI credits** – Realtime API requires a paid account. Add credits at [platform.openai.com](https://platform.openai.com) → Billing.
 
 5. **Mic not working** – Grant microphone permission when prompted. If "mic off" appears, refresh and allow access before starting the call.
+
+6. **Out of memory** – Noise cancellation is disabled to reduce memory. If OOM persists, upgrade Render to a plan with more RAM (e.g. 2GB+).
