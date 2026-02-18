@@ -13,6 +13,20 @@ import { LiveKitRoom, RoomAudioRenderer, useLocalParticipant } from "@livekit/co
 /** Phase 2: Fail fast if LiveKit URL is not set (client env inlined at build). */
 const LIVEKIT_URL = process.env.NEXT_PUBLIC_LIVEKIT_URL ?? ""
 const VOICE_AGENT_URL = process.env.NEXT_PUBLIC_VOICE_AGENT_URL ?? ""
+
+/** OpenAI Realtime API voice options with gender labels for UI. */
+const VOICE_OPTIONS = [
+  { id: "marin", label: "Marin", gender: "Feminine" },
+  { id: "shimmer", label: "Shimmer", gender: "Feminine" },
+  { id: "coral", label: "Coral", gender: "Feminine" },
+  { id: "sage", label: "Sage", gender: "Feminine" },
+  { id: "echo", label: "Echo", gender: "Masculine" },
+  { id: "ash", label: "Ash", gender: "Masculine" },
+  { id: "cedar", label: "Cedar", gender: "Masculine" },
+  { id: "verse", label: "Verse", gender: "Masculine" },
+  { id: "ballad", label: "Ballad", gender: "Masculine" },
+  { id: "alloy", label: "Alloy", gender: "Neutral" },
+] as const
 if (typeof window === "undefined" && !LIVEKIT_URL) {
   throw new Error("Missing NEXT_PUBLIC_LIVEKIT_URL")
 }
@@ -22,21 +36,12 @@ function RoomInner({ onDisconnect }: { onDisconnect: () => void }) {
   const { localParticipant, isMicrophoneEnabled, microphoneTrack } = useLocalParticipant()
 
   React.useEffect(() => {
-    console.log("[Clarte Voice] Mic state:", {
-      isMicrophoneEnabled,
-      hasMicTrack: !!microphoneTrack,
-      micPublicationKind: microphoneTrack?.kind,
-    })
-  }, [isMicrophoneEnabled, microphoneTrack])
-
-  React.useEffect(() => {
     if (!localParticipant) return
     const enableMic = async () => {
       try {
         await localParticipant.setMicrophoneEnabled(true)
-        console.log("[Clarte Voice] Microphone explicitly enabled")
       } catch (e) {
-        console.warn("[Clarte Voice] Failed to enable microphone:", e)
+        console.warn("[Clarte Voice] Mic enable failed:", e)
       }
     }
     enableMic()
@@ -61,6 +66,7 @@ export function Room() {
   const [roomName, setRoomName] = useState<string | null>(null)
   const [status, setStatus] = useState<"idle" | "starting" | "active" | "error">("idle")
   const [error, setError] = useState<string | null>(null)
+  const [selectedVoice, setSelectedVoice] = useState<string>("marin")
 
   const disconnect = useCallback(() => {
     setToken(null)
@@ -70,44 +76,7 @@ export function Room() {
   }, [])
 
   const startCall = useCallback(async () => {
-    // #region agent log
-    if (typeof window !== "undefined") {
-      fetch("http://127.0.0.1:7243/ingest/363e9ab2-528b-4bb8-8b5a-1ca9564ffd54", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          location: "Room.tsx:startCall:entry",
-          message: "startCall invoked",
-          data: {
-            hasLiveKitUrl: !!LIVEKIT_URL,
-            liveKitUrlLength: LIVEKIT_URL?.length ?? 0,
-            hasVoiceAgentUrl: !!VOICE_AGENT_URL,
-            voiceAgentUrl: VOICE_AGENT_URL || "(empty)",
-            tokenUrlUsed: VOICE_AGENT_URL ? `${VOICE_AGENT_URL.replace(/\/$/, "")}/token` : "/api/token",
-            origin: typeof window !== "undefined" ? window.location.origin : "ssr",
-          },
-          timestamp: Date.now(),
-          hypothesisId: "H1",
-        }),
-      }).catch(() => {})
-    }
-    // #endregion
     if (!LIVEKIT_URL) {
-      // #region agent log
-      if (typeof window !== "undefined") {
-        fetch("http://127.0.0.1:7243/ingest/363e9ab2-528b-4bb8-8b5a-1ca9564ffd54", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "Room.tsx:startCall:earlyExit",
-            message: "LIVEKIT_URL empty - Voice not configured",
-            data: { hypothesisId: "H1" },
-            timestamp: Date.now(),
-            hypothesisId: "H1",
-          }),
-        }).catch(() => {})
-      }
-      // #endregion
       setError("Voice is not configured. Set NEXT_PUBLIC_LIVEKIT_URL in your environment.")
       setStatus("error")
       return
@@ -124,58 +93,16 @@ export function Room() {
       setStatus("error")
       return
     }
-    console.log("[Clarte Voice] Requesting token...")
     const tokenUrl = VOICE_AGENT_URL
       ? `${VOICE_AGENT_URL.replace(/\/$/, "")}/token`
       : "/api/token"
     try {
-      // #region agent log
-      if (typeof window !== "undefined") {
-        fetch("http://127.0.0.1:7243/ingest/363e9ab2-528b-4bb8-8b5a-1ca9564ffd54", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "Room.tsx:startCall:beforeFetch",
-            message: "Fetching token",
-            data: {
-              tokenUrl,
-              fullUrl: tokenUrl.startsWith("http") ? tokenUrl : `${window.location.origin}${tokenUrl}`,
-              hypothesisId: "H2",
-            },
-            timestamp: Date.now(),
-            hypothesisId: "H2",
-          }),
-        }).catch(() => {})
-      }
-      // #endregion
       const res = await fetch(tokenUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ voice: selectedVoice }),
       })
       const raw = await res.text()
-      // #region agent log
-      if (typeof window !== "undefined") {
-        fetch("http://127.0.0.1:7243/ingest/363e9ab2-528b-4bb8-8b5a-1ca9564ffd54", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "Room.tsx:startCall:afterFetch",
-            message: "Token fetch response",
-            data: {
-              status: res.status,
-              ok: res.ok,
-              rawLength: raw.length,
-              rawPreview: raw.slice(0, 150),
-              hypothesisId: "H4",
-            },
-            timestamp: Date.now(),
-            hypothesisId: "H4",
-          }),
-        }).catch(() => {})
-      }
-      // #endregion
-      console.log("[Clarte Voice] Token response status:", res.status, "body length:", raw.length)
       if (!res.ok) {
         let errMsg = raw || `Token request failed: ${res.status}`
         try {
@@ -200,57 +127,20 @@ export function Room() {
       const receivedToken = data?.token ?? null
       const receivedRoom = data?.room ?? null
       if (!receivedToken || receivedToken.trim() === "") {
-        console.error("[Clarte Voice] Token is empty")
-        if (typeof window !== "undefined") alert("Error: Token is empty")
         setError("Token is empty")
         setStatus("error")
         return
       }
-      // #region agent log
-      if (typeof window !== "undefined") {
-        fetch("http://127.0.0.1:7243/ingest/363e9ab2-528b-4bb8-8b5a-1ca9564ffd54", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "Room.tsx:startCall:success",
-            message: "Token received successfully",
-            data: { hasToken: !!receivedToken, room: receivedRoom, hypothesisId: "H4" },
-            timestamp: Date.now(),
-            hypothesisId: "H4",
-          }),
-        }).catch(() => {})
-      }
-      // #endregion
-      console.log("[Clarte Voice] Token received successfully, room:", receivedRoom)
       setToken(receivedToken)
       setRoomName(receivedRoom ?? `room-${Date.now()}`)
       setStatus("active")
     } catch (e) {
-      // #region agent log
-      if (typeof window !== "undefined") {
-        fetch("http://127.0.0.1:7243/ingest/363e9ab2-528b-4bb8-8b5a-1ca9564ffd54", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "Room.tsx:startCall:catch",
-            message: "Token fetch threw",
-            data: {
-              errorName: e instanceof Error ? e.name : "unknown",
-              errorMessage: e instanceof Error ? e.message : String(e),
-              hypothesisId: "H5",
-            },
-            timestamp: Date.now(),
-            hypothesisId: "H5",
-          }),
-        }).catch(() => {})
-      }
-      // #endregion
       const message = e instanceof Error ? e.message : "Failed to get token"
       console.error("[Clarte Voice] Token fetch failed:", e)
       setError(message)
       setStatus("error")
     }
-  }, [])
+  }, [selectedVoice])
 
   const configured = Boolean(LIVEKIT_URL)
 
@@ -263,14 +153,13 @@ export function Room() {
           connect={true}
           audio={true}
           video={false}
-          onConnected={() => {
-            console.log("[Clarte Voice] LiveKit room connected")
+          onDisconnected={disconnect}
+          onError={(err) => {
+            setToken(null)
+            setRoomName(null)
+            setStatus("error")
+            setError(err?.message ?? "Connection error")
           }}
-          onDisconnected={() => {
-            console.log("[Clarte Voice] LiveKit room disconnected")
-            disconnect()
-          }}
-          onError={(error) => console.error("LiveKit Error:", error)}
           className="rounded-2xl overflow-hidden"
         >
           <RoomInner onDisconnect={disconnect} />
@@ -295,6 +184,22 @@ export function Room() {
         {error && (
           <p className="text-sm text-destructive text-center">{error}</p>
         )}
+        <div className="w-full max-w-xs space-y-2">
+          <label className="text-xs font-medium text-muted-foreground">
+            Voice
+          </label>
+          <select
+            value={selectedVoice}
+            onChange={(e) => setSelectedVoice(e.target.value)}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+          >
+            {VOICE_OPTIONS.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.label} ({v.gender})
+              </option>
+            ))}
+          </select>
+        </div>
         <Button
           onClick={startCall}
           disabled={!configured || status === "starting"}

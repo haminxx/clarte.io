@@ -14,6 +14,18 @@ LiveKit agent using OpenAI Realtime API + Exa. Runs with a token server so the f
 
 Frontend vars are baked in at **build time** (Next.js). Backend vars are read at **runtime** by the Python process.
 
+## OpenAI Realtime API – Cost & Pipeline
+
+**Requirement:** OpenAI Realtime API is a paid feature. Add credits at [platform.openai.com](https://platform.openai.com) → Billing.
+
+**Cost (approx.):**
+- Audio input: ~$0.06/min
+- Audio output: ~$0.24/min
+- Text tokens: ~$5/M input, ~$20/M output
+- Typical voice conversation: ~$0.30–0.50/min
+
+**Pipeline:** Realtime API is **speech-to-speech** (no separate STT → LLM → TTS). One model handles audio in and out, so latency is ~300–800 ms for first response, often under 1 second.
+
 ## Local
 
 1. Copy `.env.example` to `.env` and set:

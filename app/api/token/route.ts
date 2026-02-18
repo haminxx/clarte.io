@@ -10,26 +10,31 @@ import { RoomAgentDispatch, RoomConfiguration } from "@livekit/protocol"
 const apiKey = process.env.LIVEKIT_API_KEY
 const apiSecret = process.env.LIVEKIT_API_SECRET
 
-export async function POST() {
-  console.log("[Token API] Token request received...")
+const VALID_VOICES = new Set(["alloy", "ash", "ballad", "coral", "echo", "marin", "sage", "shimmer", "verse", "cedar"])
+
+export async function POST(request: Request) {
+  let voice = "marin"
+  try {
+    const body = await request.json().catch(() => ({}))
+    if (body && typeof body.voice === "string" && VALID_VOICES.has(body.voice)) voice = body.voice
+  } catch {
+    // ignore
+  }
 
   try {
     if (apiKey === undefined || apiKey === "") {
-      console.error("[Token API] Missing LIVEKIT_API_KEY")
       return NextResponse.json(
         { error: "Missing LIVEKIT_API_KEY" },
         { status: 500 }
       )
     }
     if (apiSecret === undefined || apiSecret === "") {
-      console.error("[Token API] Missing LIVEKIT_API_SECRET")
       return NextResponse.json(
         { error: "Missing LIVEKIT_API_SECRET" },
         { status: 500 }
       )
     }
 
-    console.log("[Token API] Generating token...")
     const identity = `user-${Math.random().toString(36).slice(2, 10)}`
     const roomName = `clarte-${Math.random().toString(36).slice(2, 14)}`
 
@@ -42,16 +47,15 @@ export async function POST() {
       agents: [
         new RoomAgentDispatch({
           agentName: "clarte",
+          metadata: JSON.stringify({ voice }),
         }),
       ],
     })
 
     const token = await at.toJwt()
-    console.log("[Token API] Token created")
     return NextResponse.json({ token, room: roomName })
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e)
-    console.error("[Token API] Token generation failed:", message)
     return NextResponse.json(
       { error: message || "Token generation failed" },
       { status: 500 }

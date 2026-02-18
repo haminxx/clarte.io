@@ -3,6 +3,7 @@ Clarte – Real-time voice AI agent.
 Uses OpenAI Realtime API for fast conversation; Exa for research/news/detailed queries.
 """
 import asyncio
+import json
 import logging
 import os
 
@@ -57,15 +58,13 @@ class ResearchTool(llm.FunctionContext):
     )
     def search_exa(self, query: str) -> str:
         """Search Exa and return results as plain text for the LLM."""
-        # Signal that research is in progress (in a full app, send a data packet here)
-        logger.info("Researching...")
-        print("Researching...", flush=True)
+        logger.info("Researching: %s", query[:80])
 
         try:
             response = self._exa.search_and_contents(
                 query,
                 text=True,
-                num_results=5,
+                num_results=4,
             )
         except Exception as e:
             logger.exception("Exa search failed")
@@ -80,25 +79,22 @@ class ResearchTool(llm.FunctionContext):
             title = getattr(r, "title", "") or "No title"
             url = getattr(r, "url", "") or ""
             text = getattr(r, "text", "") or ""
-            parts.append(f"[{i}] {title}\nURL: {url}\n{(text[:800] + '...') if len(text) > 800 else text}")
+            parts.append(f"[{i}] {title}\nURL: {url}\n{(text[:600] + '...') if len(text) > 600 else text}")
         return "\n\n---\n\n".join(parts)
 
 
 def _build_chat_ctx() -> llm.ChatContext:
-    """Build chat context with system instructions and initial greeting trigger."""
+    """Build chat context with system instructions."""
     chat_ctx = llm.ChatContext()
     chat_ctx.append(role="system", text=SYSTEM_PROMPT)
-    # Trigger agent to speak first: model will respond with the greeting when it sees user joined
-    chat_ctx.append(role="user", text="[User has joined the call. Say your opening greeting.]")
     return chat_ctx
 
 
-def _create_agent(fnc_ctx: ResearchTool) -> MultimodalAgent:
+def _create_agent(fnc_ctx: ResearchTool, voice: str = "marin") -> MultimodalAgent:
     """Create MultimodalAgent with Realtime model and research tool."""
     model = openai.realtime.RealtimeModel(
-        model="gpt-4o-realtime-preview",
-        voice="alloy",
-        temperature=0.6,
+        model="gpt-realtime",
+        voice=voice,
     )
     chat_ctx = _build_chat_ctx()
     return MultimodalAgent(
@@ -113,26 +109,30 @@ server = AgentServer()
 
 @server.rtc_session(agent_name="clarte")
 async def entrypoint(ctx: agents.JobContext) -> None:
-    print("[Clarte Agent] entrypoint started", flush=True)
     logger.info("entrypoint started")
-
     await ctx.connect(auto_subscribe=AutoSubscribe.AUDIO_ONLY)
-    print("[Clarte Agent] connected to room", flush=True)
-
     room = ctx.room
 
     @room.on("participant_connected")
     def on_participant_connected(participant, *_):
-        print(f"[Clarte Agent] User Joined! participant={participant.identity}", flush=True)
         logger.info("participant_connected: %s", participant.identity)
 
     research_tool = ResearchTool()
-    print("[Clarte Agent] ResearchTool created", flush=True)
-    agent = _create_agent(research_tool)
-    print("[Clarte Agent] MultimodalAgent created (OpenAI Realtime)", flush=True)
+    VALID_VOICES = {"alloy", "ash", "ballad", "coral", "echo", "marin", "sage", "shimmer", "verse", "cedar"}
+    voice = "marin"
+    try:
+        job = getattr(ctx, "job", None)
+        meta = getattr(job, "metadata", None) if job else None
+        if meta:
+            data = json.loads(meta) if isinstance(meta, str) else meta
+            v = data.get("voice", "marin")
+            voice = v if v in VALID_VOICES else "marin"
+    except Exception:
+        pass
+    agent = _create_agent(research_tool, voice=voice)
     # Log existing participants (user may already be in the room when agent joins)
-    for pid, p in room.remote_participants.items():
-        print(f"[Clarte Agent] Existing participant in room: {p.identity}", flush=True)
+    for _, p in room.remote_participants.items():
+        logger.info("Existing participant: %s", p.identity)
     agent.start(room)
 
     # Keep the job alive until the process is shut down (e.g. all participants leave)
