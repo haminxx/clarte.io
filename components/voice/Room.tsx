@@ -4,11 +4,16 @@
  * Clarte Voice – LiveKit + Clarte agent.
  * Fetches token from VOICE_AGENT_URL/token (Render) when set, else /api/token (local Next.js).
  * Connects to LiveKit; agent joins and speaks.
+ * Supports voice-only, voice-with-screen (screen share), and narrate-only modes.
  */
-import React, { useCallback, useState } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { PhoneOff, Loader2, Phone } from "lucide-react"
+import { PhoneOff, Loader2, Phone, Monitor } from "lucide-react"
 import { LiveKitRoom, RoomAudioRenderer, useLocalParticipant, useParticipants, useRoomContext } from "@livekit/components-react"
+import { useKrispNoiseFilter } from "@livekit/components-react/krisp"
+
+export type CallMode = "voice-only" | "voice-with-screen" | "narrate-only"
+export type TierPreset = "auto" | "tier1" | "tier2" | "tier3"
 
 /** Phase 2: Fail fast if LiveKit URL is not set (client env inlined at build). */
 const LIVEKIT_URL = process.env.NEXT_PUBLIC_LIVEKIT_URL ?? ""
@@ -19,10 +24,25 @@ if (typeof window === "undefined" && !LIVEKIT_URL) {
 }
 
 /** Inner content so we can use useLocalParticipant inside LiveKitRoom. */
-function RoomInner({ onDisconnect }: { onDisconnect: () => void }) {
-  const { localParticipant, isMicrophoneEnabled, microphoneTrack } = useLocalParticipant()
+function RoomInner({
+  onDisconnect,
+  withScreen,
+}: {
+  onDisconnect: () => void
+  withScreen: boolean
+}) {
+  const { localParticipant, isMicrophoneEnabled, microphoneTrack, isScreenShareEnabled } =
+    useLocalParticipant()
   const participants = useParticipants()
   const room = useRoomContext()
+  const [screenSharePending, setScreenSharePending] = useState(false)
+  const krisp = useKrispNoiseFilter()
+
+  React.useEffect(() => {
+    if (microphoneTrack) {
+      void krisp.setNoiseFilterEnabled(true)
+    }
+  }, [microphoneTrack, krisp])
 
   React.useEffect(() => {
     if (!localParticipant) return
@@ -43,6 +63,18 @@ function RoomInner({ onDisconnect }: { onDisconnect: () => void }) {
     }
     enableMic()
   }, [localParticipant])
+
+  const toggleScreenShare = useCallback(async () => {
+    if (!localParticipant) return
+    setScreenSharePending(true)
+    try {
+      await localParticipant.setScreenShareEnabled(!isScreenShareEnabled)
+    } catch (e) {
+      console.warn("[Clarte Voice] Screen share failed:", e)
+    } finally {
+      setScreenSharePending(false)
+    }
+  }, [localParticipant, isScreenShareEnabled])
 
   React.useEffect(() => {
     if (process.env.NODE_ENV === "development") {
@@ -74,27 +106,64 @@ function RoomInner({ onDisconnect }: { onDisconnect: () => void }) {
       <RoomAudioRenderer />
       <p className="text-sm text-muted-foreground">
         In call with Clarte {!isMicrophoneEnabled && "(mic off — check permissions)"}
+        {withScreen && isScreenShareEnabled && " · Screen shared"}
       </p>
-      <Button variant="outline" size="sm" onClick={onDisconnect} className="gap-2">
-        <PhoneOff className="h-4 w-4" />
-        End call
-      </Button>
+      <div className="flex items-center gap-2">
+        {withScreen && (
+          <Button
+            variant={isScreenShareEnabled ? "default" : "outline"}
+            size="sm"
+            onClick={toggleScreenShare}
+            disabled={screenSharePending}
+            className="gap-2"
+          >
+            <Monitor className="h-4 w-4" />
+            {isScreenShareEnabled ? "Stop sharing" : "Share screen"}
+          </Button>
+        )}
+        <Button variant="outline" size="sm" onClick={onDisconnect} className="gap-2">
+          <PhoneOff className="h-4 w-4" />
+          End call
+        </Button>
+      </div>
     </div>
   )
 }
 
-export function Room() {
+/** Map frontend mode to agent mode for token metadata. */
+function toAgentMode(mode: CallMode): "casual" | "expert" | "research" {
+  switch (mode) {
+    case "voice-only":
+      return "casual"
+    case "voice-with-screen":
+      return "expert"
+    case "narrate-only":
+      return "research"
+  }
+}
+
+interface RoomProps {
+  mode?: CallMode
+  tier?: TierPreset
+  autoStart?: boolean
+  onDisconnect?: () => void
+}
+
+export function Room({ mode = "voice-only", tier = "auto", autoStart = false, onDisconnect }: RoomProps) {
   const [token, setToken] = useState<string | null>(null)
   const [roomName, setRoomName] = useState<string | null>(null)
   const [status, setStatus] = useState<"idle" | "starting" | "active" | "error">("idle")
   const [error, setError] = useState<string | null>(null)
+
+  const withScreen = mode === "voice-with-screen"
 
   const disconnect = useCallback(() => {
     setToken(null)
     setRoomName(null)
     setStatus("idle")
     setError(null)
-  }, [])
+    onDisconnect?.()
+  }, [onDisconnect])
 
   const startCall = useCallback(async () => {
     if (!LIVEKIT_URL) {
@@ -127,7 +196,7 @@ export function Room() {
       const res = await fetch(tokenUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ voice: "marin" }),
+        body: JSON.stringify({ voice: "marin", mode: toAgentMode(mode), tier }),
       })
       const raw = await res.text()
       if (!res.ok) {
@@ -167,9 +236,15 @@ export function Room() {
       setError(message)
       setStatus("error")
     }
-  }, [])
+  }, [mode, tier])
 
   const configured = Boolean(LIVEKIT_URL)
+
+  useEffect(() => {
+    if (autoStart && status === "idle" && configured) {
+      startCall()
+    }
+  }, [autoStart, configured, status, startCall])
 
   if (status === "active" && token && roomName) {
     return (
@@ -179,7 +254,7 @@ export function Room() {
           token={token}
           connect={true}
           audio={true}
-          video={false}
+          video={withScreen}
           onDisconnected={disconnect}
           onError={(err) => {
             setToken(null)
@@ -189,7 +264,7 @@ export function Room() {
           }}
           className="rounded-2xl overflow-hidden"
         >
-          <RoomInner onDisconnect={disconnect} />
+          <RoomInner onDisconnect={disconnect} withScreen={withScreen} />
         </LiveKitRoom>
       </div>
     )
@@ -211,18 +286,26 @@ export function Room() {
         {error && (
           <p className="text-sm text-destructive text-center">{error}</p>
         )}
-        <Button
-          onClick={startCall}
-          disabled={!configured || status === "starting"}
-          className="gap-2 h-12 px-6 rounded-full"
-        >
-          {status === "starting" ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : (
-            <Phone className="h-5 w-5" />
+        <div className="flex items-center gap-2">
+          {autoStart && onDisconnect && (
+            <Button variant="outline" size="sm" onClick={onDisconnect} className="gap-2">
+              <PhoneOff className="h-4 w-4" />
+              Back
+            </Button>
           )}
-          {status === "starting" ? "Connecting…" : "Start call"}
-        </Button>
+          <Button
+            onClick={startCall}
+            disabled={!configured || status === "starting"}
+            className="gap-2 h-12 px-6 rounded-full"
+          >
+            {status === "starting" ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Phone className="h-5 w-5" />
+            )}
+            {status === "starting" ? "Connecting…" : "Start call"}
+          </Button>
+        </div>
         {!configured && (
           <p className="text-xs text-muted-foreground text-center max-w-xs">
             Set NEXT_PUBLIC_LIVEKIT_URL. For hosted (Firebase), also set NEXT_PUBLIC_VOICE_AGENT_URL to your Render token server URL.

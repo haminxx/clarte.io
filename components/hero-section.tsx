@@ -1,11 +1,29 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { ParticleOrb } from "./particle-orb"
-import { Room } from "@/components/voice/Room"
+import { Room, type CallMode, type TierPreset } from "@/components/voice/Room"
+import { VoiceCard } from "@/components/voice-card"
 import { Button } from "@/components/ui/button"
 
 export function HeroSection() {
+  const [callMode, setCallMode] = useState<CallMode | null>(null)
+  const [callTier, setCallTier] = useState<TierPreset>("auto")
+  const [inCall, setInCall] = useState(false)
+
+  const handleStartCall = (mode: CallMode, tier: TierPreset) => {
+    setCallMode(mode)
+    setCallTier(tier)
+    setInCall(true)
+  }
+
+  const handleDisconnect = () => {
+    setInCall(false)
+    setCallMode(null)
+    setCallTier("auto")
+  }
+
   return (
     <section className="relative min-h-screen overflow-hidden bg-background pt-16 w-full">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -57,7 +75,11 @@ export function HeroSection() {
           <ParticleOrb />
         </div>
         <div className="relative z-20 w-full max-w-lg">
-          <Room />
+          {inCall && callMode ? (
+            <Room mode={callMode} tier={callTier} autoStart onDisconnect={handleDisconnect} />
+          ) : (
+            <VoiceCard onStartCall={handleStartCall} isActive={false} />
+          )}
         </div>
       </div>
     </section>

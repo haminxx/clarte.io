@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from exa_py import Exa
 from livekit import agents
 from livekit.agents import Agent, AgentServer, AgentSession, AutoSubscribe, RunContext, function_tool
+from livekit.agents.voice import room_io
 from livekit.plugins import openai
 
 load_dotenv()
@@ -40,6 +41,61 @@ You are Clarte, a calm, Socratic voice AI and visual thought partner. Your goal 
 - **Tone:** Calm, thoughtful, and unhurried.
 """
 
+CASUAL_PROMPT = """
+You are Clarte, a calm voice AI. Keep responses to 1-2 short sentences. Ask at most one question per turn.
+You do not have search. For facts you don't know, suggest the user try the research mode.
+"""
+
+RESEARCH_PROMPT = """
+You are Clarte, a calm voice AI for research. When the user needs facts, news, or detailed info:
+1. Say "Let me look that up for you" and call the search_exa tool.
+2. The search runs in background. You'll receive results shortly and can summarize for the user.
+3. Keep summaries to 2-3 sentences. Ask at most one follow-up question.
+"""
+
+TIER1_PROMPT = """
+You are Clarte, a calm voice AI in Guide mode. Your role is to guide the user through critical thinking by questioning.
+
+**STYLE:** Ask questions only. Do not give answers or advice.
+- Ask for context and details: "What made you think about that?" "Can you tell me more about the situation?"
+- Probe assumptions: "Why did you think about it that way?" "What would need to be true for that to work?"
+- Guide toward clarity: Ask one focused question per turn. Keep responses to 1-2 short sentences.
+- You do not have search. For facts, suggest the user try a different mode.
+"""
+
+TIER2_PROMPT = """
+You are Clarte, a calm voice AI in Feedback mode. Share knowledge and give earned feedback.
+
+**STYLE:** Acknowledge first, then share relevant knowledge, then ask a quality question.
+- Acknowledge: "I see what you're saying."
+- Share: Reference industry standards, regulations, or common practices when relevant.
+- Ask: "Do you have a backup plan?" "How does that align with [X]?"
+- Example: "The industry standard seems to accept deals as you said, yet there are some regulations. Do you have a backup plan about this?"
+- Keep to 2-3 sentences. Use search_exa when you need facts you don't know.
+"""
+
+TIER3_PROMPT = """
+You are Clarte, a calm voice AI in Informative mode. Provide reality checks and help structure plans.
+
+**STYLE:** Heavy informative. Support the user's journey: idea → pitch → structured plan → action.
+- Reality check: What might work, what might not, yet could be worth trying.
+- Give detailed, actionable feedback when the user has concrete ideas.
+- Help structure next steps: "Here's what I'd consider..." "One approach could be..."
+- Use search_exa for facts, regulations, or market info. Summarize concisely.
+- Keep responses focused but informative (2-4 sentences).
+"""
+
+AUTO_PROMPT = """
+You are Clarte, a calm voice AI. Adapt your style based on how concrete the user's ideas are.
+
+**ADAPTIVE STYLE:**
+- **Vague/exploratory ideas** → Use Tier 1 style: Ask questions only. "Why did you think about that way?" "What details would help clarify?"
+- **Rough ideas** → Use Tier 2 style: Acknowledge, share knowledge, ask backup-plan questions. "I see what you're saying. Industry standard seems X, yet there are regulations. Do you have a backup plan?"
+- **Concrete ideas** → Use Tier 3 style: Reality check, what might work or not, help structure next steps. "Here's what might work... One approach could be..."
+
+**RULES:** Infer from the conversation. Switch style as the user's ideas become more or less concrete. Use search_exa when you need facts. Keep responses concise.
+"""
+
 
 def _do_exa_search(query: str) -> str:
     """Sync Exa search (runs in thread)."""
@@ -64,11 +120,32 @@ def _do_exa_search(query: str) -> str:
     return "\n\n---\n\n".join(parts)
 
 
-class ClarteAgent(Agent):
-    """Clarte voice agent with Exa search tool."""
+def _prompt_for_tier(tier: str) -> str:
+    """Select prompt by tier."""
+    if tier == "tier1":
+        return TIER1_PROMPT
+    if tier == "tier2":
+        return TIER2_PROMPT
+    if tier == "tier3":
+        return TIER3_PROMPT
+    return AUTO_PROMPT
+
+
+class GuideAgent(Agent):
+    """Clarte voice agent for Tier 1 (Guide): questioning only, no tools."""
 
     def __init__(self) -> None:
-        super().__init__(instructions=SYSTEM_PROMPT)
+        super().__init__(instructions=TIER1_PROMPT)
+
+
+class ClarteAgent(Agent):
+    """Clarte voice agent with Exa search tool. Used for tier2, tier3, auto."""
+
+    def __init__(self, mode: str = "expert", tier: str = "auto") -> None:
+        instructions = _prompt_for_tier(tier)
+        super().__init__(instructions=instructions)
+        self._mode = mode
+        self._tier = tier
 
     @function_tool(
         description="Search the web for research, news, or detailed information. Use when the user asks for research, news, or detailed info.",
@@ -76,6 +153,26 @@ class ClarteAgent(Agent):
     async def search_exa(self, context: RunContext, query: str) -> str:
         """Search Exa and return results as plain text for the LLM."""
         logger.info("Researching: %s", query[:80])
+        if self._mode == "research":
+            session = context.session
+
+            async def _run_and_follow_up() -> None:
+                try:
+                    result = await asyncio.to_thread(_do_exa_search, query)
+                    await session.generate_reply(
+                        instructions=(
+                            f"Search completed. Here are the results:\n\n{result}\n\n"
+                            "Summarize these concisely for the user in 2-3 sentences."
+                        )
+                    )
+                except Exception as e:
+                    logger.exception("Background Exa search failed")
+                    await session.generate_reply(
+                        instructions=f"Search failed: {e!s}. Apologize briefly and offer to try again."
+                    )
+
+            asyncio.create_task(_run_and_follow_up())
+            return "Searching... I'll get back to you with the results in a moment."
         return await asyncio.to_thread(_do_exa_search, query)
 
 
@@ -87,7 +184,7 @@ VALID_VOICES = {"alloy", "ash", "ballad", "coral", "echo", "marin", "sage", "shi
 @server.rtc_session(agent_name="clarte")
 async def entrypoint(ctx: agents.JobContext) -> None:
     logger.info("entrypoint started")
-    await ctx.connect(auto_subscribe=AutoSubscribe.AUDIO_ONLY)
+    await ctx.connect(auto_subscribe=AutoSubscribe.AUDIO_AND_VIDEO)
     room = ctx.room
 
     @room.on("participant_connected")
@@ -99,6 +196,8 @@ async def entrypoint(ctx: agents.JobContext) -> None:
         logger.info("track_subscribed: participant=%s kind=%s", participant.identity, getattr(track, "kind", "?"))
 
     voice = "marin"
+    mode = "expert"
+    tier = "auto"
     try:
         job = getattr(ctx, "job", None)
         meta = getattr(job, "metadata", None) if job else None
@@ -106,19 +205,53 @@ async def entrypoint(ctx: agents.JobContext) -> None:
             data = json.loads(meta) if isinstance(meta, str) else meta
             v = data.get("voice", "marin")
             voice = v if v in VALID_VOICES else "marin"
+            m = data.get("mode", "expert")
+            mode = m if m in ("casual", "expert", "research") else "expert"
+            t = data.get("tier", "auto")
+            tier = t if t in ("auto", "tier1", "tier2", "tier3") else "auto"
     except Exception:
         pass
 
     for _, p in room.remote_participants.items():
         logger.info("Existing participant: %s", p.identity)
 
-    session = AgentSession(
-        llm=openai.realtime.RealtimeModel(model="gpt-realtime", voice=voice),
+    from openai.types.beta.realtime.session import TurnDetection
+
+    turn_detection = (
+        TurnDetection(
+            type="semantic_vad",
+            eagerness="high",
+            create_response=True,
+            interrupt_response=True,
+        )
+        if mode == "casual"
+        else TurnDetection(
+            type="semantic_vad",
+            eagerness="medium",
+            create_response=True,
+            interrupt_response=True,
+        )
     )
-    logger.info("Starting session with OpenAI Realtime API (model=gpt-realtime, voice=%s)", voice)
+
+    session = AgentSession(
+        llm=openai.realtime.RealtimeModel(
+            model="gpt-realtime",
+            voice=voice,
+            turn_detection=turn_detection,
+        ),
+    )
+    room_opts = room_io.RoomOptions(video_input=(mode == "expert"))
+    agent = GuideAgent() if tier == "tier1" else ClarteAgent(mode=mode, tier=tier)
+    logger.info(
+        "Starting session with OpenAI Realtime API (model=gpt-realtime, voice=%s, mode=%s, tier=%s)",
+        voice,
+        mode,
+        tier,
+    )
     await session.start(
         room=room,
-        agent=ClarteAgent(),
+        agent=agent,
+        room_options=room_opts,
     )
     await session.generate_reply(
         instructions="Greet the user. Say: Hello, how's it going?"
