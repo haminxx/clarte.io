@@ -4,15 +4,15 @@
  * Clarte Voice – LiveKit + Clarte agent.
  * Fetches token from VOICE_AGENT_URL/token (Render) when set, else /api/token (local Next.js).
  * Connects to LiveKit; agent joins and speaks.
- * Supports voice-only, voice-with-screen (screen share), and narrate-only modes.
+ * Supports voice-only, voice-with-screen (screen share), and voice-with-screen-camera modes.
  */
 import React, { useCallback, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { PhoneOff, Loader2, Phone, Monitor } from "lucide-react"
+import { PhoneOff, Loader2, Phone, Monitor, Video } from "lucide-react"
 import { LiveKitRoom, RoomAudioRenderer, useLocalParticipant, useParticipants, useRoomContext } from "@livekit/components-react"
 import { useKrispNoiseFilter } from "@livekit/components-react/krisp"
 
-export type CallMode = "voice-only" | "voice-with-screen" | "narrate-only"
+export type CallMode = "voice-only" | "voice-with-screen" | "voice-with-screen-camera"
 export type TierPreset = "auto" | "tier1" | "tier2" | "tier3"
 
 /** Phase 2: Fail fast if LiveKit URL is not set (client env inlined at build). */
@@ -23,23 +23,63 @@ if (typeof window === "undefined" && !LIVEKIT_URL) {
   throw new Error("Missing NEXT_PUBLIC_LIVEKIT_URL")
 }
 
+/** Wrapper that provides Krisp to RoomInner. Uses error boundary to fall back to no-Krisp if unsupported. */
+function RoomInnerKrispProvider({
+  onDisconnect,
+  withScreen,
+  withCamera,
+}: {
+  onDisconnect: () => void
+  withScreen: boolean
+  withCamera: boolean
+}) {
+  const krisp = useKrispNoiseFilter()
+  return <RoomInner onDisconnect={onDisconnect} withScreen={withScreen} withCamera={withCamera} krisp={krisp} />
+}
+
+class KrispErrorBoundary extends React.Component<
+  { children: React.ReactNode; fallback: React.ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false }
+  static getDerivedStateFromError = () => ({ hasError: true })
+  render() {
+    if (this.state.hasError) return this.props.fallback
+    return this.props.children
+  }
+}
+
+function RoomInnerWithKrisp(props: { onDisconnect: () => void; withScreen: boolean; withCamera: boolean }) {
+  return (
+    <KrispErrorBoundary
+      fallback={<RoomInner {...props} krisp={null} />}
+    >
+      <RoomInnerKrispProvider {...props} />
+    </KrispErrorBoundary>
+  )
+}
+
 /** Inner content so we can use useLocalParticipant inside LiveKitRoom. */
 function RoomInner({
   onDisconnect,
   withScreen,
+  withCamera,
+  krisp,
 }: {
   onDisconnect: () => void
   withScreen: boolean
+  withCamera: boolean
+  krisp: { setNoiseFilterEnabled: (v: boolean) => Promise<void> } | null
 }) {
-  const { localParticipant, isMicrophoneEnabled, microphoneTrack, isScreenShareEnabled } =
+  const { localParticipant, isMicrophoneEnabled, microphoneTrack, isScreenShareEnabled, isCameraEnabled } =
     useLocalParticipant()
   const participants = useParticipants()
   const room = useRoomContext()
   const [screenSharePending, setScreenSharePending] = useState(false)
-  const krisp = useKrispNoiseFilter()
+  const [cameraPending, setCameraPending] = useState(false)
 
   React.useEffect(() => {
-    if (microphoneTrack) {
+    if (microphoneTrack && krisp) {
       void krisp.setNoiseFilterEnabled(true)
     }
   }, [microphoneTrack, krisp])
@@ -76,6 +116,18 @@ function RoomInner({
     }
   }, [localParticipant, isScreenShareEnabled])
 
+  const toggleCamera = useCallback(async () => {
+    if (!localParticipant) return
+    setCameraPending(true)
+    try {
+      await localParticipant.setCameraEnabled(!isCameraEnabled)
+    } catch (e) {
+      console.warn("[Clarte Voice] Camera failed:", e)
+    } finally {
+      setCameraPending(false)
+    }
+  }, [localParticipant, isCameraEnabled])
+
   React.useEffect(() => {
     if (process.env.NODE_ENV === "development") {
       const remote = participants.filter((p) => p !== localParticipant)
@@ -107,6 +159,7 @@ function RoomInner({
       <p className="text-sm text-muted-foreground">
         In call with Clarte {!isMicrophoneEnabled && "(mic off — check permissions)"}
         {withScreen && isScreenShareEnabled && " · Screen shared"}
+        {withCamera && isCameraEnabled && " · Camera on"}
       </p>
       <div className="flex items-center gap-2">
         {withScreen && (
@@ -121,6 +174,18 @@ function RoomInner({
             {isScreenShareEnabled ? "Stop sharing" : "Share screen"}
           </Button>
         )}
+        {withCamera && (
+          <Button
+            variant={isCameraEnabled ? "default" : "outline"}
+            size="sm"
+            onClick={toggleCamera}
+            disabled={cameraPending}
+            className="gap-2"
+          >
+            <Video className="h-4 w-4" />
+            {isCameraEnabled ? "Camera off" : "Camera on"}
+          </Button>
+        )}
         <Button variant="outline" size="sm" onClick={onDisconnect} className="gap-2">
           <PhoneOff className="h-4 w-4" />
           End call
@@ -131,15 +196,8 @@ function RoomInner({
 }
 
 /** Map frontend mode to agent mode for token metadata. */
-function toAgentMode(mode: CallMode): "casual" | "expert" | "research" {
-  switch (mode) {
-    case "voice-only":
-      return "casual"
-    case "voice-with-screen":
-      return "expert"
-    case "narrate-only":
-      return "research"
-  }
+function toAgentMode(mode: CallMode): "casual" | "expert" {
+  return mode === "voice-only" ? "casual" : "expert"
 }
 
 interface RoomProps {
@@ -155,7 +213,8 @@ export function Room({ mode = "voice-only", tier = "auto", autoStart = false, on
   const [status, setStatus] = useState<"idle" | "starting" | "active" | "error">("idle")
   const [error, setError] = useState<string | null>(null)
 
-  const withScreen = mode === "voice-with-screen"
+  const withScreen = mode === "voice-with-screen" || mode === "voice-with-screen-camera"
+  const withCamera = mode === "voice-with-screen-camera"
 
   const disconnect = useCallback(() => {
     setToken(null)
@@ -254,7 +313,7 @@ export function Room({ mode = "voice-only", tier = "auto", autoStart = false, on
           token={token}
           connect={true}
           audio={true}
-          video={withScreen}
+          video={false}
           onDisconnected={disconnect}
           onError={(err) => {
             setToken(null)
@@ -264,7 +323,7 @@ export function Room({ mode = "voice-only", tier = "auto", autoStart = false, on
           }}
           className="rounded-2xl overflow-hidden"
         >
-          <RoomInner onDisconnect={disconnect} withScreen={withScreen} />
+          <RoomInnerWithKrisp onDisconnect={disconnect} withScreen={withScreen} withCamera={withCamera} />
         </LiveKitRoom>
       </div>
     )
