@@ -117,6 +117,10 @@ async def entrypoint(ctx: agents.JobContext) -> None:
     def on_participant_connected(participant, *_):
         logger.info("participant_connected: %s", participant.identity)
 
+    @room.on("track_subscribed")
+    def on_track_subscribed(track, publication, participant):
+        logger.info("track_subscribed: participant=%s kind=%s", participant.identity, getattr(track, "kind", "?"))
+
     research_tool = ResearchTool()
     VALID_VOICES = {"alloy", "ash", "ballad", "coral", "echo", "marin", "sage", "shimmer", "verse", "cedar"}
     voice = "marin"
@@ -134,6 +138,17 @@ async def entrypoint(ctx: agents.JobContext) -> None:
     for _, p in room.remote_participants.items():
         logger.info("Existing participant: %s", p.identity)
     agent.start(room)
+
+    # Explicit greeting trigger: Realtime API may not speak until user speaks.
+    # Trigger response.create() to force the opening "Hello, how's it going?"
+    try:
+        model = getattr(agent, "model", None)
+        sessions = getattr(model, "sessions", None) if model else None
+        if sessions and len(sessions) > 0:
+            sessions[0].response.create()
+            logger.info("Greeting trigger sent")
+    except Exception as e:
+        logger.warning("Could not trigger greeting: %s", e)
 
     # Keep the job alive until the process is shut down (e.g. all participants leave)
     await asyncio.Future()

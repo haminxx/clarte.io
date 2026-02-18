@@ -53,3 +53,22 @@ Frontend: set `NEXT_PUBLIC_VOICE_AGENT_URL=http://localhost:8080` and `NEXT_PUBL
 After deploy, copy the Render URL (e.g. `https://your-service.onrender.com`) and set:
 - **Frontend** `.env.local`: `NEXT_PUBLIC_VOICE_AGENT_URL=https://your-service.onrender.com` (no trailing slash)
 - **GitHub** → Settings → Secrets → Actions: add `NEXT_PUBLIC_VOICE_AGENT_URL` and `NEXT_PUBLIC_LIVEKIT_URL` so the built site can connect.
+
+## Troubleshooting
+
+### No audio from agent
+
+1. **Render logs** – Render Dashboard → your service → Logs. Start a call and watch for:
+   - `entrypoint started` → agent received the job
+   - `participant_connected` → agent sees the user
+   - `track_subscribed` → agent is receiving your audio
+   - `Greeting trigger sent` → initial greeting was triggered
+   - Any `ERROR`, `Exception`, or `OpenAI` messages
+
+2. **Browser DevTools** – F12 → Network: confirm WebSocket to LiveKit URL. Console: check for LiveKit or audio errors. Application → Permissions: ensure microphone is allowed.
+
+3. **Render cold start** – Free tier sleeps after ~15 min. The frontend warms up via `/health` before the token request. If the first call fails, wait ~30 seconds and try again.
+
+4. **OpenAI credits** – Realtime API requires a paid account. Add credits at [platform.openai.com](https://platform.openai.com) → Billing.
+
+5. **Mic not working** – Grant microphone permission when prompted. If "mic off" appears, refresh and allow access before starting the call.

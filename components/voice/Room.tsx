@@ -8,7 +8,7 @@
 import React, { useCallback, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { PhoneOff, Loader2, Phone } from "lucide-react"
-import { LiveKitRoom, RoomAudioRenderer, useLocalParticipant } from "@livekit/components-react"
+import { LiveKitRoom, RoomAudioRenderer, useLocalParticipant, useParticipants, useRoomContext } from "@livekit/components-react"
 
 /** Phase 2: Fail fast if LiveKit URL is not set (client env inlined at build). */
 const LIVEKIT_URL = process.env.NEXT_PUBLIC_LIVEKIT_URL ?? ""
@@ -34,6 +34,8 @@ if (typeof window === "undefined" && !LIVEKIT_URL) {
 /** Inner content so we can use useLocalParticipant inside LiveKitRoom. */
 function RoomInner({ onDisconnect }: { onDisconnect: () => void }) {
   const { localParticipant, isMicrophoneEnabled, microphoneTrack } = useLocalParticipant()
+  const participants = useParticipants()
+  const room = useRoomContext()
 
   React.useEffect(() => {
     if (!localParticipant) return
@@ -42,10 +44,44 @@ function RoomInner({ onDisconnect }: { onDisconnect: () => void }) {
         await localParticipant.setMicrophoneEnabled(true)
       } catch (e) {
         console.warn("[Clarte Voice] Mic enable failed:", e)
+        // Retry once after short delay (timing can be off on connect)
+        setTimeout(async () => {
+          try {
+            await localParticipant.setMicrophoneEnabled(true)
+          } catch (e2) {
+            console.warn("[Clarte Voice] Mic retry failed:", e2)
+          }
+        }, 500)
       }
     }
     enableMic()
   }, [localParticipant])
+
+  // Diagnostic: log mic state and remote participants (agent)
+  React.useEffect(() => {
+    const remote = participants.filter((p) => p !== localParticipant)
+    if (process.env.NODE_ENV === "development") {
+      console.log("[Clarte Voice] Room state:", {
+        isMicrophoneEnabled,
+        hasMicTrack: !!microphoneTrack,
+        remoteCount: remote.length,
+        remoteIdentities: remote.map((p) => p.identity),
+      })
+    }
+  }, [participants, localParticipant, isMicrophoneEnabled, microphoneTrack])
+
+  React.useEffect(() => {
+    if (!room) return
+    const onTrackSubscribed = (track: unknown, publication: unknown, participant: { identity: string }) => {
+      if (process.env.NODE_ENV === "development") {
+        console.log("[Clarte Voice] Track subscribed:", participant.identity, (track as { kind?: string })?.kind)
+      }
+    }
+    room.on("trackSubscribed", onTrackSubscribed)
+    return () => {
+      room.off("trackSubscribed", onTrackSubscribed)
+    }
+  }, [room])
 
   return (
     <div className="flex flex-col items-center gap-4 py-4">
@@ -93,6 +129,16 @@ export function Room() {
       setStatus("error")
       return
     }
+    // Warm-up: ping health endpoint first to wake Render if sleeping (cold start)
+    if (VOICE_AGENT_URL) {
+      try {
+        const healthUrl = VOICE_AGENT_URL.replace(/\/$/, "") + "/health"
+        await fetch(healthUrl)
+      } catch {
+        // Ignore; token request will surface real errors
+      }
+    }
+
     const tokenUrl = VOICE_AGENT_URL
       ? `${VOICE_AGENT_URL.replace(/\/$/, "")}/token`
       : "/api/token"
