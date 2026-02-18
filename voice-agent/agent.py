@@ -1,6 +1,6 @@
 """
 Clarte – Real-time voice AI agent.
-Uses OpenAI Realtime API for fast conversation; Exa for research/news/detailed queries.
+Uses OpenAI Realtime API via AgentSession; Exa for research/news/detailed queries.
 """
 import asyncio
 import json
@@ -9,11 +9,15 @@ import os
 
 from dotenv import load_dotenv
 from exa_py import Exa
-from livekit import agents
-from livekit.agents import llm
-from livekit.agents.multimodal import MultimodalAgent
-from livekit.agents import AgentServer, AutoSubscribe
+from livekit import agents, rtc
+from livekit.agents import Agent, AgentServer, AgentSession, AutoSubscribe, RunContext, function_tool, room_io
 from livekit.plugins import openai
+
+try:
+    from livekit.plugins import noise_cancellation
+    _HAS_NOISE_CANCEL = True
+except ImportError:
+    _HAS_NOISE_CANCEL = False
 
 load_dotenv()
 
@@ -43,68 +47,54 @@ You are Clarte, a calm, Socratic voice AI and visual thought partner. Your goal 
 """
 
 
-class ResearchTool(llm.FunctionContext):
-    """Exa search tool for research, news, and detailed info."""
+def _do_exa_search(query: str) -> str:
+    """Sync Exa search (runs in thread)."""
+    api_key = os.getenv("EXA_API_KEY")
+    if not api_key:
+        return "EXA_API_KEY is not configured."
+    exa = Exa(api_key=api_key)
+    try:
+        response = exa.search_and_contents(query, text=True, num_results=4)
+    except Exception as e:
+        logger.exception("Exa search failed")
+        return f"Search failed: {e!s}"
+    results = getattr(response, "results", None) or []
+    if not results:
+        return "No results found."
+    parts = []
+    for i, r in enumerate(results, 1):
+        title = getattr(r, "title", "") or "No title"
+        url = getattr(r, "url", "") or ""
+        text = getattr(r, "text", "") or ""
+        parts.append(f"[{i}] {title}\nURL: {url}\n{(text[:600] + '...') if len(text) > 600 else text}")
+    return "\n\n---\n\n".join(parts)
+
+
+class ClarteAgent(Agent):
+    """Clarte voice agent with Exa search tool."""
 
     def __init__(self) -> None:
-        api_key = os.getenv("EXA_API_KEY")
-        if not api_key:
-            raise ValueError("EXA_API_KEY is required for ResearchTool")
-        self._exa = Exa(api_key=api_key)
-        super().__init__()
+        super().__init__(instructions=SYSTEM_PROMPT)
 
-    @llm.ai_callable(
+    @function_tool(
         description="Search the web for research, news, or detailed information. Use when the user asks for research, news, or detailed info.",
     )
-    def search_exa(self, query: str) -> str:
+    async def search_exa(self, context: RunContext, query: str) -> str:
         """Search Exa and return results as plain text for the LLM."""
         logger.info("Researching: %s", query[:80])
-
-        try:
-            response = self._exa.search_and_contents(
-                query,
-                text=True,
-                num_results=4,
-            )
-        except Exception as e:
-            logger.exception("Exa search failed")
-            return f"Search failed: {e!s}"
-
-        results = getattr(response, "results", None) or []
-        if not results:
-            return "No results found."
-
-        parts = []
-        for i, r in enumerate(results, 1):
-            title = getattr(r, "title", "") or "No title"
-            url = getattr(r, "url", "") or ""
-            text = getattr(r, "text", "") or ""
-            parts.append(f"[{i}] {title}\nURL: {url}\n{(text[:600] + '...') if len(text) > 600 else text}")
-        return "\n\n---\n\n".join(parts)
-
-
-def _build_chat_ctx() -> llm.ChatContext:
-    """Build chat context with system instructions."""
-    chat_ctx = llm.ChatContext()
-    chat_ctx.append(role="system", text=SYSTEM_PROMPT)
-    return chat_ctx
-
-
-def _create_agent(fnc_ctx: ResearchTool, voice: str = "marin") -> MultimodalAgent:
-    """Create MultimodalAgent with Realtime model and research tool."""
-    model = openai.realtime.RealtimeModel(
-        model="gpt-realtime",
-        voice=voice,
-    )
-    chat_ctx = _build_chat_ctx()
-    return MultimodalAgent(
-        model=model,
-        chat_ctx=chat_ctx,
-        fnc_ctx=fnc_ctx,
-    )
+        return await asyncio.to_thread(_do_exa_search, query)
 
 
 server = AgentServer()
+
+VALID_VOICES = {"alloy", "ash", "ballad", "coral", "echo", "marin", "sage", "shimmer", "verse", "cedar"}
+
+
+def _noise_cancellation(params) -> "noise_cancellation.NoiseCancellation":
+    """Use telephony NC for SIP, BVC for standard participants."""
+    if params.participant.kind == rtc.ParticipantKind.PARTICIPANT_KIND_SIP:
+        return noise_cancellation.BVCTelephony()
+    return noise_cancellation.BVC()
 
 
 @server.rtc_session(agent_name="clarte")
@@ -121,8 +111,6 @@ async def entrypoint(ctx: agents.JobContext) -> None:
     def on_track_subscribed(track, publication, participant):
         logger.info("track_subscribed: participant=%s kind=%s", participant.identity, getattr(track, "kind", "?"))
 
-    research_tool = ResearchTool()
-    VALID_VOICES = {"alloy", "ash", "ballad", "coral", "echo", "marin", "sage", "shimmer", "verse", "cedar"}
     voice = "marin"
     try:
         job = getattr(ctx, "job", None)
@@ -133,24 +121,27 @@ async def entrypoint(ctx: agents.JobContext) -> None:
             voice = v if v in VALID_VOICES else "marin"
     except Exception:
         pass
-    agent = _create_agent(research_tool, voice=voice)
-    # Log existing participants (user may already be in the room when agent joins)
+
     for _, p in room.remote_participants.items():
         logger.info("Existing participant: %s", p.identity)
-    agent.start(room)
 
-    # Explicit greeting trigger: Realtime API may not speak until user speaks.
-    # Trigger response.create() to force the opening "Hello, how's it going?"
-    try:
-        model = getattr(agent, "model", None)
-        sessions = getattr(model, "sessions", None) if model else None
-        if sessions and len(sessions) > 0:
-            sessions[0].response.create()
-            logger.info("Greeting trigger sent")
-    except Exception as e:
-        logger.warning("Could not trigger greeting: %s", e)
+    session = AgentSession(
+        llm=openai.realtime.RealtimeModel(model="gpt-realtime", voice=voice),
+    )
+    room_opts = None
+    if _HAS_NOISE_CANCEL:
+        room_opts = room_io.RoomOptions(
+            audio_input=room_io.AudioInputOptions(noise_cancellation=_noise_cancellation),
+        )
+    await session.start(
+        room=room,
+        agent=ClarteAgent(),
+        room_options=room_opts,
+    )
+    await session.generate_reply(
+        instructions="Greet the user. Say: Hello, how's it going?"
+    )
 
-    # Keep the job alive until the process is shut down (e.g. all participants leave)
     await asyncio.Future()
 
 

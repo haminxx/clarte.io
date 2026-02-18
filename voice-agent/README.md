@@ -41,7 +41,7 @@ Frontend: set `NEXT_PUBLIC_VOICE_AGENT_URL=http://localhost:8080` and `NEXT_PUBL
 
 1. Create a **Web Service**, connect this repo.
 2. **Root Directory:** `voice-agent`
-3. **Build Command:** `pip install -r requirements.txt`
+3. **Build Command:** `pip install -r requirements.txt && python agent.py download-files`
 4. **Start Command:** `python start_render.py`
 5. **Environment** (in Render dashboard):
    - `LIVEKIT_URL` (e.g. `wss://clarte-nrk5tnrq.livekit.cloud`)
@@ -54,6 +54,8 @@ After deploy, copy the Render URL (e.g. `https://your-service.onrender.com`) and
 - **Frontend** `.env.local`: `NEXT_PUBLIC_VOICE_AGENT_URL=https://your-service.onrender.com` (no trailing slash)
 - **GitHub** → Settings → Secrets → Actions: add `NEXT_PUBLIC_VOICE_AGENT_URL` and `NEXT_PUBLIC_LIVEKIT_URL` so the built site can connect.
 
+**Note:** `runtime.txt` pins Python 3.12 (LiveKit requires Python < 3.14). The build runs `download-files` for noise cancellation models.
+
 ## Troubleshooting
 
 ### No audio from agent
@@ -62,7 +64,6 @@ After deploy, copy the Render URL (e.g. `https://your-service.onrender.com`) and
    - `entrypoint started` → agent received the job
    - `participant_connected` → agent sees the user
    - `track_subscribed` → agent is receiving your audio
-   - `Greeting trigger sent` → initial greeting was triggered
    - Any `ERROR`, `Exception`, or `OpenAI` messages
 
 2. **Browser DevTools** – F12 → Network: confirm WebSocket to LiveKit URL. Console: check for LiveKit or audio errors. Application → Permissions: ensure microphone is allowed.

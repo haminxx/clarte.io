@@ -58,7 +58,7 @@ Service ID you created: `srv-d692mn0gjchc73dfcivg`.
    - `EXA_API_KEY` = (your Exa key, mark Secret)
 3. **Build & Deploy**:
    - **Root Directory:** `voice-agent`
-   - **Build Command:** `pip install -r requirements.txt`
+   - **Build Command:** `pip install -r requirements.txt && python agent.py download-files`
    - **Start Command:** `python start_render.py`
 4. Deploy and copy the service URL (e.g. `https://clarte-xxxx.onrender.com`).
 
