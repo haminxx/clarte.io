@@ -4,15 +4,14 @@ Run with the agent on Render so the frontend can get a token and join a room.
 """
 import json
 import os
-import tempfile
 import uuid
 from typing import Optional
 
+from dotenv import load_dotenv
 from fastapi import Body, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from dotenv import load_dotenv
 load_dotenv()
 
 LIVEKIT_API_KEY = os.getenv("LIVEKIT_API_KEY")
@@ -27,8 +26,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-VALID_VOICES = {"alloy", "ash", "ballad", "coral", "echo", "marin", "sage", "shimmer", "verse", "cedar"}
+VALID_VOICES = frozenset({"alloy", "ash", "ballad", "coral", "echo", "marin", "sage", "shimmer", "verse", "cedar"})
 
 
 class TokenRequest(BaseModel):
@@ -40,28 +38,6 @@ class TokenRequest(BaseModel):
 @app.get("/health")
 def health():
     return {"status": "ok"}
-
-
-@app.get("/debug")
-def debug_logs():
-    """Return agent debug logs (for troubleshooting)."""
-    paths = [
-        os.environ.get("DEBUG_LOG_PATH"),
-        os.path.join(os.path.dirname(__file__), "..", ".cursor", "debug.log"),
-        os.path.join(tempfile.gettempdir(), "clarte-agent.log"),
-    ]
-    for p in paths:
-        if not p:
-            continue
-        try:
-            p = os.path.abspath(p)
-            if os.path.isfile(p):
-                with open(p, "r", encoding="utf-8") as f:
-                    lines = f.readlines()
-                return {"path": p, "lines": [l.strip() for l in lines if l.strip()]}
-        except Exception as e:
-            continue
-    return {"path": None, "lines": [], "error": "No debug log found"}
 
 
 @app.post("/token")

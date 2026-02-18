@@ -33,7 +33,7 @@ Frontend vars are baked in at **build time** (Next.js). Backend vars are read at
    - `OPENAI_API_KEY`, `EXA_API_KEY`
 2. Install: `pip install -r requirements.txt` (or `uv sync` if using uv)
 3. **Option A – Agent only:** `python agent.py dev`
-4. **Option B – Token server + agent (like Render):** `python start_render.py` (serves token server on port 8080, agent in background)
+4. **Option B – Token server + agent (like Render):** `python start_render.py` (token server on port 8080, agent in subprocess)
 
 Frontend: set `NEXT_PUBLIC_VOICE_AGENT_URL=http://localhost:8080` and `NEXT_PUBLIC_LIVEKIT_URL=<your LiveKit URL>`.
 
@@ -42,8 +42,9 @@ Frontend: set `NEXT_PUBLIC_VOICE_AGENT_URL=http://localhost:8080` and `NEXT_PUBL
 1. Create a **Web Service**, connect this repo.
 2. **Root Directory:** `voice-agent`
 3. **Build Command:** `pip install -r requirements.txt && python agent.py download-files`
-4. **Start Command:** `python start_render.py`
+4. **Start Command:** `python -u start_render.py` (the `-u` flag ensures unbuffered logs)
 5. **Environment** (in Render dashboard):
+   - `PYTHONUNBUFFERED=1` (ensures agent logs appear in Render logs)
    - `LIVEKIT_URL` (e.g. `wss://clarte-nrk5tnrq.livekit.cloud`)
    - `LIVEKIT_API_KEY` (secret)
    - `LIVEKIT_API_SECRET` (secret)

@@ -6,37 +6,8 @@ import asyncio
 import json
 import logging
 import os
-import tempfile
-import time
 
 from dotenv import load_dotenv
-
-# #region agent log
-_DEBUG_LOG_PATH: str | None = None
-def _dbg(loc: str, msg: str, data: dict | None = None, hid: str = "H1"):
-    payload = {"location": loc, "message": msg, "data": data or {}, "timestamp": int(time.time() * 1000), "hypothesisId": hid}
-    line = json.dumps(payload) + "\n"
-    global _DEBUG_LOG_PATH
-    base = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    for path in (
-        os.environ.get("DEBUG_LOG_PATH"),
-        os.path.join(base, ".cursor", "debug.log"),
-        r"c:\Users\wildk\OneDrive\Important files\Project Source\App Development\Clarte.io\.cursor\debug.log",
-        os.path.join(tempfile.gettempdir(), "clarte-agent.log"),
-    ):
-        if path:
-            try:
-                d = os.path.dirname(path)
-                if d:
-                    os.makedirs(d, exist_ok=True)
-                with open(path, "a", encoding="utf-8") as f:
-                    f.write(line)
-                _DEBUG_LOG_PATH = path
-                return
-            except Exception:
-                pass
-    print(f"[agent-dbg] {line.strip()}")
-# #endregion
 from exa_py import Exa
 from livekit import agents, rtc
 from livekit.agents import Agent, AgentServer, AgentSession, AutoSubscribe, RunContext, function_tool, room_io
@@ -128,14 +99,8 @@ def _noise_cancellation(params) -> "noise_cancellation.NoiseCancellation":
 
 @server.rtc_session(agent_name="clarte")
 async def entrypoint(ctx: agents.JobContext) -> None:
-    # #region agent log
-    _dbg("agent.py:entrypoint", "entrypoint started", {"agent_name": "clarte"}, "H2")
-    # #endregion
     logger.info("entrypoint started")
     await ctx.connect(auto_subscribe=AutoSubscribe.AUDIO_ONLY)
-    # #region agent log
-    _dbg("agent.py:entrypoint", "ctx.connect done", {"room": getattr(ctx.room, "name", "?")}, "H2")
-    # #endregion
     room = ctx.room
 
     @room.on("participant_connected")
@@ -160,9 +125,6 @@ async def entrypoint(ctx: agents.JobContext) -> None:
     for _, p in room.remote_participants.items():
         logger.info("Existing participant: %s", p.identity)
 
-    # #region agent log
-    _dbg("agent.py:entrypoint", "before session.start", {"voice": voice, "room_name": room.name}, "H3")
-    # #endregion
     session = AgentSession(
         llm=openai.realtime.RealtimeModel(model="gpt-realtime", voice=voice),
     )
@@ -171,32 +133,14 @@ async def entrypoint(ctx: agents.JobContext) -> None:
         room_opts = room_io.RoomOptions(
             audio_input=room_io.AudioInputOptions(noise_cancellation=_noise_cancellation),
         )
-    try:
-        await session.start(
-            room=room,
-            agent=ClarteAgent(),
-            room_options=room_opts,
-        )
-        # #region agent log
-        _dbg("agent.py:entrypoint", "session.start done", {}, "H3")
-        # #endregion
-    except Exception as e:
-        # #region agent log
-        _dbg("agent.py:entrypoint", "session.start FAILED", {"error": str(e)}, "H3")
-        # #endregion
-        raise
-    try:
-        await session.generate_reply(
-            instructions="Greet the user. Say: Hello, how's it going?"
-        )
-        # #region agent log
-        _dbg("agent.py:entrypoint", "generate_reply done", {}, "H4")
-        # #endregion
-    except Exception as e:
-        # #region agent log
-        _dbg("agent.py:entrypoint", "generate_reply FAILED", {"error": str(e)}, "H4")
-        # #endregion
-        raise
+    await session.start(
+        room=room,
+        agent=ClarteAgent(),
+        room_options=room_opts,
+    )
+    await session.generate_reply(
+        instructions="Greet the user. Say: Hello, how's it going?"
+    )
 
     await asyncio.Future()
 
