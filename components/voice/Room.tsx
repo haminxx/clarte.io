@@ -9,7 +9,7 @@
 import React, { useCallback, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { PhoneOff, Loader2, Phone, Monitor, Video } from "lucide-react"
-import { LiveKitRoom, RoomAudioRenderer, useLocalParticipant, useParticipants, useRoomContext } from "@livekit/components-react"
+import { LiveKitRoom, RoomAudioRenderer, useLocalParticipant } from "@livekit/components-react"
 import { useKrispNoiseFilter } from "@livekit/components-react/krisp"
 
 export type CallMode = "voice-only" | "voice-with-screen" | "voice-with-screen-camera" | "voice-with-camera"
@@ -49,12 +49,19 @@ class KrispErrorBoundary extends React.Component<
   }
 }
 
-function RoomInnerWithKrisp(props: { onDisconnect: () => void; withScreen: boolean; withCamera: boolean }) {
+function RoomInnerWithKrisp(props: {
+  onDisconnect: () => void
+  withScreen: boolean
+  withCamera: boolean
+  useKrisp: boolean
+}) {
+  const { useKrisp, ...innerProps } = props
+  if (!useKrisp) {
+    return <RoomInner {...innerProps} krisp={null} />
+  }
   return (
-    <KrispErrorBoundary
-      fallback={<RoomInner {...props} krisp={null} />}
-    >
-      <RoomInnerKrispProvider {...props} />
+    <KrispErrorBoundary fallback={<RoomInner {...innerProps} krisp={null} />}>
+      <RoomInnerKrispProvider {...innerProps} />
     </KrispErrorBoundary>
   )
 }
@@ -73,8 +80,6 @@ function RoomInner({
 }) {
   const { localParticipant, isMicrophoneEnabled, microphoneTrack, isScreenShareEnabled, isCameraEnabled } =
     useLocalParticipant()
-  const participants = useParticipants()
-  const room = useRoomContext()
   const [screenSharePending, setScreenSharePending] = useState(false)
   const [cameraPending, setCameraPending] = useState(false)
 
@@ -128,31 +133,6 @@ function RoomInner({
     }
   }, [localParticipant, isCameraEnabled])
 
-  React.useEffect(() => {
-    if (process.env.NODE_ENV === "development") {
-      const remote = participants.filter((p) => p !== localParticipant)
-      console.log("[Clarte Voice] Room state:", {
-        isMicrophoneEnabled,
-        hasMicTrack: !!microphoneTrack,
-        remoteCount: remote.length,
-        remoteIdentities: remote.map((p) => p.identity),
-      })
-    }
-  }, [participants, localParticipant, isMicrophoneEnabled, microphoneTrack])
-
-  React.useEffect(() => {
-    if (!room) return
-    const onTrackSubscribed = (track: unknown, _publication: unknown, participant: { identity: string }) => {
-      if (process.env.NODE_ENV === "development") {
-        console.log("[Clarte Voice] Track subscribed:", participant.identity, (track as { kind?: string })?.kind)
-      }
-    }
-    room.on("trackSubscribed", onTrackSubscribed)
-    return () => {
-      room.off("trackSubscribed", onTrackSubscribed)
-    }
-  }, [room])
-
   return (
     <div className="flex flex-col items-center gap-4 py-4">
       <RoomAudioRenderer />
@@ -195,9 +175,42 @@ function RoomInner({
   )
 }
 
-/** Map frontend mode to agent mode for token metadata. */
 function toAgentMode(mode: CallMode): "casual" | "expert" {
   return mode === "voice-only" ? "casual" : "expert"
+}
+
+async function fetchToken(
+  tokenUrl: string,
+  mode: CallMode,
+  tier: TierPreset
+): Promise<{ token: string; room: string } | { error: string }> {
+  const res = await fetch(tokenUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ voice: "marin", mode: toAgentMode(mode), tier }),
+  })
+  const raw = await res.text()
+  if (!res.ok) {
+    let errMsg = raw || `Token request failed: ${res.status}`
+    try {
+      const parsed = JSON.parse(raw) as { error?: string; detail?: string }
+      if (parsed?.error) errMsg = parsed.error
+      else if (parsed?.detail) errMsg = parsed.detail
+    } catch {
+      /* use raw */
+    }
+    return { error: errMsg }
+  }
+  let data: { token?: string; room?: string }
+  try {
+    data = JSON.parse(raw) as { token?: string; room?: string }
+  } catch {
+    return { error: "Invalid token response" }
+  }
+  const token = data?.token ?? null
+  const room = data?.room ?? null
+  if (!token || token.trim() === "") return { error: "Token is empty" }
+  return { token, room: room ?? `room-${Date.now()}` }
 }
 
 interface RoomProps {
@@ -215,6 +228,7 @@ export function Room({ mode = "voice-only", tier = "auto", autoStart = false, on
 
   const withScreen = mode === "voice-with-screen" || mode === "voice-with-screen-camera"
   const withCamera = mode === "voice-with-screen-camera" || mode === "voice-with-camera"
+  const useKrisp = withScreen || withCamera
 
   const disconnect = useCallback(() => {
     setToken(null)
@@ -248,51 +262,21 @@ export function Room({ mode = "voice-only", tier = "auto", autoStart = false, on
       try {
         await fetch(`${baseUrl}/health`)
       } catch {
-        // Ignore; token request will surface real errors
+        /* ignore */
       }
     }
     try {
-      const res = await fetch(tokenUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ voice: "marin", mode: toAgentMode(mode), tier }),
-      })
-      const raw = await res.text()
-      if (!res.ok) {
-        let errMsg = raw || `Token request failed: ${res.status}`
-        try {
-          const parsed = JSON.parse(raw) as { error?: string; detail?: string }
-          if (parsed?.error) errMsg = parsed.error
-          else if (parsed?.detail) errMsg = parsed.detail
-        } catch {
-          // use raw
-        }
-        setError(errMsg)
+      const result = await fetchToken(tokenUrl, mode, tier)
+      if ("error" in result) {
+        setError(result.error)
         setStatus("error")
         return
       }
-      let data: { token?: string; room?: string }
-      try {
-        data = JSON.parse(raw) as { token?: string; room?: string }
-      } catch {
-        setError("Invalid token response")
-        setStatus("error")
-        return
-      }
-      const receivedToken = data?.token ?? null
-      const receivedRoom = data?.room ?? null
-      if (!receivedToken || receivedToken.trim() === "") {
-        setError("Token is empty")
-        setStatus("error")
-        return
-      }
-      setToken(receivedToken)
-      setRoomName(receivedRoom ?? `room-${Date.now()}`)
+      setToken(result.token)
+      setRoomName(result.room)
       setStatus("active")
     } catch (e) {
-      const message = e instanceof Error ? e.message : "Failed to get token"
-      console.error("[Clarte Voice] Token fetch failed:", e)
-      setError(message)
+      setError(e instanceof Error ? e.message : "Failed to get token")
       setStatus("error")
     }
   }, [mode, tier])
@@ -323,7 +307,7 @@ export function Room({ mode = "voice-only", tier = "auto", autoStart = false, on
           }}
           className="rounded-2xl overflow-hidden"
         >
-          <RoomInnerWithKrisp onDisconnect={disconnect} withScreen={withScreen} withCamera={withCamera} />
+          <RoomInnerWithKrisp onDisconnect={disconnect} withScreen={withScreen} withCamera={withCamera} useKrisp={useKrisp} />
         </LiveKitRoom>
       </div>
     )

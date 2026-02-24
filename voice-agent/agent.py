@@ -18,41 +18,6 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_PROMPT = """
-You are Clarte, a calm, Socratic voice AI and visual thought partner. Your goal is to help users gain clarity by listening to their words and observing their screen.
-
-**OPENING:** You always begin the conversation by saying: "Hello, how's it going?"
-
-**CORE SPEAKING RULES (STRICT):**
-1. **Brevity:** Respond in 1 or 2 short sentences. Never monologue.
-2. **Inquiry:** Ask at most ONE question per turn.
-3. **Pacing:** You may make a short observation before a question, but keep it concise.
-4. **Tools:** If the user needs facts you do not know, say exactly "Let me look that up for you" and then immediately call the `search_exa` tool.
-
-**VISUAL AWARENESS (Screen Share):**
-- **Acknowledge:** When a screen is shared, briefly validate it to build trust (e.g., "I see the code editor...").
-- **Processing:** Use natural fillers like "Hmm..." or "Let's see..." when analyzing complex visuals on screen to simulate human processing.
-- **Context:** Use what is on the screen to ground your questions. (e.g., "I see the budget spreadsheet... which row is causing the most friction?")
-- **No Narration:** Do not describe every mouse movement. Only mention visual elements if they help the user think.
-
-**INTERACTION STYLE:**
-- **Socratic:** Do not give answers. Ask questions that reveal the user's assumptions or motivations.
-- **Clarify First:** If the user or screen is vague, ask for a concrete example before diving deep.
-- **Tone:** Calm, thoughtful, and unhurried.
-"""
-
-CASUAL_PROMPT = """
-You are Clarte, a calm voice AI. Keep responses to 1-2 short sentences. Ask at most one question per turn.
-You do not have search. For facts you don't know, suggest the user try the research mode.
-"""
-
-RESEARCH_PROMPT = """
-You are Clarte, a calm voice AI for research. When the user needs facts, news, or detailed info:
-1. Say "Let me look that up for you" and call the search_exa tool.
-2. The search runs in background. You'll receive results shortly and can summarize for the user.
-3. Keep summaries to 2-3 sentences. Ask at most one follow-up question.
-"""
-
 TIER1_PROMPT = """
 You are Clarte, a calm voice AI in Guide mode. Your role is to guide the user through critical thinking by questioning.
 
@@ -120,15 +85,31 @@ def _do_exa_search(query: str) -> str:
     return "\n\n---\n\n".join(parts)
 
 
+TIER_PROMPTS = {"tier1": TIER1_PROMPT, "tier2": TIER2_PROMPT, "tier3": TIER3_PROMPT}
+VALID_VOICES = {"alloy", "ash", "ballad", "coral", "echo", "marin", "sage", "shimmer", "verse", "cedar"}
+
+
 def _prompt_for_tier(tier: str) -> str:
-    """Select prompt by tier."""
-    if tier == "tier1":
-        return TIER1_PROMPT
-    if tier == "tier2":
-        return TIER2_PROMPT
-    if tier == "tier3":
-        return TIER3_PROMPT
-    return AUTO_PROMPT
+    return TIER_PROMPTS.get(tier, AUTO_PROMPT)
+
+
+def _parse_metadata(job) -> dict:
+    """Parse job metadata; returns defaults if missing or invalid."""
+    out = {"voice": "marin", "mode": "expert", "tier": "auto"}
+    try:
+        meta = getattr(job, "metadata", None) if job else None
+        if not meta:
+            return out
+        data = json.loads(meta) if isinstance(meta, str) else meta
+        if data.get("voice") in VALID_VOICES:
+            out["voice"] = data["voice"]
+        if data.get("mode") in ("casual", "expert", "research"):
+            out["mode"] = data["mode"]
+        if data.get("tier") in ("auto", "tier1", "tier2", "tier3"):
+            out["tier"] = data["tier"]
+    except Exception:
+        pass
+    return out
 
 
 class GuideAgent(Agent):
@@ -178,13 +159,15 @@ class ClarteAgent(Agent):
 
 server = AgentServer()
 
-VALID_VOICES = {"alloy", "ash", "ballad", "coral", "echo", "marin", "sage", "shimmer", "verse", "cedar"}
-
 
 @server.rtc_session(agent_name="clarte")
 async def entrypoint(ctx: agents.JobContext) -> None:
     logger.info("entrypoint started")
-    await ctx.connect(auto_subscribe=AutoSubscribe.SUBSCRIBE_ALL)
+    meta = _parse_metadata(getattr(ctx, "job", None))
+    voice, mode, tier = meta["voice"], meta["mode"], meta["tier"]
+
+    auto_sub = AutoSubscribe.AUDIO_ONLY if mode == "casual" else AutoSubscribe.SUBSCRIBE_ALL
+    await ctx.connect(auto_subscribe=auto_sub)
     room = ctx.room
 
     @room.on("participant_connected")
@@ -195,42 +178,16 @@ async def entrypoint(ctx: agents.JobContext) -> None:
     def on_track_subscribed(track, publication, participant):
         logger.info("track_subscribed: participant=%s kind=%s", participant.identity, getattr(track, "kind", "?"))
 
-    voice = "marin"
-    mode = "expert"
-    tier = "auto"
-    try:
-        job = getattr(ctx, "job", None)
-        meta = getattr(job, "metadata", None) if job else None
-        if meta:
-            data = json.loads(meta) if isinstance(meta, str) else meta
-            v = data.get("voice", "marin")
-            voice = v if v in VALID_VOICES else "marin"
-            m = data.get("mode", "expert")
-            mode = m if m in ("casual", "expert", "research") else "expert"
-            t = data.get("tier", "auto")
-            tier = t if t in ("auto", "tier1", "tier2", "tier3") else "auto"
-    except Exception:
-        pass
-
     for _, p in room.remote_participants.items():
         logger.info("Existing participant: %s", p.identity)
 
     from openai.types.beta.realtime.session import TurnDetection
 
-    turn_detection = (
-        TurnDetection(
-            type="semantic_vad",
-            eagerness="high",
-            create_response=True,
-            interrupt_response=True,
-        )
-        if mode == "casual"
-        else TurnDetection(
-            type="semantic_vad",
-            eagerness="medium",
-            create_response=True,
-            interrupt_response=True,
-        )
+    turn_detection = TurnDetection(
+        type="semantic_vad",
+        eagerness="high",
+        create_response=True,
+        interrupt_response=True,
     )
 
     session = AgentSession(
