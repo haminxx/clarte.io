@@ -1,0 +1,22 @@
+# Clarte voice-agent – Render Blueprint
+# Deploy: Connect repo, use "Apply" or create from Blueprint
+services:
+  - type: web
+    name: clarte-voice-agent
+    runtime: python
+    rootDir: voice-agent
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -u start_render.py
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: EXA_API_KEY
+        sync: false
+      - key: LIVEKIT_URL
+        sync: false
+      - key: LIVEKIT_API_KEY
+        sync: false
+      - key: LIVEKIT_API_SECRET
+        sync: false
