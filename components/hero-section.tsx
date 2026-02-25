@@ -3,25 +3,23 @@
 import { useState } from "react"
 import Link from "next/link"
 import { ParticleOrb } from "./particle-orb"
-import { Room, type CallMode, type TierPreset } from "@/components/voice/Room"
+import { Room, type CallMode } from "@/components/voice/Room"
+import { VoiceRoomDirect } from "@/components/voice/VoiceRoomDirect"
 import { VoiceCard } from "@/components/voice-card"
 import { Button } from "@/components/ui/button"
 
 export function HeroSection() {
   const [callMode, setCallMode] = useState<CallMode | null>(null)
-  const [callTier, setCallTier] = useState<TierPreset>("auto")
   const [inCall, setInCall] = useState(false)
 
-  const handleStartCall = (mode: CallMode, tier: TierPreset) => {
+  const handleStartCall = (mode: CallMode) => {
     setCallMode(mode)
-    setCallTier(tier)
     setInCall(true)
   }
 
   const handleDisconnect = () => {
     setInCall(false)
     setCallMode(null)
-    setCallTier("auto")
   }
 
   return (
@@ -76,7 +74,11 @@ export function HeroSection() {
         </div>
         <div className="relative z-20 w-full max-w-lg">
           {inCall && callMode ? (
-            <Room mode={callMode} tier={callTier} autoStart onDisconnect={handleDisconnect} />
+            callMode === "voice-only" ? (
+              <VoiceRoomDirect autoStart onDisconnect={handleDisconnect} />
+            ) : (
+              <Room mode={callMode} autoStart onDisconnect={handleDisconnect} />
+            )
           ) : (
             <VoiceCard onStartCall={handleStartCall} isActive={false} />
           )}

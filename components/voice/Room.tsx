@@ -13,15 +13,12 @@ import { LiveKitRoom, RoomAudioRenderer, useLocalParticipant } from "@livekit/co
 import { useKrispNoiseFilter } from "@livekit/components-react/krisp"
 
 export type CallMode = "voice-only" | "voice-with-screen" | "voice-with-screen-camera" | "voice-with-camera"
-export type TierPreset = "auto" | "tier1" | "tier2" | "tier3"
 
 /** Phase 2: Fail fast if LiveKit URL is not set (client env inlined at build). */
 const LIVEKIT_URL = process.env.NEXT_PUBLIC_LIVEKIT_URL ?? ""
 const VOICE_AGENT_URL = process.env.NEXT_PUBLIC_VOICE_AGENT_URL ?? ""
 
-if (typeof window === "undefined" && !LIVEKIT_URL) {
-  throw new Error("Missing NEXT_PUBLIC_LIVEKIT_URL")
-}
+// LIVEKIT_URL required only for Tier 2/3 (screen share, camera). Tier 1 uses VoiceRoomDirect.
 
 /** Wrapper that provides Krisp to RoomInner. Uses error boundary to fall back to no-Krisp if unsupported. */
 function RoomInnerKrispProvider({
@@ -137,7 +134,7 @@ function RoomInner({
     <div className="flex flex-col items-center gap-4 py-4">
       <RoomAudioRenderer />
       <p className="text-sm text-muted-foreground">
-        In call with Clarte {!isMicrophoneEnabled && "(mic off — check permissions)"}
+        In call with Assistant {!isMicrophoneEnabled && "(mic off — check permissions)"}
         {withScreen && isScreenShareEnabled && " · Screen shared"}
         {withCamera && isCameraEnabled && " · Camera on"}
       </p>
@@ -181,13 +178,12 @@ function toAgentMode(mode: CallMode): "casual" | "expert" {
 
 async function fetchToken(
   tokenUrl: string,
-  mode: CallMode,
-  tier: TierPreset
+  mode: CallMode
 ): Promise<{ token: string; room: string } | { error: string }> {
   const res = await fetch(tokenUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ voice: "marin", mode: toAgentMode(mode), tier }),
+    body: JSON.stringify({ voice: "cedar", mode: toAgentMode(mode) }),
   })
   const raw = await res.text()
   if (!res.ok) {
@@ -266,7 +262,7 @@ export function Room({ mode = "voice-only", tier = "auto", autoStart = false, on
       }
     }
     try {
-      const result = await fetchToken(tokenUrl, mode, tier)
+      const result = await fetchToken(tokenUrl, mode)
       if ("error" in result) {
         setError(result.error)
         setStatus("error")
@@ -279,7 +275,7 @@ export function Room({ mode = "voice-only", tier = "auto", autoStart = false, on
       setError(e instanceof Error ? e.message : "Failed to get token")
       setStatus("error")
     }
-  }, [mode, tier])
+  }, [mode])
 
   const configured = Boolean(LIVEKIT_URL)
 

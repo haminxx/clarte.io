@@ -12,17 +12,14 @@ const apiSecret = process.env.LIVEKIT_API_SECRET
 
 const VALID_VOICES = new Set(["alloy", "ash", "ballad", "coral", "echo", "marin", "sage", "shimmer", "verse", "cedar"])
 const VALID_MODES = new Set(["casual", "expert", "research"])
-const VALID_TIERS = new Set(["auto", "tier1", "tier2", "tier3"])
 
 export async function POST(request: Request) {
-  let voice = "marin"
+  let voice = "cedar"
   let mode = "expert"
-  let tier = "auto"
   try {
     const body = await request.json().catch(() => ({}))
     if (body && typeof body.voice === "string" && VALID_VOICES.has(body.voice)) voice = body.voice
     if (body && typeof body.mode === "string" && VALID_MODES.has(body.mode)) mode = body.mode
-    if (body && typeof body.tier === "string" && VALID_TIERS.has(body.tier)) tier = body.tier
   } catch {
     // ignore
   }
@@ -53,7 +50,7 @@ export async function POST(request: Request) {
       agents: [
         new RoomAgentDispatch({
           agentName: "clarte",
-          metadata: JSON.stringify({ voice, mode, tier }),
+          metadata: JSON.stringify({ voice, mode }),
         }),
       ],
     })

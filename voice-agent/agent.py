@@ -1,14 +1,12 @@
 """
-Clarte – Real-time voice AI agent.
-Uses OpenAI Realtime API via AgentSession; Exa for research/news/detailed queries.
+Clarte – Executive Assistant voice agent.
+Single unified agent: proactive briefing, feedback, research. Tools: schedule, search, memory.
 """
 import asyncio
 import json
 import logging
-import os
 
 from dotenv import load_dotenv
-from exa_py import Exa
 from livekit import agents
 from livekit.agents import Agent, AgentServer, AgentSession, AutoSubscribe, RunContext, function_tool
 from livekit.agents.voice import room_io
@@ -18,84 +16,43 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-TIER1_PROMPT = """
-You are Clarte, a calm voice AI in Guide mode. Your role is to guide the user through critical thinking by questioning.
+EXECUTIVE_ASSISTANT_PROMPT = """
+You are an elite Executive Assistant — a proactive, talking secretary for your boss.
 
-**STYLE:** Ask questions only. Do not give answers or advice.
-- Ask for context and details: "What made you think about that?" "Can you tell me more about the situation?"
-- Probe assumptions: "Why did you think about it that way?" "What would need to be true for that to work?"
-- Guide toward clarity: Ask one focused question per turn. Keep responses to 1-2 short sentences.
-- You do not have search. For facts, suggest the user try a different mode.
+## Persona & Interaction Loop
+
+1. **Proactive Briefing**: Start conversations by asking for attention on priorities. Summarize what needs to be done today. Don't wait to be asked — surface what matters.
+
+2. **Feedback & Strategy**: You don't just take orders. When your boss proposes a plan (e.g., a timeline for a hardware prototype, balancing coursework with internship applications), you:
+   - Identify missing steps
+   - Point out flaws and risks
+   - Suggest improvements
+   Be direct but respectful. You're trusted to push back.
+
+3. **Research & Sourcing**: When decisions require information, present your research. Say: "Here is what I found regarding X, and based on these sources, here are your options." Use search_web for facts, regulations, market info, and competitive intelligence.
+
+## Tools
+
+Route intents to the correct tool without breaking character:
+- **check_schedule**: When they ask about availability, propose meeting times, or need to move/reschedule events.
+- **search_web**: When they need research, facts, news, or external information to inform a decision.
+- **log_feedback**: When they want to record a note, track project progress, or log a decision for future recall.
+
+Use tools naturally as part of the conversation. After using a tool, summarize the result in your voice and continue the dialogue.
+
+## Style
+
+- Concise. Professional but warm.
+- Proactive. Anticipate needs.
+- Honest. Give pushback when it helps.
 """
 
-TIER2_PROMPT = """
-You are Clarte, a calm voice AI in Feedback mode. Share knowledge and give earned feedback.
-
-**STYLE:** Acknowledge first, then share relevant knowledge, then ask a quality question.
-- Acknowledge: "I see what you're saying."
-- Share: Reference industry standards, regulations, or common practices when relevant.
-- Ask: "Do you have a backup plan?" "How does that align with [X]?"
-- Example: "The industry standard seems to accept deals as you said, yet there are some regulations. Do you have a backup plan about this?"
-- Keep to 2-3 sentences. Use search_exa when you need facts you don't know.
-"""
-
-TIER3_PROMPT = """
-You are Clarte, a calm voice AI in Informative mode. Provide reality checks and help structure plans.
-
-**STYLE:** Heavy informative. Support the user's journey: idea → pitch → structured plan → action.
-- Reality check: What might work, what might not, yet could be worth trying.
-- Give detailed, actionable feedback when the user has concrete ideas.
-- Help structure next steps: "Here's what I'd consider..." "One approach could be..."
-- Use search_exa for facts, regulations, or market info. Summarize concisely.
-- Keep responses focused but informative (2-4 sentences).
-"""
-
-AUTO_PROMPT = """
-You are Clarte, a calm voice AI. Adapt your style based on how concrete the user's ideas are.
-
-**ADAPTIVE STYLE:**
-- **Vague/exploratory ideas** → Use Tier 1 style: Ask questions only. "Why did you think about that way?" "What details would help clarify?"
-- **Rough ideas** → Use Tier 2 style: Acknowledge, share knowledge, ask backup-plan questions. "I see what you're saying. Industry standard seems X, yet there are regulations. Do you have a backup plan?"
-- **Concrete ideas** → Use Tier 3 style: Reality check, what might work or not, help structure next steps. "Here's what might work... One approach could be..."
-
-**RULES:** Infer from the conversation. Switch style as the user's ideas become more or less concrete. Use search_exa when you need facts. Keep responses concise.
-"""
-
-
-def _do_exa_search(query: str) -> str:
-    """Sync Exa search (runs in thread)."""
-    api_key = os.getenv("EXA_API_KEY")
-    if not api_key:
-        return "EXA_API_KEY is not configured."
-    exa = Exa(api_key=api_key)
-    try:
-        response = exa.search_and_contents(query, text=True, num_results=4)
-    except Exception as e:
-        logger.exception("Exa search failed")
-        return f"Search failed: {e!s}"
-    results = getattr(response, "results", None) or []
-    if not results:
-        return "No results found."
-    parts = []
-    for i, r in enumerate(results, 1):
-        title = getattr(r, "title", "") or "No title"
-        url = getattr(r, "url", "") or ""
-        text = getattr(r, "text", "") or ""
-        parts.append(f"[{i}] {title}\nURL: {url}\n{(text[:600] + '...') if len(text) > 600 else text}")
-    return "\n\n---\n\n".join(parts)
-
-
-TIER_PROMPTS = {"tier1": TIER1_PROMPT, "tier2": TIER2_PROMPT, "tier3": TIER3_PROMPT}
 VALID_VOICES = {"alloy", "ash", "ballad", "coral", "echo", "marin", "sage", "shimmer", "verse", "cedar"}
-
-
-def _prompt_for_tier(tier: str) -> str:
-    return TIER_PROMPTS.get(tier, AUTO_PROMPT)
 
 
 def _parse_metadata(job) -> dict:
     """Parse job metadata; returns defaults if missing or invalid."""
-    out = {"voice": "marin", "mode": "expert", "tier": "auto"}
+    out = {"voice": "cedar", "mode": "expert"}
     try:
         meta = getattr(job, "metadata", None) if job else None
         if not meta:
@@ -105,56 +62,40 @@ def _parse_metadata(job) -> dict:
             out["voice"] = data["voice"]
         if data.get("mode") in ("casual", "expert", "research"):
             out["mode"] = data["mode"]
-        if data.get("tier") in ("auto", "tier1", "tier2", "tier3"):
-            out["tier"] = data["tier"]
     except Exception:
         pass
     return out
 
 
-class GuideAgent(Agent):
-    """Clarte voice agent for Tier 1 (Guide): questioning only, no tools."""
+from tools import do_check_schedule, do_log_feedback, do_search_web
+
+
+class ExecutiveAssistantAgent(Agent):
+    """Single unified Executive Assistant with schedule, search, and memory tools."""
 
     def __init__(self) -> None:
-        super().__init__(instructions=TIER1_PROMPT)
-
-
-class ClarteAgent(Agent):
-    """Clarte voice agent with Exa search tool. Used for tier2, tier3, auto."""
-
-    def __init__(self, mode: str = "expert", tier: str = "auto") -> None:
-        instructions = _prompt_for_tier(tier)
-        super().__init__(instructions=instructions)
-        self._mode = mode
-        self._tier = tier
+        super().__init__(instructions=EXECUTIVE_ASSISTANT_PROMPT)
 
     @function_tool(
-        description="Search the web for research, news, or detailed information. Use when the user asks for research, news, or detailed info.",
+        description="Check the boss's calendar availability. Use when they ask about free slots, propose meeting times, or need to move/reschedule events.",
     )
-    async def search_exa(self, context: RunContext, query: str) -> str:
-        """Search Exa and return results as plain text for the LLM."""
-        logger.info("Researching: %s", query[:80])
-        if self._mode == "research":
-            session = context.session
+    async def check_schedule(self, context: RunContext, query: str) -> str:
+        """Check availability and propose times. Stub: returns placeholder until calendar integration."""
+        return await asyncio.to_thread(do_check_schedule, query)
 
-            async def _run_and_follow_up() -> None:
-                try:
-                    result = await asyncio.to_thread(_do_exa_search, query)
-                    await session.generate_reply(
-                        instructions=(
-                            f"Search completed. Here are the results:\n\n{result}\n\n"
-                            "Summarize these concisely for the user in 2-3 sentences."
-                        )
-                    )
-                except Exception as e:
-                    logger.exception("Background Exa search failed")
-                    await session.generate_reply(
-                        instructions=f"Search failed: {e!s}. Apologize briefly and offer to try again."
-                    )
+    @function_tool(
+        description="Search the web for research, news, facts, or detailed information. Use when the user needs external data to inform a decision.",
+    )
+    async def search_web(self, context: RunContext, query: str) -> str:
+        """Search Exa and return results for the LLM to summarize."""
+        return await asyncio.to_thread(do_search_web, query)
 
-            asyncio.create_task(_run_and_follow_up())
-            return "Searching... I'll get back to you with the results in a moment."
-        return await asyncio.to_thread(_do_exa_search, query)
+    @function_tool(
+        description="Log a note, track project progress, or record a decision for future recall. Use when the user wants to save something for later.",
+    )
+    async def log_feedback(self, context: RunContext, content: str, project: str = "") -> str:
+        """Log feedback/notes to memory. Stub: returns placeholder until Notion/DB integration."""
+        return await asyncio.to_thread(do_log_feedback, content, project)
 
 
 server = AgentServer()
@@ -162,9 +103,10 @@ server = AgentServer()
 
 @server.rtc_session(agent_name="clarte")
 async def entrypoint(ctx: agents.JobContext) -> None:
+    """Single entrypoint: Executive Assistant only. No agent routing."""
     logger.info("entrypoint started")
     meta = _parse_metadata(getattr(ctx, "job", None))
-    voice, mode, tier = meta["voice"], meta["mode"], meta["tier"]
+    voice, mode = meta["voice"], meta["mode"]
 
     auto_sub = AutoSubscribe.AUDIO_ONLY if mode == "casual" else AutoSubscribe.SUBSCRIBE_ALL
     await ctx.connect(auto_subscribe=auto_sub)
@@ -198,20 +140,15 @@ async def entrypoint(ctx: agents.JobContext) -> None:
         ),
     )
     room_opts = room_io.RoomOptions(video_input=(mode == "expert"))
-    agent = GuideAgent() if tier == "tier1" else ClarteAgent(mode=mode, tier=tier)
-    logger.info(
-        "Starting session with OpenAI Realtime API (model=gpt-realtime, voice=%s, mode=%s, tier=%s)",
-        voice,
-        mode,
-        tier,
-    )
+    agent = ExecutiveAssistantAgent()
+    logger.info("Starting Executive Assistant session (voice=%s, mode=%s)", voice, mode)
     await session.start(
         room=room,
         agent=agent,
         room_options=room_opts,
     )
     await session.generate_reply(
-        instructions="Greet the user. Say: Hello, how's it going?"
+        instructions="Greet in one short sentence. Jarvis-style: minimal, direct. Ask what they need."
     )
 
     await asyncio.Future()

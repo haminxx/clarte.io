@@ -5,3 +5,4 @@ exa-py
 python-dotenv
 fastapi
 uvicorn[standard]
+websockets

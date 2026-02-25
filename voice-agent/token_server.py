@@ -1,6 +1,7 @@
 """
 Token server: issues LiveKit access tokens for the frontend.
 Run with the agent on Render so the frontend can get a token and join a room.
+Also provides /realtime WebSocket for Tier 1 (voice-only, no LiveKit).
 """
 import json
 import os
@@ -8,7 +9,7 @@ import uuid
 from typing import Optional
 
 from dotenv import load_dotenv
-from fastapi import Body, FastAPI, HTTPException
+from fastapi import Body, FastAPI, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -30,7 +31,6 @@ VALID_VOICES = frozenset({"alloy", "ash", "ballad", "coral", "echo", "marin", "s
 
 
 VALID_MODES = frozenset({"casual", "expert", "research"})
-VALID_TIERS = frozenset({"auto", "tier1", "tier2", "tier3"})
 
 
 class TokenRequest(BaseModel):
@@ -38,12 +38,20 @@ class TokenRequest(BaseModel):
     room_name: Optional[str] = None
     voice: Optional[str] = None
     mode: Optional[str] = None
-    tier: Optional[str] = None
 
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.websocket("/realtime")
+async def realtime_websocket(websocket: WebSocket):
+    """Tier 1: Voice-only relay to OpenAI Realtime API. No LiveKit."""
+    await websocket.accept()
+    from realtime_relay import handle_realtime_websocket
+
+    await handle_realtime_websocket(websocket)
 
 
 @app.post("/token")
@@ -54,12 +62,10 @@ def get_token(body: Optional[TokenRequest] = Body(None)):
 
     identity = body.identity if body else None
     room_name = body.room_name if body else None
-    raw_voice = (body.voice if body else None) or "marin"
-    voice = raw_voice if raw_voice in VALID_VOICES else "marin"
+    raw_voice = (body.voice if body else None) or "cedar"
+    voice = raw_voice if raw_voice in VALID_VOICES else "cedar"
     raw_mode = (body.mode if body else None) or "expert"
     mode = raw_mode if raw_mode in VALID_MODES else "expert"
-    raw_tier = (body.tier if body else None) or "auto"
-    tier = raw_tier if raw_tier in VALID_TIERS else "auto"
 
     try:
         from livekit.api import (
@@ -79,7 +85,7 @@ def get_token(body: Optional[TokenRequest] = Body(None)):
                 agents=[
                     RoomAgentDispatch(
                         agent_name="clarte",
-                        metadata=json.dumps({"voice": voice, "mode": mode, "tier": tier}),
+                        metadata=json.dumps({"voice": voice, "mode": mode}),
                     )
                 ],
             ),

@@ -1,6 +1,9 @@
 # Clarte Voice Agent
 
-LiveKit agent using OpenAI Realtime API + Exa. Runs with a token server so the frontend can get LiveKit tokens.
+Executive Assistant voice agent with two paths:
+
+- **Tier 1 (voice-only):** Browser connects to `/realtime` WebSocket relay. No LiveKit. Tools (Exa, stubs) run on relay.
+- **Tier 2/3 (screen share, camera):** Browser connects to LiveKit; Python agent joins. Uses same tools.
 
 ## Environment check (frontend vs backend)
 
@@ -10,7 +13,11 @@ LiveKit agent using OpenAI Realtime API + Exa. Runs with a token server so the f
 | **NEXT_PUBLIC_VOICE_AGENT_URL** | Frontend (e.g. `.env.local`, GitHub Actions secrets) | Browser – where to get the token (e.g. `https://your-app.onrender.com`, no trailing slash) |
 | **LIVEKIT_URL** | Backend only (`voice-agent/.env` or Render env) | Agent + token server – same WebSocket URL as above |
 | **LIVEKIT_API_KEY**, **LIVEKIT_API_SECRET** | Backend only (never in frontend) | Token server + agent – to issue tokens and register with LiveKit |
-| **OPENAI_API_KEY**, **EXA_API_KEY** | Backend only (never in frontend) | Agent – Realtime API and Exa search |
+| **OPENAI_API_KEY**, **EXA_API_KEY** | Backend only (never in frontend) | Agent + relay – Realtime API and Exa search |
+
+**Tier 1 only:** `OPENAI_API_KEY`, `EXA_API_KEY`, `NEXT_PUBLIC_VOICE_AGENT_URL`. No LiveKit needed.
+
+**Tier 2/3:** Add `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `NEXT_PUBLIC_LIVEKIT_URL`.
 
 Frontend vars are baked in at **build time** (Next.js). Backend vars are read at **runtime** by the Python process.
 
