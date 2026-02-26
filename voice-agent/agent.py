@@ -17,34 +17,20 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 EXECUTIVE_ASSISTANT_PROMPT = """
-You are an elite Executive Assistant — a proactive, talking secretary for your boss.
+You are Clarte, an elite Executive Assistant — proactive, concise, and direct.
 
-## Persona & Interaction Loop
+## Language & Speed
+- Always respond in English unless the user explicitly asks for another language.
+- Keep answers under 1–2 short sentences for speed. Avoid filler.
 
-1. **Proactive Briefing**: Start conversations by asking for attention on priorities. Summarize what needs to be done today. Don't wait to be asked — surface what matters.
+## When to use tools
+- **search_web**: Only when the user clearly needs research, news, facts, or detailed external information. Say "Let me look that up for you" in one short sentence, then call the tool. Summarize results briefly.
+- **check_schedule**: When they ask about availability, meeting times, or rescheduling.
+- **log_feedback**: When they want to save a note or record a decision.
+- **request_screen_share**: When the user asks you to look at their screen, see what's on their screen, or help with something on their display. Call this once; the user will see a prompt to allow screen share.
+- **request_camera**: When the user asks you to see them, see their camera, watch their drawing, or look at something in front of their camera. Call this once; the user will see a prompt to allow camera.
 
-2. **Feedback & Strategy**: You don't just take orders. When your boss proposes a plan (e.g., a timeline for a hardware prototype, balancing coursework with internship applications), you:
-   - Identify missing steps
-   - Point out flaws and risks
-   - Suggest improvements
-   Be direct but respectful. You're trusted to push back.
-
-3. **Research & Sourcing**: When decisions require information, present your research. Say: "Here is what I found regarding X, and based on these sources, here are your options." Use search_web for facts, regulations, market info, and competitive intelligence.
-
-## Tools
-
-Route intents to the correct tool without breaking character:
-- **check_schedule**: When they ask about availability, propose meeting times, or need to move/reschedule events.
-- **search_web**: When they need research, facts, news, or external information to inform a decision.
-- **log_feedback**: When they want to record a note, track project progress, or log a decision for future recall.
-
-Use tools naturally as part of the conversation. After using a tool, summarize the result in your voice and continue the dialogue.
-
-## Style
-
-- Concise. Professional but warm.
-- Proactive. Anticipate needs.
-- Honest. Give pushback when it helps.
+Use request_screen_share and request_camera only when the user explicitly asks to show you their screen or camera. Do not call them proactively.
 """
 
 VALID_VOICES = {"alloy", "ash", "ballad", "coral", "echo", "marin", "sage", "shimmer", "verse", "cedar"}
@@ -71,10 +57,43 @@ from tools import do_check_schedule, do_log_feedback, do_search_web
 
 
 class ExecutiveAssistantAgent(Agent):
-    """Single unified Executive Assistant with schedule, search, and memory tools."""
+    """Single unified Executive Assistant with schedule, search, memory, and screen/camera request tools."""
 
-    def __init__(self) -> None:
+    def __init__(self, room) -> None:
         super().__init__(instructions=EXECUTIVE_ASSISTANT_PROMPT)
+        self._room = room
+
+    @function_tool(
+        description="Ask the user to share their screen so you can see what is on their display. Use when they ask you to look at their screen, see what's on their screen, or help with something visible on their display.",
+    )
+    async def request_screen_share(self, context: RunContext) -> str:
+        """Send a request to the frontend to prompt the user to enable screen share."""
+        try:
+            await self._room.local_participant.publish_data(
+                json.dumps({"type": "request_screen_share"}),
+                reliable=True,
+            )
+            logger.info("Sent request_screen_share to client")
+            return "Request sent. Ask the user to allow screen share when they see the prompt, then describe what they see or wait for the video."
+        except Exception as e:
+            logger.exception("request_screen_share failed: %s", e)
+            return "Could not send the request. Ask the user to share their screen manually if their app supports it."
+
+    @function_tool(
+        description="Ask the user to turn on their camera so you can see them or what is in front of the camera (e.g. a drawing, whiteboard). Use when they ask you to see them, see their camera, or watch their drawing.",
+    )
+    async def request_camera(self, context: RunContext) -> str:
+        """Send a request to the frontend to prompt the user to enable camera."""
+        try:
+            await self._room.local_participant.publish_data(
+                json.dumps({"type": "request_camera"}),
+                reliable=True,
+            )
+            logger.info("Sent request_camera to client")
+            return "Request sent. Ask the user to allow camera when they see the prompt, then they can show you their drawing or themselves."
+        except Exception as e:
+            logger.exception("request_camera failed: %s", e)
+            return "Could not send the request. Ask the user to turn on their camera manually if possible."
 
     @function_tool(
         description="Check the boss's calendar availability. Use when they ask about free slots, propose meeting times, or need to move/reschedule events.",
@@ -108,7 +127,7 @@ async def entrypoint(ctx: agents.JobContext) -> None:
     meta = _parse_metadata(getattr(ctx, "job", None))
     voice, mode = meta["voice"], meta["mode"]
 
-    auto_sub = AutoSubscribe.AUDIO_ONLY if mode == "casual" else AutoSubscribe.SUBSCRIBE_ALL
+    auto_sub = AutoSubscribe.SUBSCRIBE_ALL  # receive audio + screen/camera when user enables them
     await ctx.connect(auto_subscribe=auto_sub)
     room = ctx.room
 
@@ -139,8 +158,8 @@ async def entrypoint(ctx: agents.JobContext) -> None:
             turn_detection=turn_detection,
         ),
     )
-    room_opts = room_io.RoomOptions(video_input=(mode == "expert"))
-    agent = ExecutiveAssistantAgent()
+    room_opts = room_io.RoomOptions(video_input=True)  # allow video when user enables screen/camera
+    agent = ExecutiveAssistantAgent(room=room)
     logger.info("Starting Executive Assistant session (voice=%s, mode=%s)", voice, mode)
     await session.start(
         room=room,

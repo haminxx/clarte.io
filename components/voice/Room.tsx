@@ -2,15 +2,22 @@
 
 /**
  * Clarte Voice – LiveKit + Clarte agent.
- * Fetches token from VOICE_AGENT_URL/token (Render) when set, else /api/token (local Next.js).
- * Connects to LiveKit; agent joins and speaks.
- * Supports voice-only, voice-with-screen (screen share), and voice-with-screen-camera modes.
+ * Single pipeline: voice-only by default. Screen share and camera are enabled only when
+ * the agent requests them via data messages (user sees a modal and can Allow or Deny).
  */
 import React, { useCallback, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { PhoneOff, Loader2, Phone, Monitor, Video } from "lucide-react"
-import { LiveKitRoom, RoomAudioRenderer, useLocalParticipant } from "@livekit/components-react"
+import { LiveKitRoom, RoomAudioRenderer, useLocalParticipant, useDataChannel } from "@livekit/components-react"
 import { useKrispNoiseFilter } from "@livekit/components-react/krisp"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 export type CallMode = "voice-only" | "voice-with-screen" | "voice-with-screen-camera" | "voice-with-camera"
 
@@ -79,6 +86,19 @@ function RoomInner({
     useLocalParticipant()
   const [screenSharePending, setScreenSharePending] = useState(false)
   const [cameraPending, setCameraPending] = useState(false)
+  const [showScreenShareRequest, setShowScreenShareRequest] = useState(false)
+  const [showCameraRequest, setShowCameraRequest] = useState(false)
+
+  useDataChannel((msg) => {
+    try {
+      const text = new TextDecoder().decode(msg.payload)
+      const data = JSON.parse(text) as { type?: string }
+      if (data?.type === "request_screen_share") setShowScreenShareRequest(true)
+      if (data?.type === "request_camera") setShowCameraRequest(true)
+    } catch {
+      /* ignore */
+    }
+  })
 
   React.useEffect(() => {
     if (microphoneTrack && krisp) {
@@ -130,37 +150,99 @@ function RoomInner({
     }
   }, [localParticipant, isCameraEnabled])
 
+  const handleAllowScreenShare = useCallback(async () => {
+    setShowScreenShareRequest(false)
+    if (!localParticipant) return
+    setScreenSharePending(true)
+    try {
+      await localParticipant.setScreenShareEnabled(true)
+    } catch (e) {
+      console.warn("[Clarte Voice] Screen share failed:", e)
+    } finally {
+      setScreenSharePending(false)
+    }
+  }, [localParticipant])
+
+  const handleAllowCamera = useCallback(async () => {
+    setShowCameraRequest(false)
+    if (!localParticipant) return
+    setCameraPending(true)
+    try {
+      await localParticipant.setCameraEnabled(true)
+    } catch (e) {
+      console.warn("[Clarte Voice] Camera failed:", e)
+    } finally {
+      setCameraPending(false)
+    }
+  }, [localParticipant])
+
   return (
     <div className="flex flex-col items-center gap-4 py-4">
       <RoomAudioRenderer />
       <p className="text-sm text-muted-foreground">
         In call with Assistant {!isMicrophoneEnabled && "(mic off — check permissions)"}
-        {withScreen && isScreenShareEnabled && " · Screen shared"}
-        {withCamera && isCameraEnabled && " · Camera on"}
+        {isScreenShareEnabled && " · Screen shared"}
+        {isCameraEnabled && " · Camera on"}
       </p>
+      <Dialog open={showScreenShareRequest} onOpenChange={setShowScreenShareRequest}>
+        <DialogContent showCloseButton={true}>
+          <DialogHeader>
+            <DialogTitle>Share your screen?</DialogTitle>
+            <DialogDescription>
+              Clarte would like to see your screen to help you. Allow to share your display.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowScreenShareRequest(false)}>
+              Not now
+            </Button>
+            <Button onClick={handleAllowScreenShare} disabled={screenSharePending}>
+              {screenSharePending ? "Starting…" : "Allow"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={showCameraRequest} onOpenChange={setShowCameraRequest}>
+        <DialogContent showCloseButton={true}>
+          <DialogHeader>
+            <DialogTitle>Turn on camera?</DialogTitle>
+            <DialogDescription>
+              Clarte would like to see your camera (e.g. to see your drawing). Allow to turn on your camera.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCameraRequest(false)}>
+              Not now
+            </Button>
+            <Button onClick={handleAllowCamera} disabled={cameraPending}>
+              {cameraPending ? "Starting…" : "Allow"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <div className="flex items-center gap-2">
-        {withScreen && (
+        {isScreenShareEnabled && (
           <Button
-            variant={isScreenShareEnabled ? "default" : "outline"}
+            variant="default"
             size="sm"
             onClick={toggleScreenShare}
             disabled={screenSharePending}
             className="gap-2"
           >
             <Monitor className="h-4 w-4" />
-            {isScreenShareEnabled ? "Stop sharing" : "Share screen"}
+            Stop sharing
           </Button>
         )}
-        {withCamera && (
+        {isCameraEnabled && (
           <Button
-            variant={isCameraEnabled ? "default" : "outline"}
+            variant="default"
             size="sm"
             onClick={toggleCamera}
             disabled={cameraPending}
             className="gap-2"
           >
             <Video className="h-4 w-4" />
-            {isCameraEnabled ? "Camera off" : "Camera on"}
+            Camera off
           </Button>
         )}
         <Button variant="outline" size="sm" onClick={onDisconnect} className="gap-2">
@@ -211,12 +293,11 @@ async function fetchToken(
 
 interface RoomProps {
   mode?: CallMode
-  tier?: TierPreset
   autoStart?: boolean
   onDisconnect?: () => void
 }
 
-export function Room({ mode = "voice-only", tier = "auto", autoStart = false, onDisconnect }: RoomProps) {
+export function Room({ mode = "voice-only", autoStart = false, onDisconnect }: RoomProps) {
   const [token, setToken] = useState<string | null>(null)
   const [roomName, setRoomName] = useState<string | null>(null)
   const [status, setStatus] = useState<"idle" | "starting" | "active" | "error">("idle")

@@ -3,22 +3,19 @@
 import { useState } from "react"
 import Link from "next/link"
 import { ParticleOrb } from "./particle-orb"
-import { Room, type CallMode } from "@/components/voice/Room"
+import { Room } from "@/components/voice/Room"
 import { VoiceCard } from "@/components/voice-card"
 import { Button } from "@/components/ui/button"
 
 export function HeroSection() {
-  const [callMode, setCallMode] = useState<CallMode | null>(null)
   const [inCall, setInCall] = useState(false)
 
-  const handleStartCall = (mode: CallMode) => {
-    setCallMode(mode)
+  const handleStartCall = () => {
     setInCall(true)
   }
 
   const handleDisconnect = () => {
     setInCall(false)
-    setCallMode(null)
   }
 
   return (
@@ -72,8 +69,8 @@ export function HeroSection() {
           <ParticleOrb />
         </div>
         <div className="relative z-20 w-full max-w-lg">
-          {inCall && callMode ? (
-            <Room mode={callMode} autoStart onDisconnect={handleDisconnect} />
+          {inCall ? (
+            <Room mode="voice-only" autoStart onDisconnect={handleDisconnect} />
           ) : (
             <VoiceCard onStartCall={handleStartCall} isActive={false} />
           )}
