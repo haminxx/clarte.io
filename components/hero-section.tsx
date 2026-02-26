@@ -4,7 +4,6 @@ import { useState } from "react"
 import Link from "next/link"
 import { ParticleOrb } from "./particle-orb"
 import { Room, type CallMode } from "@/components/voice/Room"
-import { VoiceRoomDirect } from "@/components/voice/VoiceRoomDirect"
 import { VoiceCard } from "@/components/voice-card"
 import { Button } from "@/components/ui/button"
 
@@ -74,11 +73,7 @@ export function HeroSection() {
         </div>
         <div className="relative z-20 w-full max-w-lg">
           {inCall && callMode ? (
-            callMode === "voice-only" ? (
-              <VoiceRoomDirect autoStart onDisconnect={handleDisconnect} />
-            ) : (
-              <Room mode={callMode} autoStart onDisconnect={handleDisconnect} />
-            )
+            <Room mode={callMode} autoStart onDisconnect={handleDisconnect} />
           ) : (
             <VoiceCard onStartCall={handleStartCall} isActive={false} />
           )}

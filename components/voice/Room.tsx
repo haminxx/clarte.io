@@ -255,10 +255,15 @@ export function Room({ mode = "voice-only", tier = "auto", autoStart = false, on
     const baseUrl = VOICE_AGENT_URL?.replace(/\/$/, "") ?? ""
     const tokenUrl = baseUrl ? `${baseUrl}/token` : "/api/token"
     if (baseUrl) {
+      console.log("[Clarte Voice] Using Render token server:", tokenUrl)
+    } else {
+      console.log("[Clarte Voice] Using local /api/token for dev")
+    }
+    if (baseUrl) {
       try {
         await fetch(`${baseUrl}/health`)
       } catch {
-        /* ignore */
+        /* ignore warmup failures */
       }
     }
     try {
