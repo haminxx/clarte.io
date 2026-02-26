@@ -7,7 +7,9 @@
  */
 import React, { useCallback, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { PhoneOff, Loader2, Phone, Monitor, Video } from "lucide-react"
+import { PhoneOff, Loader2, Phone, Play, Monitor, Video } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { VOICE_OPTIONS } from "@/components/voice-card"
 import { LiveKitRoom, RoomAudioRenderer, useLocalParticipant, useDataChannel } from "@livekit/components-react"
 import { useKrispNoiseFilter } from "@livekit/components-react/krisp"
 import {
@@ -32,13 +34,15 @@ function RoomInnerKrispProvider({
   onDisconnect,
   withScreen,
   withCamera,
+  compact,
 }: {
   onDisconnect: () => void
   withScreen: boolean
   withCamera: boolean
+  compact?: boolean
 }) {
   const krisp = useKrispNoiseFilter()
-  return <RoomInner onDisconnect={onDisconnect} withScreen={withScreen} withCamera={withCamera} krisp={krisp} />
+  return <RoomInner onDisconnect={onDisconnect} withScreen={withScreen} withCamera={withCamera} krisp={krisp} compact={compact} />
 }
 
 class KrispErrorBoundary extends React.Component<
@@ -58,14 +62,15 @@ function RoomInnerWithKrisp(props: {
   withScreen: boolean
   withCamera: boolean
   useKrisp: boolean
+  compact?: boolean
 }) {
-  const { useKrisp, ...innerProps } = props
+  const { useKrisp, compact, ...innerProps } = props
   if (!useKrisp) {
-    return <RoomInner {...innerProps} krisp={null} />
+    return <RoomInner {...innerProps} krisp={null} compact={compact} />
   }
   return (
-    <KrispErrorBoundary fallback={<RoomInner {...innerProps} krisp={null} />}>
-      <RoomInnerKrispProvider {...innerProps} />
+    <KrispErrorBoundary fallback={<RoomInner {...innerProps} krisp={null} compact={compact} />}>
+      <RoomInnerKrispProvider {...innerProps} compact={compact} />
     </KrispErrorBoundary>
   )
 }
@@ -76,11 +81,13 @@ function RoomInner({
   withScreen,
   withCamera,
   krisp,
+  compact,
 }: {
   onDisconnect: () => void
   withScreen: boolean
   withCamera: boolean
   krisp: { setNoiseFilterEnabled: (v: boolean) => Promise<void> } | null
+  compact?: boolean
 }) {
   const { localParticipant, isMicrophoneEnabled, microphoneTrack, isScreenShareEnabled, isCameraEnabled } =
     useLocalParticipant()
@@ -177,13 +184,15 @@ function RoomInner({
   }, [localParticipant])
 
   return (
-    <div className="flex flex-col items-center gap-4 py-4">
+    <div className={compact ? "flex items-center gap-2" : "flex flex-col items-center gap-4 py-4"}>
       <RoomAudioRenderer />
-      <p className="text-sm text-muted-foreground">
-        In call with Assistant {!isMicrophoneEnabled && "(mic off — check permissions)"}
-        {isScreenShareEnabled && " · Screen shared"}
-        {isCameraEnabled && " · Camera on"}
-      </p>
+      {!compact && (
+        <p className="text-sm text-muted-foreground">
+          In call with Assistant {!isMicrophoneEnabled && "(mic off — check permissions)"}
+          {isScreenShareEnabled && " · Screen shared"}
+          {isCameraEnabled && " · Camera on"}
+        </p>
+      )}
       <Dialog open={showScreenShareRequest} onOpenChange={setShowScreenShareRequest}>
         <DialogContent showCloseButton={true}>
           <DialogHeader>
@@ -297,9 +306,21 @@ interface RoomProps {
   voice?: string
   autoStart?: boolean
   onDisconnect?: () => void
+  /** When true, use VoiceCard-style layout (header, badge, voice toggle) for idle/starting/active. */
+  cardLayout?: boolean
+  selectedVoiceId?: string
+  onVoiceChange?: (voiceId: string) => void
 }
 
-export function Room({ mode = "voice-only", voice, autoStart = false, onDisconnect }: RoomProps) {
+export function Room({
+  mode = "voice-only",
+  voice,
+  autoStart = false,
+  onDisconnect,
+  cardLayout = false,
+  selectedVoiceId = "cedar",
+  onVoiceChange,
+}: RoomProps) {
   const [token, setToken] = useState<string | null>(null)
   const [roomName, setRoomName] = useState<string | null>(null)
   const [status, setStatus] = useState<"idle" | "starting" | "active" | "error">("idle")
@@ -373,7 +394,91 @@ export function Room({ mode = "voice-only", voice, autoStart = false, onDisconne
     }
   }, [autoStart, configured, status, startCall])
 
+  const cardHeader = (
+    <div className="mb-6 flex items-center justify-between">
+      <p className="text-foreground/80">
+        Welcome to Clarte — your Executive Assistant.
+      </p>
+      <div className="flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5">
+        <div
+          className={`h-2 w-2 rounded-full bg-emerald-400 ${status === "active" ? "animate-[clarte-pulse_1.5s_ease-in-out_infinite]" : ""}`}
+        />
+        <span className="text-sm text-muted-foreground">
+          {status === "starting" ? "Connecting…" : status === "active" ? "Active" : "Ready"}
+        </span>
+      </div>
+    </div>
+  )
+
+  const voiceToggle = (
+    <div
+      role="group"
+      aria-label="Voice selection"
+      className={cn(
+        "inline-flex rounded-full bg-muted/50 p-1 ring-1 ring-border/50 shadow-sm",
+        (status === "starting" || status === "active") && "opacity-60 pointer-events-none"
+      )}
+    >
+      {VOICE_OPTIONS.map(({ name, voiceId }) => (
+        <button
+          key={voiceId}
+          type="button"
+          onClick={() => (status !== "starting" && status !== "active") && onVoiceChange?.(voiceId)}
+          aria-pressed={selectedVoiceId === voiceId}
+          aria-label={`Voice: ${name}`}
+          disabled={status === "starting" || status === "active"}
+          className={cn(
+            "relative px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
+            selectedVoiceId === voiceId
+              ? "bg-primary text-primary-foreground shadow-md"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          )}
+        >
+          {name}
+        </button>
+      ))}
+    </div>
+  )
+
   if (status === "active" && token && roomName) {
+    if (cardLayout) {
+      return (
+        <>
+          {cardHeader}
+          <div className="space-y-3">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Start with voice. Ask Clarte to see your screen or camera when you need it.
+            </p>
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+              <div className="flex items-center gap-3">{voiceToggle}</div>
+              <LiveKitRoom
+                serverUrl={LIVEKIT_URL}
+                token={token}
+                connect={true}
+                audio={true}
+                video={false}
+                onDisconnected={disconnect}
+                onError={(err) => {
+                  setToken(null)
+                  setRoomName(null)
+                  setStatus("error")
+                  setError(err?.message ?? "Connection error")
+                }}
+                className="flex items-center gap-2"
+              >
+                <RoomInnerWithKrisp
+                  onDisconnect={disconnect}
+                  withScreen={withScreen}
+                  withCamera={withCamera}
+                  useKrisp={useKrisp}
+                  compact
+                />
+              </LiveKitRoom>
+            </div>
+          </div>
+        </>
+      )
+    }
     return (
       <div className="w-full max-w-lg rounded-2xl border border-border bg-card/90 p-4 sm:p-6 shadow-2xl backdrop-blur-md mx-auto">
         <LiveKitRoom
@@ -394,6 +499,52 @@ export function Room({ mode = "voice-only", voice, autoStart = false, onDisconne
           <RoomInnerWithKrisp onDisconnect={disconnect} withScreen={withScreen} withCamera={withCamera} useKrisp={useKrisp} />
         </LiveKitRoom>
       </div>
+    )
+  }
+
+  if (cardLayout) {
+    return (
+      <>
+        {cardHeader}
+        <div className="space-y-3">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Start with voice. Ask Clarte to see your screen or camera when you need it.
+          </p>
+          <div className="flex flex-col items-center gap-4 py-2">
+            {error && (
+              <p className="text-sm text-destructive text-center">{error}</p>
+            )}
+            <div className="flex flex-wrap items-center justify-between gap-3 w-full">
+              <div className="flex items-center gap-3">{voiceToggle}</div>
+              <div className="flex items-center gap-2">
+                {autoStart && onDisconnect && (
+                  <Button variant="outline" size="sm" onClick={onDisconnect} className="gap-2">
+                    <PhoneOff className="h-4 w-4" />
+                    Back
+                  </Button>
+                )}
+                <Button
+                  onClick={startCall}
+                  disabled={!configured || status === "starting"}
+                  className="gap-2 h-12 px-6 rounded-full"
+                >
+                  {status === "starting" ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Play className="h-4 w-4" />
+                  )}
+                  {status === "starting" ? "Connecting…" : "Connect to Assistant"}
+                </Button>
+              </div>
+            </div>
+          </div>
+          {!configured && (
+            <p className="text-xs text-muted-foreground text-center max-w-xs mt-2">
+              Set NEXT_PUBLIC_LIVEKIT_URL. For hosted (Firebase), also set NEXT_PUBLIC_VOICE_AGENT_URL to your Render token server URL.
+            </p>
+          )}
+        </div>
+      </>
     )
   }
 

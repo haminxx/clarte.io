@@ -19,13 +19,13 @@ interface VoiceCardProps {
 
 export function VoiceCard({ onStartCall, isActive, selectedVoiceId = "cedar", onVoiceChange }: VoiceCardProps) {
   return (
-    <div className="w-full max-w-lg rounded-2xl border border-border bg-card/90 p-4 sm:p-6 shadow-2xl backdrop-blur-md mx-auto">
+    <>
       <div className="mb-6 flex items-center justify-between">
         <p className="text-foreground/80">
           Welcome to Clarte — your Executive Assistant.
         </p>
         <div className="flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5">
-          <div className={`h-2 w-2 rounded-full ${isActive ? "bg-emerald-400 animate-pulse" : "bg-emerald-400"}`} />
+          <div className={`h-2 w-2 rounded-full bg-emerald-400 ${isActive ? "animate-[clarte-pulse_1.5s_ease-in-out_infinite]" : ""}`} />
           <span className="text-sm text-muted-foreground">{isActive ? "Active" : "Ready"}</span>
         </div>
       </div>
@@ -36,7 +36,6 @@ export function VoiceCard({ onStartCall, isActive, selectedVoiceId = "cedar", on
         </p>
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
           <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground">Voice:</span>
             <div
               role="group"
               aria-label="Voice selection"
@@ -72,6 +71,6 @@ export function VoiceCard({ onStartCall, isActive, selectedVoiceId = "cedar", on
           </Button>
         </div>
       </div>
-    </div>
+    </>
   )
 }

@@ -86,3 +86,34 @@ After deploy, copy the Render URL (e.g. `https://your-service.onrender.com`) and
 5. **Mic not working** – Grant microphone permission when prompted. If "mic off" appears, refresh and allow access before starting the call.
 
 6. **Out of memory** – Noise cancellation is disabled to reduce memory. If OOM persists, upgrade Render to a plan with more RAM (e.g. 2GB+).
+
+## Latency tuning (target: under 1 second)
+
+**Current latency:** ~1–3 seconds (OpenAI Realtime + ElevenLabs TTS pipeline).
+
+**Target:** Under 1 second for first response.
+
+### Latency sources
+
+1. **OpenAI Realtime:** Speech understanding + text generation.
+2. **ElevenLabs TTS:** Text → audio synthesis + streaming.
+3. **Network:** Render ↔ LiveKit ↔ client.
+4. **Turn detection:** When the model decides the user has finished speaking.
+
+### Options to explore
+
+| Option | Description | Expected impact |
+|--------|-------------|-----------------|
+| **Lower ElevenLabs streaming_latency** | Reduce from 2 to 0 or 1 in `agent.py`. Lower = faster first chunk, less buffering. | Moderate; may affect quality. |
+| **Use eleven_turbo_v2** | Switch from `eleven_flash_v2_5` to `eleven_turbo_v2` if available; optimized for low latency. | Moderate. |
+| **Switch back to OpenAI built-in voice** | Disable ElevenLabs when latency is critical; OpenAI Realtime is typically ~300–800 ms. | Large; trades voice quality for speed. |
+| **Shorter prompt** | Reduce `EXECUTIVE_ASSISTANT_PROMPT` size to cut input tokens. | Small. |
+| **Render region** | Run Render in a region close to LiveKit (e.g. same cloud/region). | Small–moderate. |
+| **Hybrid: OpenAI for quick replies, ElevenLabs for long** | Use OpenAI voice for short replies (< 2 sentences) and ElevenLabs for longer ones. | Complex; requires pipeline logic. |
+
+### Recommended order
+
+1. **Quick win:** Lower `streaming_latency` to 0 or 1 for ElevenLabs.
+2. **A/B test:** Compare OpenAI-only vs ElevenLabs; measure latency vs quality.
+3. **Model:** Try `eleven_turbo_v2` if the LiveKit plugin supports it.
+4. **Infrastructure:** Check Render region vs LiveKit region.

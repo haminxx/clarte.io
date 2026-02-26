@@ -70,16 +70,26 @@ export function HeroSection() {
           <ParticleOrb />
         </div>
         <div className="relative z-20 w-full max-w-lg">
-          {inCall ? (
-            <Room mode="voice-only" voice={selectedVoice} autoStart onDisconnect={handleDisconnect} />
-          ) : (
-            <VoiceCard
-              onStartCall={handleStartCall}
-              isActive={false}
-              selectedVoiceId={selectedVoice}
-              onVoiceChange={setSelectedVoice}
-            />
-          )}
+          <div className="w-full max-w-lg rounded-2xl border border-border bg-card/90 p-4 sm:p-6 shadow-2xl backdrop-blur-md mx-auto">
+            {inCall ? (
+              <Room
+                mode="voice-only"
+                voice={selectedVoice}
+                autoStart
+                onDisconnect={handleDisconnect}
+                cardLayout
+                selectedVoiceId={selectedVoice}
+                onVoiceChange={setSelectedVoice}
+              />
+            ) : (
+              <VoiceCard
+                onStartCall={handleStartCall}
+                isActive={false}
+                selectedVoiceId={selectedVoice}
+                onVoiceChange={setSelectedVoice}
+              />
+            )}
+          </div>
         </div>
       </div>
     </section>
