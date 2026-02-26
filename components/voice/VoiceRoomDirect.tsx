@@ -6,7 +6,7 @@
  */
 import React, { useCallback, useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { PhoneOff, Loader2 } from "lucide-react"
+import { PhoneOff, Loader2, Phone } from "lucide-react"
 
 const VOICE_AGENT_URL = process.env.NEXT_PUBLIC_VOICE_AGENT_URL ?? ""
 const RELAY_WS_URL = VOICE_AGENT_URL
