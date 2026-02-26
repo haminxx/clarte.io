@@ -67,8 +67,8 @@ def get_token(body: Optional[TokenRequest] = Body(None)):
 
     identity = body.identity if body else None
     room_name = body.room_name if body else None
-    raw_voice = (body.voice if body else None) or "cedar"
-    voice = raw_voice if raw_voice in VALID_VOICES else "cedar"
+    raw_voice = (body.voice if body else None) or "marin"
+    voice = raw_voice if raw_voice in VALID_VOICES else "marin"
     raw_mode = (body.mode if body else None) or "expert"
     mode = raw_mode if raw_mode in VALID_MODES else "expert"
     raw_language = (body.language if body else None) or "en"

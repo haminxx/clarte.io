@@ -277,7 +277,7 @@ async function fetchToken(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      voice: voice ?? "cedar",
+      voice: voice ?? "marin",
       mode: toAgentMode(mode),
       language: language === "ko" ? "ko" : "en",
     }),
@@ -327,7 +327,7 @@ export function Room({
   autoStart = false,
   onDisconnect,
   cardLayout = false,
-  selectedVoiceId = "cedar",
+  selectedVoiceId = "marin",
   onVoiceChange,
   selectedLanguage = "en",
   onLanguageChange,

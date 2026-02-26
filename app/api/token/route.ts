@@ -15,7 +15,7 @@ const VALID_MODES = new Set(["casual", "expert", "research"])
 const VALID_LANGUAGES = new Set(["en", "ko"])
 
 export async function POST(request: Request) {
-  let voice = "cedar"
+  let voice = "marin"
   let mode = "expert"
   let language = "en"
   try {

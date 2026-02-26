@@ -27,7 +27,7 @@ interface VoiceCardProps {
 export function VoiceCard({
   onStartCall,
   isActive,
-  selectedVoiceId = "cedar",
+  selectedVoiceId = "marin",
   onVoiceChange,
   selectedLanguage = "en",
   onLanguageChange,

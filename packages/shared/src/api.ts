@@ -17,7 +17,7 @@ export async function fetchClarteToken(
   baseUrl: string,
   options: { voice?: string; mode?: "casual" | "expert" } = {}
 ): Promise<TokenResponse> {
-  const { voice = "cedar", mode = "casual" } = options
+  const { voice = "marin", mode = "casual" } = options
   const tokenUrl = baseUrl ? `${baseUrl.replace(/\/$/, "")}/token` : "/api/token"
   const res = await fetch(tokenUrl, {
     method: "POST",

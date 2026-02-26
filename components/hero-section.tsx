@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 
 export function HeroSection() {
   const [inCall, setInCall] = useState(false)
-  const [selectedVoice, setSelectedVoice] = useState("cedar")
+  const [selectedVoice, setSelectedVoice] = useState("marin")
   const [selectedLanguage, setSelectedLanguage] = useState<"en" | "ko">("en")
 
   const handleStartCall = () => {
