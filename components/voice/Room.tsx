@@ -260,12 +260,13 @@ function toAgentMode(mode: CallMode): "casual" | "expert" {
 
 async function fetchToken(
   tokenUrl: string,
-  mode: CallMode
+  mode: CallMode,
+  voice?: string
 ): Promise<{ token: string; room: string } | { error: string }> {
   const res = await fetch(tokenUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ voice: "cedar", mode: toAgentMode(mode) }),
+    body: JSON.stringify({ voice: voice ?? "cedar", mode: toAgentMode(mode) }),
   })
   const raw = await res.text()
   if (!res.ok) {
@@ -293,11 +294,12 @@ async function fetchToken(
 
 interface RoomProps {
   mode?: CallMode
+  voice?: string
   autoStart?: boolean
   onDisconnect?: () => void
 }
 
-export function Room({ mode = "voice-only", autoStart = false, onDisconnect }: RoomProps) {
+export function Room({ mode = "voice-only", voice, autoStart = false, onDisconnect }: RoomProps) {
   const [token, setToken] = useState<string | null>(null)
   const [roomName, setRoomName] = useState<string | null>(null)
   const [status, setStatus] = useState<"idle" | "starting" | "active" | "error">("idle")
@@ -348,7 +350,7 @@ export function Room({ mode = "voice-only", autoStart = false, onDisconnect }: R
       }
     }
     try {
-      const result = await fetchToken(tokenUrl, mode)
+      const result = await fetchToken(tokenUrl, mode, voice)
       if ("error" in result) {
         setError(result.error)
         setStatus("error")

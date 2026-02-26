@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 
 export function HeroSection() {
   const [inCall, setInCall] = useState(false)
+  const [selectedVoice, setSelectedVoice] = useState("cedar")
 
   const handleStartCall = () => {
     setInCall(true)
@@ -70,9 +71,14 @@ export function HeroSection() {
         </div>
         <div className="relative z-20 w-full max-w-lg">
           {inCall ? (
-            <Room mode="voice-only" autoStart onDisconnect={handleDisconnect} />
+            <Room mode="voice-only" voice={selectedVoice} autoStart onDisconnect={handleDisconnect} />
           ) : (
-            <VoiceCard onStartCall={handleStartCall} isActive={false} />
+            <VoiceCard
+              onStartCall={handleStartCall}
+              isActive={false}
+              selectedVoiceId={selectedVoice}
+              onVoiceChange={setSelectedVoice}
+            />
           )}
         </div>
       </div>
