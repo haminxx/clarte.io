@@ -68,6 +68,19 @@ After deploy, copy the Render URL (e.g. `https://your-service.onrender.com`) and
 
 ## Troubleshooting
 
+### Agent doesn't respond (Ghost Call)
+
+If the button works but the agent never speaks or responds:
+
+1. **Render logs** – Render Dashboard → your service → Logs. Start a call and watch for:
+   - `entrypoint started` → agent received the job from LiveKit
+   - `participant_connected: <identity>` → agent sees the user in the room
+   - `Token issued for room=...` → token server received the request
+   - If you see `entrypoint started` but no `participant_connected` → agent runs but user never joins; check frontend token and `NEXT_PUBLIC_LIVEKIT_URL`
+   - If you see nothing → agent subprocess may not be starting; check Render env (`LIVEKIT_URL`, `OPENAI_API_KEY`, etc.)
+
+2. **ElevenLabs fallback** – If `ELEVEN_API_KEY` is set but invalid or expired, the agent will log `ElevenLabs init failed, falling back to OpenAI` and use OpenAI built-in voice instead. The agent will still join and respond.
+
 ### No audio from agent
 
 1. **Render logs** – Render Dashboard → your service → Logs. Start a call and watch for:

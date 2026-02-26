@@ -176,25 +176,32 @@ async def entrypoint(ctx: agents.JobContext) -> None:
         interrupt_response=True,
     )
 
-    # Use ElevenLabs TTS if ELEVEN_API_KEY is set; otherwise fall back to OpenAI built-in voice
+    # Use ElevenLabs TTS if ELEVEN_API_KEY is set; otherwise fall back to OpenAI built-in voice.
+    # If ElevenLabs init fails (invalid key, API error), fall back to OpenAI so agent still joins.
     use_elevenlabs = bool(os.environ.get("ELEVEN_API_KEY"))
     elevenlabs_voice_id = ELEVENLABS_VOICE_IDS.get(voice, ELEVENLABS_VOICE_IDS["cedar"])
+    session = None
 
     if use_elevenlabs:
-        session = AgentSession(
-            llm=openai.realtime.RealtimeModel(
-                model="gpt-realtime",
-                modalities=["text"],
-                turn_detection=turn_detection,
-            ),
-            tts=elevenlabs.TTS(
-                voice_id=elevenlabs_voice_id,
-                model="eleven_flash_v2_5",
-                streaming_latency=2,
-            ),
-        )
-        logger.info("Using ElevenLabs TTS (voice_id=%s)", elevenlabs_voice_id)
-    else:
+        try:
+            session = AgentSession(
+                llm=openai.realtime.RealtimeModel(
+                    model="gpt-realtime",
+                    modalities=["text"],
+                    turn_detection=turn_detection,
+                ),
+                tts=elevenlabs.TTS(
+                    voice_id=elevenlabs_voice_id,
+                    model="eleven_flash_v2_5",
+                    streaming_latency=2,
+                ),
+            )
+            logger.info("Using ElevenLabs TTS (voice_id=%s)", elevenlabs_voice_id)
+        except Exception as e:
+            logger.warning("ElevenLabs init failed, falling back to OpenAI: %s", e)
+            session = None
+
+    if session is None:
         session = AgentSession(
             llm=openai.realtime.RealtimeModel(
                 model="gpt-realtime",

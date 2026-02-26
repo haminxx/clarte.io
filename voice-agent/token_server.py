@@ -4,9 +4,12 @@ Run with the agent on Render so the frontend can get a token and join a room.
 Also provides /realtime WebSocket for Tier 1 (voice-only, no LiveKit).
 """
 import json
+import logging
 import os
 import uuid
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 from dotenv import load_dotenv
 from fastapi import Body, FastAPI, HTTPException, WebSocket
@@ -91,6 +94,8 @@ def get_token(body: Optional[TokenRequest] = Body(None)):
             ),
         )
 
-        return {"token": at.to_jwt(), "room": room}
+        token = at.to_jwt()
+        logger.info("Token issued for room=%s voice=%s mode=%s", room, voice, mode)
+        return {"token": token, "room": room}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

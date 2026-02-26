@@ -384,7 +384,7 @@ export function Room({
       setError(e instanceof Error ? e.message : "Failed to get token")
       setStatus("error")
     }
-  }, [mode])
+  }, [mode, voice])
 
   const configured = Boolean(LIVEKIT_URL)
 
@@ -457,8 +457,10 @@ export function Room({
                 connect={true}
                 audio={true}
                 video={false}
+                onConnected={() => console.log("[Clarte Voice] Connected to LiveKit room")}
                 onDisconnected={disconnect}
                 onError={(err) => {
+                  console.error("[Clarte Voice] LiveKit error:", err)
                   setToken(null)
                   setRoomName(null)
                   setStatus("error")
@@ -487,8 +489,10 @@ export function Room({
           connect={true}
           audio={true}
           video={false}
+          onConnected={() => console.log("[Clarte Voice] Connected to LiveKit room")}
           onDisconnected={disconnect}
           onError={(err) => {
+            console.error("[Clarte Voice] LiveKit error:", err)
             setToken(null)
             setRoomName(null)
             setStatus("error")
