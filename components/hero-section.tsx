@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 export function HeroSection() {
   const [inCall, setInCall] = useState(false)
   const [selectedVoice, setSelectedVoice] = useState("cedar")
+  const [selectedLanguage, setSelectedLanguage] = useState<"en" | "ko">("en")
 
   const handleStartCall = () => {
     setInCall(true)
@@ -75,11 +76,14 @@ export function HeroSection() {
               <Room
                 mode="voice-only"
                 voice={selectedVoice}
+                language={selectedLanguage}
                 autoStart
                 onDisconnect={handleDisconnect}
                 cardLayout
                 selectedVoiceId={selectedVoice}
                 onVoiceChange={setSelectedVoice}
+                selectedLanguage={selectedLanguage}
+                onLanguageChange={setSelectedLanguage}
               />
             ) : (
               <VoiceCard
@@ -87,6 +91,8 @@ export function HeroSection() {
                 isActive={false}
                 selectedVoiceId={selectedVoice}
                 onVoiceChange={setSelectedVoice}
+                selectedLanguage={selectedLanguage}
+                onLanguageChange={setSelectedLanguage}
               />
             )}
           </div>

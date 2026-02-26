@@ -34,6 +34,7 @@ VALID_VOICES = frozenset({"alloy", "ash", "ballad", "coral", "echo", "marin", "s
 
 
 VALID_MODES = frozenset({"casual", "expert", "research"})
+VALID_LANGUAGES = frozenset({"en", "ko"})
 
 
 class TokenRequest(BaseModel):
@@ -41,6 +42,7 @@ class TokenRequest(BaseModel):
     room_name: Optional[str] = None
     voice: Optional[str] = None
     mode: Optional[str] = None
+    language: Optional[str] = None
 
 
 @app.get("/health")
@@ -69,6 +71,8 @@ def get_token(body: Optional[TokenRequest] = Body(None)):
     voice = raw_voice if raw_voice in VALID_VOICES else "cedar"
     raw_mode = (body.mode if body else None) or "expert"
     mode = raw_mode if raw_mode in VALID_MODES else "expert"
+    raw_language = (body.language if body else None) or "en"
+    language = raw_language if raw_language in VALID_LANGUAGES else "en"
 
     try:
         from livekit.api import (
@@ -88,14 +92,14 @@ def get_token(body: Optional[TokenRequest] = Body(None)):
                 agents=[
                     RoomAgentDispatch(
                         agent_name="clarte",
-                        metadata=json.dumps({"voice": voice, "mode": mode}),
+                        metadata=json.dumps({"voice": voice, "mode": mode, "language": language}),
                     )
                 ],
             ),
         )
 
         token = at.to_jwt()
-        logger.info("Token issued for room=%s voice=%s mode=%s", room, voice, mode)
+        logger.info("Token issued for room=%s voice=%s mode=%s language=%s", room, voice, mode, language)
         return {"token": token, "room": room}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

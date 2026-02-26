@@ -10,14 +10,28 @@ export const VOICE_OPTIONS = [
   { name: "Cedar", voiceId: "cedar" },
 ] as const
 
+export const LANGUAGE_OPTIONS = [
+  { name: "EN", langId: "en" as const },
+  { name: "KO", langId: "ko" as const },
+] as const
+
 interface VoiceCardProps {
   onStartCall?: () => void
   isActive?: boolean
   selectedVoiceId?: string
   onVoiceChange?: (voiceId: string) => void
+  selectedLanguage?: "en" | "ko"
+  onLanguageChange?: (lang: "en" | "ko") => void
 }
 
-export function VoiceCard({ onStartCall, isActive, selectedVoiceId = "cedar", onVoiceChange }: VoiceCardProps) {
+export function VoiceCard({
+  onStartCall,
+  isActive,
+  selectedVoiceId = "cedar",
+  onVoiceChange,
+  selectedLanguage = "en",
+  onLanguageChange,
+}: VoiceCardProps) {
   return (
     <>
       <div className="mb-6 flex items-center justify-between">
@@ -36,6 +50,29 @@ export function VoiceCard({ onStartCall, isActive, selectedVoiceId = "cedar", on
         </p>
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
           <div className="flex items-center gap-3">
+            <div
+              role="group"
+              aria-label="Language selection"
+              className="inline-flex rounded-full bg-muted/50 p-1 ring-1 ring-border/50 shadow-sm"
+            >
+              {LANGUAGE_OPTIONS.map(({ name, langId }) => (
+                <button
+                  key={langId}
+                  type="button"
+                  onClick={() => onLanguageChange?.(langId)}
+                  aria-pressed={selectedLanguage === langId}
+                  aria-label={`Language: ${name}`}
+                  className={cn(
+                    "relative px-3 py-2 rounded-full text-sm font-medium transition-all duration-200",
+                    selectedLanguage === langId
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  )}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
             <div
               role="group"
               aria-label="Voice selection"

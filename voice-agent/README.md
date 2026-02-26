@@ -14,7 +14,8 @@ Executive Assistant voice agent with two paths:
 | **LIVEKIT_URL** | Backend only (`voice-agent/.env` or Render env) | Agent + token server – same WebSocket URL as above |
 | **LIVEKIT_API_KEY**, **LIVEKIT_API_SECRET** | Backend only (never in frontend) | Token server + agent – to issue tokens and register with LiveKit |
 | **OPENAI_API_KEY**, **EXA_API_KEY** | Backend only (never in frontend) | Agent + relay – Realtime API and Exa search |
-| **ELEVEN_API_KEY** | Backend only (optional) | Agent – ElevenLabs TTS for more realistic voice. If set, uses ElevenLabs instead of OpenAI built-in voice. |
+| **ELEVEN_API_KEY** | Backend only (optional) | Agent – ElevenLabs TTS for more realistic voice. If set and valid, uses ElevenLabs instead of OpenAI built-in voice. Pre-flight validation prevents runtime crashes from bad keys. |
+| **FORCE_OPENAI_VOICE** | Backend only (optional) | Set to `1`, `true`, or `yes` to always use OpenAI built-in voice (bypass ElevenLabs) for debugging. |
 
 **Tier 1 only:** `OPENAI_API_KEY`, `EXA_API_KEY`, `NEXT_PUBLIC_VOICE_AGENT_URL`. No LiveKit needed.
 
@@ -58,7 +59,7 @@ Frontend: set `NEXT_PUBLIC_VOICE_AGENT_URL=http://localhost:8080` and `NEXT_PUBL
    - `LIVEKIT_API_SECRET` (secret)
    - `OPENAI_API_KEY` (secret) — **Render only** (not needed in GitHub; agent runs on Render)
    - `EXA_API_KEY` (secret)
-   - `ELEVEN_API_KEY` (secret, optional) — ElevenLabs TTS for more realistic voice. Marin → Rachel, Cedar → Adam.
+   - `ELEVEN_API_KEY` (secret, optional) — ElevenLabs TTS for more realistic voice. Marin → Rachel, Cedar → Adam. Must have Text-to-Speech access. Pre-flight validation falls back to OpenAI if invalid.
 
 After deploy, copy the Render URL (e.g. `https://your-service.onrender.com`) and set:
 - **Frontend** `.env.local`: `NEXT_PUBLIC_VOICE_AGENT_URL=https://your-service.onrender.com` (no trailing slash)
@@ -79,7 +80,7 @@ If the button works but the agent never speaks or responds:
    - If you see `entrypoint started` but no `participant_connected` → agent runs but user never joins; check frontend token and `NEXT_PUBLIC_LIVEKIT_URL`
    - If you see nothing → agent subprocess may not be starting; check Render env (`LIVEKIT_URL`, `OPENAI_API_KEY`, etc.)
 
-2. **ElevenLabs fallback** – If `ELEVEN_API_KEY` is set but invalid or expired, the agent will log `ElevenLabs init failed, falling back to OpenAI` and use OpenAI built-in voice instead. The agent will still join and respond.
+2. **ElevenLabs fallback** – The agent validates `ELEVEN_API_KEY` before use (GET /v1/user). If invalid, expired, or lacking permissions, it logs `ElevenLabs key validation failed, using OpenAI voice` and uses OpenAI built-in voice. The agent will still join and respond. If init fails at runtime, it logs `ElevenLabs init failed, falling back to OpenAI`. Set `FORCE_OPENAI_VOICE=1` to bypass ElevenLabs entirely for debugging.
 
 ### No audio from agent
 
@@ -99,6 +100,20 @@ If the button works but the agent never speaks or responds:
 5. **Mic not working** – Grant microphone permission when prompted. If "mic off" appears, refresh and allow access before starting the call.
 
 6. **Out of memory** – Noise cancellation is disabled to reduce memory. If OOM persists, upgrade Render to a plan with more RAM (e.g. 2GB+).
+
+### ElevenLabs-specific issues
+
+- **Invalid key** – Ensure `ELEVEN_API_KEY` is set exactly (LiveKit plugin expects this name). The key must have Text-to-Speech access. Pre-flight validation calls ElevenLabs `/v1/user`; if it fails, the agent uses OpenAI voice.
+- **Voice ID** – Marin → Rachel, Cedar → Adam. Verify these IDs work for your ElevenLabs account.
+- **Force OpenAI** – Set `FORCE_OPENAI_VOICE=1` in Render env to always use OpenAI voice and rule out ElevenLabs as the cause.
+
+## Language support (English / Korean)
+
+The agent responds in the same language as the user. Supported languages: **English (en)** and **Korean (ko)**.
+
+- **Frontend toggle** – Use the EN | KO toggle next to the voice selector before connecting. The selected language is passed in the token metadata.
+- **Mid-call switch** – The user can say "speak Korean" or "한국어로 말해줘" and the agent will call `switch_to_korean` to update TTS. Similarly, "speak English" triggers `switch_to_english`.
+- **ElevenLabs** – When using ElevenLabs TTS, the `language` parameter is set from metadata (en/ko) for correct pronunciation. `eleven_flash_v2_5` supports Korean.
 
 ## Latency tuning (target: under 1 second)
 

@@ -9,7 +9,7 @@ import React, { useCallback, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { PhoneOff, Loader2, Phone, Play, Monitor, Video } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { VOICE_OPTIONS } from "@/components/voice-card"
+import { VOICE_OPTIONS, LANGUAGE_OPTIONS } from "@/components/voice-card"
 import { LiveKitRoom, RoomAudioRenderer, useLocalParticipant, useDataChannel } from "@livekit/components-react"
 import { useKrispNoiseFilter } from "@livekit/components-react/krisp"
 import {
@@ -270,12 +270,17 @@ function toAgentMode(mode: CallMode): "casual" | "expert" {
 async function fetchToken(
   tokenUrl: string,
   mode: CallMode,
-  voice?: string
+  voice?: string,
+  language?: string
 ): Promise<{ token: string; room: string } | { error: string }> {
   const res = await fetch(tokenUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ voice: voice ?? "cedar", mode: toAgentMode(mode) }),
+    body: JSON.stringify({
+      voice: voice ?? "cedar",
+      mode: toAgentMode(mode),
+      language: language === "ko" ? "ko" : "en",
+    }),
   })
   const raw = await res.text()
   if (!res.ok) {
@@ -304,22 +309,28 @@ async function fetchToken(
 interface RoomProps {
   mode?: CallMode
   voice?: string
+  language?: "en" | "ko"
   autoStart?: boolean
   onDisconnect?: () => void
   /** When true, use VoiceCard-style layout (header, badge, voice toggle) for idle/starting/active. */
   cardLayout?: boolean
   selectedVoiceId?: string
   onVoiceChange?: (voiceId: string) => void
+  selectedLanguage?: "en" | "ko"
+  onLanguageChange?: (lang: "en" | "ko") => void
 }
 
 export function Room({
   mode = "voice-only",
   voice,
+  language = "en",
   autoStart = false,
   onDisconnect,
   cardLayout = false,
   selectedVoiceId = "cedar",
   onVoiceChange,
+  selectedLanguage = "en",
+  onLanguageChange,
 }: RoomProps) {
   const [token, setToken] = useState<string | null>(null)
   const [roomName, setRoomName] = useState<string | null>(null)
@@ -371,7 +382,7 @@ export function Room({
       }
     }
     try {
-      const result = await fetchToken(tokenUrl, mode, voice)
+      const result = await fetchToken(tokenUrl, mode, voice, language)
       if ("error" in result) {
         setError(result.error)
         setStatus("error")
@@ -384,7 +395,7 @@ export function Room({
       setError(e instanceof Error ? e.message : "Failed to get token")
       setStatus("error")
     }
-  }, [mode, voice])
+  }, [mode, voice, language])
 
   const configured = Boolean(LIVEKIT_URL)
 
@@ -407,6 +418,36 @@ export function Room({
           {status === "starting" ? "Connecting…" : status === "active" ? "Active" : "Ready"}
         </span>
       </div>
+    </div>
+  )
+
+  const languageToggle = (
+    <div
+      role="group"
+      aria-label="Language selection"
+      className={cn(
+        "inline-flex rounded-full bg-muted/50 p-1 ring-1 ring-border/50 shadow-sm",
+        (status === "starting" || status === "active") && "opacity-60 pointer-events-none"
+      )}
+    >
+      {LANGUAGE_OPTIONS.map(({ name, langId }) => (
+        <button
+          key={langId}
+          type="button"
+          onClick={() => (status !== "starting" && status !== "active") && onLanguageChange?.(langId)}
+          aria-pressed={selectedLanguage === langId}
+          aria-label={`Language: ${name}`}
+          disabled={status === "starting" || status === "active"}
+          className={cn(
+            "relative px-3 py-2 rounded-full text-sm font-medium transition-all duration-200",
+            selectedLanguage === langId
+              ? "bg-primary text-primary-foreground shadow-md"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          )}
+        >
+          {name}
+        </button>
+      ))}
     </div>
   )
 
@@ -450,7 +491,7 @@ export function Room({
               Start with voice. Ask Clarte to see your screen or camera when you need it.
             </p>
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-              <div className="flex items-center gap-3">{voiceToggle}</div>
+              <div className="flex items-center gap-3">{languageToggle}{voiceToggle}</div>
               <LiveKitRoom
                 serverUrl={LIVEKIT_URL}
                 token={token}
@@ -519,7 +560,7 @@ export function Room({
               <p className="text-sm text-destructive text-center">{error}</p>
             )}
             <div className="flex flex-wrap items-center justify-between gap-3 w-full">
-              <div className="flex items-center gap-3">{voiceToggle}</div>
+              <div className="flex items-center gap-3">{languageToggle}{voiceToggle}</div>
               <div className="flex items-center gap-2">
                 {autoStart && onDisconnect && (
                   <Button variant="outline" size="sm" onClick={onDisconnect} className="gap-2">
