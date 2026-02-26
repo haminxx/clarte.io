@@ -2,11 +2,11 @@
 
 import { Play } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { cn } from "@/lib/utils"
 
-/** Voice name (UI) -> OpenAI voice ID. Sage = female, Cedar = male. */
+/** Voice name (UI) -> OpenAI voice ID. Marin = female, Cedar = male (both high-quality Realtime voices). */
 export const VOICE_OPTIONS = [
-  { name: "Sage", voiceId: "shimmer" },
+  { name: "Marin", voiceId: "marin" },
   { name: "Cedar", voiceId: "cedar" },
 ] as const
 
@@ -35,21 +35,31 @@ export function VoiceCard({ onStartCall, isActive, selectedVoiceId = "cedar", on
           Start with voice. Ask Clarte to see your screen or camera when you need it.
         </p>
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <span className="text-xs text-muted-foreground">Voice:</span>
-            <ToggleGroup
-              type="single"
-              value={selectedVoiceId}
-              onValueChange={(v) => v && onVoiceChange?.(v)}
-              variant="outline"
-              size="sm"
+            <div
+              role="group"
+              aria-label="Voice selection"
+              className="inline-flex rounded-full bg-muted/50 p-1 ring-1 ring-border/50 shadow-sm"
             >
               {VOICE_OPTIONS.map(({ name, voiceId }) => (
-                <ToggleGroupItem key={voiceId} value={voiceId} aria-label={`Voice: ${name}`}>
+                <button
+                  key={voiceId}
+                  type="button"
+                  onClick={() => onVoiceChange?.(voiceId)}
+                  aria-pressed={selectedVoiceId === voiceId}
+                  aria-label={`Voice: ${name}`}
+                  className={cn(
+                    "relative px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
+                    selectedVoiceId === voiceId
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  )}
+                >
                   {name}
-                </ToggleGroupItem>
+                </button>
               ))}
-            </ToggleGroup>
+            </div>
           </div>
           <Button
             size="lg"
