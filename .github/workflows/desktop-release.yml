@@ -1,0 +1,56 @@
+name: Build Clarte Desktop
+
+on:
+  push:
+    branches:
+      - v0/clarte_main
+    paths:
+      - "apps/desktop/**"
+      - ".github/workflows/desktop-release.yml"
+  workflow_dispatch:
+
+jobs:
+  build-desktop:
+    strategy:
+      matrix:
+        include:
+          - platform: macos-latest
+          - platform: windows-latest
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install desktop dependencies
+        working-directory: apps/desktop
+        run: npm ci
+
+      - name: Build Tauri app
+        working-directory: apps/desktop
+        run: npm run tauri build
+        env:
+          VITE_LIVEKIT_URL: ${{ secrets.NEXT_PUBLIC_LIVEKIT_URL }}
+          VITE_VOICE_AGENT_URL: ${{ secrets.NEXT_PUBLIC_VOICE_AGENT_URL }}
+
+      - name: Upload artifact (macOS)
+        if: matrix.platform == 'macos-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: clarte-desktop-macos
+          path: apps/desktop/src-tauri/target/release/bundle/
+
+      - name: Upload artifact (Windows)
+        if: matrix.platform == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: clarte-desktop-windows
+          path: apps/desktop/src-tauri/target/release/bundle/

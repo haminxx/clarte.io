@@ -1,20 +1,28 @@
 """
 Clarte – Executive Assistant voice agent.
 Single unified agent: proactive briefing, feedback, research. Tools: schedule, search, memory.
+Uses OpenAI Realtime for understanding + ElevenLabs TTS for realistic voice output.
 """
 import asyncio
 import json
 import logging
+import os
 
 from dotenv import load_dotenv
 from livekit import agents
 from livekit.agents import Agent, AgentServer, AgentSession, AutoSubscribe, RunContext, function_tool
 from livekit.agents.voice import room_io
-from livekit.plugins import openai
+from livekit.plugins import openai, elevenlabs
 
 load_dotenv()
 
 logger = logging.getLogger(__name__)
+
+# ElevenLabs voice IDs: Marin (female) -> Rachel, Cedar (male) -> Adam
+ELEVENLABS_VOICE_IDS = {
+    "marin": "EXAVITQu4vr4xnSDxMaL",  # Rachel - female
+    "cedar": "pNInz6obpgDQGcFmaJgB",  # Adam - male
+}
 
 EXECUTIVE_ASSISTANT_PROMPT = """
 You are Clarte, an elite Executive Assistant — curious, reflective, and focused on understanding before advising.
@@ -168,13 +176,33 @@ async def entrypoint(ctx: agents.JobContext) -> None:
         interrupt_response=True,
     )
 
-    session = AgentSession(
-        llm=openai.realtime.RealtimeModel(
-            model="gpt-realtime",
-            voice=voice,
-            turn_detection=turn_detection,
-        ),
-    )
+    # Use ElevenLabs TTS if ELEVEN_API_KEY is set; otherwise fall back to OpenAI built-in voice
+    use_elevenlabs = bool(os.environ.get("ELEVEN_API_KEY"))
+    elevenlabs_voice_id = ELEVENLABS_VOICE_IDS.get(voice, ELEVENLABS_VOICE_IDS["cedar"])
+
+    if use_elevenlabs:
+        session = AgentSession(
+            llm=openai.realtime.RealtimeModel(
+                model="gpt-realtime",
+                modalities=["text"],
+                turn_detection=turn_detection,
+            ),
+            tts=elevenlabs.TTS(
+                voice_id=elevenlabs_voice_id,
+                model="eleven_flash_v2_5",
+                streaming_latency=2,
+            ),
+        )
+        logger.info("Using ElevenLabs TTS (voice_id=%s)", elevenlabs_voice_id)
+    else:
+        session = AgentSession(
+            llm=openai.realtime.RealtimeModel(
+                model="gpt-realtime",
+                voice=voice,
+                turn_detection=turn_detection,
+            ),
+        )
+        logger.info("Using OpenAI built-in voice (%s)", voice)
     room_opts = room_io.RoomOptions(video_input=True)  # allow video when user enables screen/camera
     agent = ExecutiveAssistantAgent(room=room)
     logger.info("Starting Executive Assistant session (voice=%s, mode=%s)", voice, mode)

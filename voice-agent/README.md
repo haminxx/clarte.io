@@ -14,6 +14,7 @@ Executive Assistant voice agent with two paths:
 | **LIVEKIT_URL** | Backend only (`voice-agent/.env` or Render env) | Agent + token server – same WebSocket URL as above |
 | **LIVEKIT_API_KEY**, **LIVEKIT_API_SECRET** | Backend only (never in frontend) | Token server + agent – to issue tokens and register with LiveKit |
 | **OPENAI_API_KEY**, **EXA_API_KEY** | Backend only (never in frontend) | Agent + relay – Realtime API and Exa search |
+| **ELEVEN_API_KEY** | Backend only (optional) | Agent – ElevenLabs TTS for more realistic voice. If set, uses ElevenLabs instead of OpenAI built-in voice. |
 
 **Tier 1 only:** `OPENAI_API_KEY`, `EXA_API_KEY`, `NEXT_PUBLIC_VOICE_AGENT_URL`. No LiveKit needed.
 
@@ -57,6 +58,7 @@ Frontend: set `NEXT_PUBLIC_VOICE_AGENT_URL=http://localhost:8080` and `NEXT_PUBL
    - `LIVEKIT_API_SECRET` (secret)
    - `OPENAI_API_KEY` (secret) — **Render only** (not needed in GitHub; agent runs on Render)
    - `EXA_API_KEY` (secret)
+   - `ELEVEN_API_KEY` (secret, optional) — ElevenLabs TTS for more realistic voice. Marin → Rachel, Cedar → Adam.
 
 After deploy, copy the Render URL (e.g. `https://your-service.onrender.com`) and set:
 - **Frontend** `.env.local`: `NEXT_PUBLIC_VOICE_AGENT_URL=https://your-service.onrender.com` (no trailing slash)

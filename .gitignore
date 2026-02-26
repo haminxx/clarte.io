@@ -31,3 +31,12 @@ backend/.venv
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Tauri / Rust
+apps/desktop/src-tauri/target/
+apps/desktop/dist/
+
+# iOS
+apps/ios/*.xcodeproj/xcuserdata/
+apps/ios/*.xcworkspace/xcuserdata/
+DerivedData/

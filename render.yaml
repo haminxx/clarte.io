@@ -20,3 +20,5 @@ services:
         sync: false
       - key: LIVEKIT_API_SECRET
         sync: false
+      - key: ELEVEN_API_KEY
+        sync: false
