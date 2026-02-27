@@ -5,11 +5,33 @@ import { Waveform } from "./waveform"
 import { Button } from "@/components/ui/button"
 import { Play, Square } from "lucide-react"
 
-type VoiceSample = "Jane" | "Victoria" | null
+type VoiceSample = "Marin" | "Victoria" | null
 
 function getVoices(): SpeechSynthesisVoice[] {
   if (typeof window === "undefined") return []
   return window.speechSynthesis.getVoices()
+}
+
+/** Marin = Clarte's female voice (ElevenLabs Rachel). Prefer Rachel or similar for preview. */
+function getMarinVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
+  const en = voices.filter((v) => v.lang.startsWith("en"))
+  const marin = en.find(
+    (v) =>
+      v.name.toLowerCase().includes("rachel") ||
+      v.name.toLowerCase().includes("marin") ||
+      v.name.includes("Samantha") ||
+      v.name.includes("Karen")
+  )
+  const female = en.filter(
+    (v) =>
+      v.name.toLowerCase().includes("female") ||
+      v.name.includes("Zira") ||
+      v.name.includes("Samantha") ||
+      v.name.includes("Karen") ||
+      v.name.includes("Victoria") ||
+      v.name.includes("Google")
+  )
+  return marin ?? female[0] ?? en[0] ?? null
 }
 
 export function FeaturesSection() {
@@ -30,22 +52,46 @@ export function FeaturesSection() {
   }, [])
 
   const playSample = useCallback(
-    (name: "Jane" | "Victoria") => {
-      if (typeof window === "undefined" || !("speechSynthesis" in window)) return
-
-      const synth = window.speechSynthesis
-      synth.cancel()
+    (name: "Marin" | "Victoria") => {
+      if (typeof window === "undefined") return
 
       if (playingSample === name) {
         setPlayingSample(null)
+        if ("speechSynthesis" in window) window.speechSynthesis.cancel()
         return
       }
 
-      const text = `Hello! My name is ${name}.`
+      if (name === "Marin") {
+        const audio = new Audio("/audio/marin-sample.mp3")
+        const onEnd = () => setPlayingSample(null)
+        audio.onended = onEnd
+        audio.onerror = () => {
+          onEnd()
+          const synth = window.speechSynthesis
+          synth.cancel()
+          const text = "Hello! I'm Clarte, your executive assistant."
+          const utterance = new SpeechSynthesisUtterance(text)
+          utterance.rate = 0.95
+          utterance.pitch = 1
+          const preferred = getMarinVoice(voices)
+          if (preferred) utterance.voice = preferred
+          utterance.onend = onEnd
+          utterance.onerror = onEnd
+          setPlayingSample("Marin")
+          synth.speak(utterance)
+        }
+        setPlayingSample("Marin")
+        audio.play().catch(() => audio.onerror?.(new Event("error")))
+        return
+      }
+
+      if (!("speechSynthesis" in window)) return
+      const synth = window.speechSynthesis
+      synth.cancel()
+      const text = "Hello! My name is Victoria."
       const utterance = new SpeechSynthesisUtterance(text)
       utterance.rate = 0.95
       utterance.pitch = 1
-
       const enVoices = voices.filter((v) => v.lang.startsWith("en"))
       const femaleVoices = enVoices.filter(
         (v) =>
@@ -57,13 +103,11 @@ export function FeaturesSection() {
           v.name.includes("Google")
       )
       const candidates = femaleVoices.length > 0 ? femaleVoices : enVoices
-      const preferred = name === "Jane" ? candidates[0] : candidates[1] ?? candidates[0]
+      const preferred = candidates[1] ?? candidates[0]
       if (preferred) utterance.voice = preferred
-
       utterance.onend = () => setPlayingSample(null)
       utterance.onerror = () => setPlayingSample(null)
-
-      setPlayingSample(name)
+      setPlayingSample("Victoria")
       synth.speak(utterance)
     },
     [playingSample, voices]
@@ -94,7 +138,7 @@ export function FeaturesSection() {
               <h3 className="text-lg font-medium text-foreground">Clarte Agent</h3>
               <div className="flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5">
                 <div className="h-2 w-2 rounded-full bg-emerald-400" />
-                <span className="text-sm text-muted-foreground">Jane</span>
+                <span className="text-sm text-muted-foreground">Marin</span>
               </div>
             </div>
             <Waveform variant="ai" />
@@ -102,10 +146,10 @@ export function FeaturesSection() {
               <Button
                 size="icon"
                 className="h-10 w-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
-                onClick={() => playSample("Jane")}
-                aria-label={playingSample === "Jane" ? "Stop sample" : "Play Jane sample"}
+                onClick={() => playSample("Marin")}
+                aria-label={playingSample === "Marin" ? "Stop sample" : "Play Marin sample"}
               >
-                {playingSample === "Jane" ? (
+                {playingSample === "Marin" ? (
                   <Square className="h-4 w-4" />
                 ) : (
                   <Play className="h-4 w-4" />
