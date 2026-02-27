@@ -16,6 +16,7 @@ Executive Assistant voice agent with two paths:
 | **OPENAI_API_KEY**, **EXA_API_KEY** | Backend only (never in frontend) | Agent + relay – Realtime API and Exa search |
 | **ELEVEN_API_KEY** | Backend only (optional) | Agent – ElevenLabs TTS for more realistic voice. If set and valid, uses ElevenLabs instead of OpenAI built-in voice. Pre-flight validation prevents runtime crashes from bad keys. |
 | **FORCE_OPENAI_VOICE** | Backend only (optional) | Set to `1`, `true`, or `yes` to always use OpenAI built-in voice (bypass ElevenLabs) for debugging. |
+| **HUME_API_KEY**, **PLAYHT_***, **CARTESIA_*** | Backend only (optional) | Alternative TTS providers. See [TTS alternatives](#tts-alternatives-low-latency--emotion) for details. |
 
 **Tier 1 only:** `OPENAI_API_KEY`, `EXA_API_KEY`, `NEXT_PUBLIC_VOICE_AGENT_URL`. No LiveKit needed.
 
@@ -106,6 +107,19 @@ If the button works but the agent never speaks or responds:
 - **Invalid key** – Ensure `ELEVEN_API_KEY` is set exactly (LiveKit plugin expects this name). The key must have Text-to-Speech access. Pre-flight validation calls ElevenLabs `/v1/user`; if it fails, the agent uses OpenAI voice.
 - **Voice ID** – Marin → Rachel, Cedar → Adam. Verify these IDs work for your ElevenLabs account.
 - **Force OpenAI** – Set `FORCE_OPENAI_VOICE=1` in Render env to always use OpenAI voice and rule out ElevenLabs as the cause.
+
+## TTS alternatives (low latency + emotion)
+
+The agent uses ElevenLabs by default. For more expressive speech (tone, pitch, pacing) or lower latency, consider these LiveKit-compatible alternatives:
+
+| Provider | LiveKit plugin | Latency | Emotion control | Notes |
+|----------|----------------|---------|-----------------|-------|
+| **Hume Octave** | `livekit-agents[hume]` | ~100ms (Octave 2) | `description` – natural-language acting instructions (tone, pacing, mood) | Best fit for ultra-low latency + strong emotion. Set `HUME_API_KEY`. |
+| **PlayHT (PlayAI)** | `livekit-agents[playai]` | ~200–400ms TTFA | Emotion control in API | PlayHT 2.0 Turbo. Requires `PLAYHT_API_KEY` and `PLAYHT_USER_ID`. |
+| **Cartesia Sonic-3** | `livekit-agents[cartesia]` | Low-latency streaming | 60+ emotions (neutral, excited, sad, sarcastic, etc.) | Explicit `emotion` parameter; natural laughter and pacing. |
+| **ElevenLabs** (current) | `livekit-agents[elevenlabs]` | `streaming_latency=2` | `stability`, `similarity_boost`, `style` | Default. Tuned for expressiveness via `VoiceSettings`. |
+
+To switch providers, add the plugin to `requirements.txt`, set the provider's API key(s), and branch in `agent.py` to instantiate the chosen TTS (e.g. `TTS_PROVIDER=elevenlabs|hume`).
 
 ## Language support (English / Korean)
 
