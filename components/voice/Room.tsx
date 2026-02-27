@@ -43,12 +43,14 @@ function RoomInnerKrispProvider({
   withCamera,
   compact,
   onTranscriptAdd,
+  onTranscriptPartial,
 }: {
   onDisconnect: () => void
   withScreen: boolean
   withCamera: boolean
   compact?: boolean
   onTranscriptAdd?: (role: string, content: string) => void
+  onTranscriptPartial?: (role: string, content: string) => void
 }) {
   const krisp = useKrispNoiseFilter()
   return (
@@ -59,6 +61,7 @@ function RoomInnerKrispProvider({
       krisp={krisp}
       compact={compact}
       onTranscriptAdd={onTranscriptAdd}
+      onTranscriptPartial={onTranscriptPartial}
     />
   )
 }
@@ -82,6 +85,7 @@ function RoomInnerWithKrisp(props: {
   useKrisp: boolean
   compact?: boolean
   onTranscriptAdd?: (role: string, content: string) => void
+  onTranscriptPartial?: (role: string, content: string) => void
 }) {
   const { useKrisp, compact, ...innerProps } = props
   if (!useKrisp) {
@@ -102,6 +106,7 @@ function RoomInner({
   krisp,
   compact,
   onTranscriptAdd,
+  onTranscriptPartial,
 }: {
   onDisconnect: () => void
   withScreen: boolean
@@ -109,6 +114,7 @@ function RoomInner({
   krisp: { setNoiseFilterEnabled: (v: boolean) => Promise<void> } | null
   compact?: boolean
   onTranscriptAdd?: (role: string, content: string) => void
+  onTranscriptPartial?: (role: string, content: string) => void
 }) {
   const { localParticipant, isMicrophoneEnabled, microphoneTrack, isScreenShareEnabled, isCameraEnabled } =
     useLocalParticipant()
@@ -132,6 +138,9 @@ function RoomInner({
       if (data?.type === "agent_thinking") setIsAgentThinking(true)
       if (data?.type === "transcript_add" && data.role && data.content && onTranscriptAdd) {
         onTranscriptAdd(data.role, data.content)
+      }
+      if (data?.type === "transcript_partial" && data.role && data.content !== undefined && onTranscriptPartial) {
+        onTranscriptPartial(data.role, data.content)
       }
     } catch {
       /* ignore */
@@ -317,7 +326,12 @@ function RoomInner({
             Camera off
           </Button>
         )}
-        <Button variant="outline" size="sm" onClick={onDisconnect} className="gap-2">
+        <Button
+          variant="outline"
+          size={compact ? "lg" : "sm"}
+          onClick={onDisconnect}
+          className={compact ? "gap-2 h-12 px-6 rounded-full" : "gap-2"}
+        >
           <PhoneOff className="h-4 w-4" />
           End call
         </Button>
@@ -396,6 +410,8 @@ interface RoomProps {
   onConversationSaved?: () => void
   /** Called when transcript is added (for live display, e.g. hero transcript box). */
   onTranscriptAdd?: (role: string, content: string) => void
+  /** Called when partial transcript is received (real-time word-by-word). */
+  onTranscriptPartial?: (role: string, content: string) => void
 }
 
 export function Room({
@@ -414,6 +430,7 @@ export function Room({
   getAuthToken,
   onConversationSaved,
   onTranscriptAdd,
+  onTranscriptPartial,
 }: RoomProps) {
   const [token, setToken] = useState<string | null>(null)
   const [roomName, setRoomName] = useState<string | null>(null)
@@ -431,6 +448,13 @@ export function Room({
       onTranscriptAdd?.(role, content)
     },
     [onTranscriptAdd]
+  )
+
+  const addTranscriptPartial = useCallback(
+    (role: string, content: string) => {
+      onTranscriptPartial?.(role, content)
+    },
+    [onTranscriptPartial]
   )
 
   const disconnect = useCallback(async () => {
@@ -637,6 +661,7 @@ export function Room({
                   useKrisp={useKrisp}
                   compact
                   onTranscriptAdd={addTranscript}
+                  onTranscriptPartial={addTranscriptPartial}
                 />
               </LiveKitRoom>
             </div>
@@ -669,6 +694,7 @@ export function Room({
             withCamera={withCamera}
             useKrisp={useKrisp}
             onTranscriptAdd={addTranscript}
+            onTranscriptPartial={addTranscriptPartial}
           />
         </LiveKitRoom>
       </div>

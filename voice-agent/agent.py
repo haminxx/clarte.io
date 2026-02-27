@@ -448,18 +448,19 @@ async def entrypoint(ctx: agents.JobContext) -> None:
 
     @session.on("user_input_transcribed")
     def on_user_input_transcribed(event: UserInputTranscribedEvent) -> None:
-        """Forward user speech transcription to frontend for live transcript display."""
-        if not event.is_final or not (event.transcript or "").strip():
+        """Forward user speech transcription to frontend for live transcript display (partial + final)."""
+        transcript = (event.transcript or "").strip()
+        if not transcript:
             return
+
+        msg_type = "transcript_partial" if not event.is_final else "transcript_add"
+        payload = json.dumps({"type": msg_type, "role": "user", "content": transcript})
 
         async def _publish() -> None:
             try:
-                await room.local_participant.publish_data(
-                    json.dumps({"type": "transcript_add", "role": "user", "content": event.transcript.strip()}),
-                    reliable=True,
-                )
+                await room.local_participant.publish_data(payload, reliable=True)
             except Exception as e:
-                logger.debug("transcript_add publish failed: %s", e)
+                logger.debug("transcript publish failed: %s", e)
 
         asyncio.create_task(_publish())
 

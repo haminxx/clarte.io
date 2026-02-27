@@ -13,6 +13,8 @@ export function HeroSection() {
   const [selectedVoice, setSelectedVoice] = useState("marin")
   const [selectedLanguage, setSelectedLanguage] = useState<"en" | "ko">("en")
   const [transcriptEntries, setTranscriptEntries] = useState<{ role: string; content: string }[]>([])
+  const [transcriptPartial, setTranscriptPartial] = useState<string>("")
+  const transcriptContainerRef = useRef<HTMLDivElement>(null)
   const transcriptEndRef = useRef<HTMLDivElement>(null)
 
   const handleStartCall = () => {
@@ -22,18 +24,36 @@ export function HeroSection() {
   const handleDisconnect = () => {
     setInCall(false)
     setTranscriptEntries([])
+    setTranscriptPartial("")
   }
 
   const handleTranscriptAdd = useCallback((role: string, content: string) => {
     setTranscriptEntries((prev) => [...prev, { role, content }])
+    setTranscriptPartial("")
+  }, [])
+
+  const handleTranscriptPartial = useCallback((role: string, content: string) => {
+    if (role === "user") setTranscriptPartial(content)
   }, [])
 
   useEffect(() => {
-    transcriptEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [transcriptEntries])
+    if (typeof window !== "undefined") {
+      history.scrollRestoration = "manual"
+      window.scrollTo(0, 0)
+    }
+  }, [])
+
+  useEffect(() => {
+    const container = transcriptContainerRef.current
+    if (container) {
+      container.scrollTop = container.scrollHeight
+    } else {
+      transcriptEndRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" })
+    }
+  }, [transcriptEntries, transcriptPartial])
 
   return (
-    <section className="relative min-h-screen overflow-hidden bg-background pt-16 w-full">
+    <section className="relative min-h-screen overflow-hidden bg-background pt-8 w-full">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] md:h-[900px] md:w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-blue-600/25 via-indigo-600/15 to-transparent blur-3xl" />
         <div className="absolute right-1/4 top-1/3 h-[300px] w-[300px] md:h-[500px] md:w-[500px] rounded-full bg-blue-500/10 blur-3xl" />
@@ -43,7 +63,7 @@ export function HeroSection() {
 
       <div className="pointer-events-none absolute inset-2 sm:inset-4 md:inset-8 border border-dashed border-white/10" />
 
-      <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 pt-16 text-center w-full">
+      <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 pt-8 text-center w-full">
         <AnimateOnScroll animateOnMount delay={0} animation="fade-up">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2">
             <span className="text-sm text-white/70">
@@ -87,7 +107,7 @@ export function HeroSection() {
       </div>
 
       <AnimateOnScroll animateOnMount delay={320} animation="fade-up">
-        <div className="relative mx-auto flex min-h-[200px] w-full max-w-4xl flex-col items-center justify-center gap-4 px-4 pt-4">
+        <div className="relative mx-auto flex min-h-[200px] w-full max-w-4xl flex-col items-center justify-center gap-4 px-4 pt-2">
           <div className="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none">
             <ParticleOrb />
           </div>
@@ -106,6 +126,7 @@ export function HeroSection() {
                   selectedLanguage={selectedLanguage}
                   onLanguageChange={setSelectedLanguage}
                   onTranscriptAdd={handleTranscriptAdd}
+                  onTranscriptPartial={handleTranscriptPartial}
                 />
               ) : (
                 <VoiceCard
@@ -122,17 +143,28 @@ export function HeroSection() {
               <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Live transcript (Speech to text)
               </p>
-              <div className="max-h-[120px] overflow-y-auto rounded-lg border border-border/50 bg-background/50 px-3 py-2 text-sm text-foreground">
-                {transcriptEntries.filter((e) => e.role === "user").length === 0 ? (
+              <div
+                ref={transcriptContainerRef}
+                className="max-h-[120px] overflow-y-auto rounded-lg border border-border/50 bg-background/50 px-3 py-2 text-sm text-foreground"
+              >
+                {transcriptEntries.filter((e) => e.role === "user").length === 0 && !transcriptPartial ? (
                   <span className="text-muted-foreground">Your speech will appear here...</span>
                 ) : (
-                  transcriptEntries
-                    .filter((e) => e.role === "user")
-                    .map((entry, i) => (
-                      <div key={i} className="mb-1 last:mb-0">
-                        <span className="text-foreground">{entry.content}</span>
+                  <>
+                    {transcriptEntries
+                      .filter((e) => e.role === "user")
+                      .map((entry, i) => (
+                        <div key={i} className="mb-1 last:mb-0">
+                          <span className="text-foreground">{entry.content}</span>
+                        </div>
+                      ))}
+                    {transcriptPartial && (
+                      <div className="mb-1 last:mb-0">
+                        <span className="text-foreground/80">{transcriptPartial}</span>
+                        <span className="animate-pulse">|</span>
                       </div>
-                    ))
+                    )}
+                  </>
                 )}
                 <div ref={transcriptEndRef} />
               </div>
