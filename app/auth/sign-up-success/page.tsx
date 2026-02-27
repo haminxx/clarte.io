@@ -1,11 +1,46 @@
+"use client"
+
+import { useState } from "react"
 import Link from "next/link"
-import { Mail } from "lucide-react"
+import { getFirebaseAuth } from "@/lib/firebase"
+import { sendEmailVerification } from "firebase/auth"
+import { Mail, Loader2, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export default function SignUpSuccessPage() {
+  const [resending, setResending] = useState(false)
+  const [resendSuccess, setResendSuccess] = useState(false)
+  const [resendError, setResendError] = useState<string | null>(null)
+
+  const handleResendVerification = async () => {
+    const auth = getFirebaseAuth()
+    const user = auth?.currentUser
+    if (!user || !auth) {
+      setResendError("You must be signed in to resend the verification email.")
+      return
+    }
+    if (user.emailVerified) {
+      setResendError("Your email is already verified.")
+      return
+    }
+    setResending(true)
+    setResendError(null)
+    setResendSuccess(false)
+    try {
+      await sendEmailVerification(user, {
+        url: typeof window !== "undefined" ? `${window.location.origin}/auth/login` : undefined,
+        handleCodeInApp: true,
+      })
+      setResendSuccess(true)
+    } catch (err: unknown) {
+      setResendError(err instanceof Error ? err.message : "Failed to send verification email. Please try again.")
+    } finally {
+      setResending(false)
+    }
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#0a0a14] px-4">
-      {/* Background gradient */}
       <div className="pointer-events-none fixed inset-0">
         <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-blue-600/20 via-indigo-500/10 to-transparent blur-3xl" />
       </div>
@@ -15,15 +50,44 @@ export default function SignUpSuccessPage() {
           <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
             <Mail className="h-8 w-8 text-emerald-400" />
           </div>
-          
+
           <h1 className="text-2xl font-bold text-white">Check your email</h1>
           <p className="mt-4 text-white/60">
             We&apos;ve sent you a confirmation link. Please check your email to verify your account.
           </p>
-          
-          <div className="mt-8">
+          <p className="mt-2 text-sm text-white/40">
+            Can&apos;t find it? Check your spam folder.
+          </p>
+
+          {resendSuccess && (
+            <div className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-400">
+              <CheckCircle className="h-4 w-4 shrink-0" />
+              Verification email sent again.
+            </div>
+          )}
+          {resendError && (
+            <div className="mt-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+              {resendError}
+            </div>
+          )}
+
+          <div className="mt-8 flex flex-col gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="border-white/20 bg-transparent text-white hover:bg-white/10"
+              onClick={handleResendVerification}
+              disabled={resending}
+            >
+              {resending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Mail className="mr-2 h-4 w-4" />
+              )}
+              Resend verification email
+            </Button>
             <Link href="/auth/login">
-              <Button variant="outline" className="border-white/20 bg-transparent text-white hover:bg-white/10">
+              <Button variant="outline" className="w-full border-white/20 bg-transparent text-white hover:bg-white/10">
                 Back to Sign In
               </Button>
             </Link>

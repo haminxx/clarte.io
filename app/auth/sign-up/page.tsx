@@ -36,10 +36,13 @@ export default function SignUpPage() {
     setError(null)
     try {
       const { user } = await createUserWithEmailAndPassword(auth, email, password)
-      await sendEmailVerification(user)
       if (fullName.trim()) {
         await updateProfile(user, { displayName: fullName.trim() })
       }
+      await sendEmailVerification(user, {
+        url: typeof window !== "undefined" ? `${window.location.origin}/auth/login` : undefined,
+        handleCodeInApp: true,
+      })
       router.push("/auth/sign-up-success")
       router.refresh()
     } catch (err: unknown) {
