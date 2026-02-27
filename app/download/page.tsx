@@ -3,6 +3,7 @@ import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Monitor, Smartphone, Apple, LayoutGrid, ExternalLink } from "lucide-react"
+import { AnimateOnScroll } from "@/components/animate-on-scroll"
 
 const DESKTOP_RELEASES_URL = "https://github.com/haminxx/clarte.io/releases"
 const APP_STORE_URL = "https://apps.apple.com/us/search?term=clarte"
@@ -17,19 +18,22 @@ export default function DownloadPage() {
       <Header />
 
       <main className="relative z-10 mx-auto max-w-4xl px-4 py-24">
-        <div className="mb-16 text-center">
-          <h1 className="text-4xl font-bold text-white md:text-5xl lg:text-6xl">
-            Download{" "}
-            <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-              Clarte
-            </span>
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-white/60">
-            Get Clarte on your desktop or mobile device. Voice AI that runs at the speed of thought.
-          </p>
-        </div>
+        <AnimateOnScroll animation="fade-up" animateOnMount delay={100}>
+          <div className="mb-16 text-center">
+            <h1 className="text-4xl font-bold text-white md:text-5xl lg:text-6xl">
+              Download{" "}
+              <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                Clarte
+              </span>
+            </h1>
+            <p className="mx-auto mt-6 max-w-2xl text-lg text-white/60">
+              Get Clarte on your desktop or mobile device. Voice AI that runs at the speed of thought.
+            </p>
+          </div>
+        </AnimateOnScroll>
 
         <div className="grid gap-8 md:grid-cols-2">
+          <AnimateOnScroll animation="fade-up" delay={0}>
           {/* Desktop */}
           <a
             href={DESKTOP_RELEASES_URL}
@@ -59,7 +63,9 @@ export default function DownloadPage() {
               <ExternalLink className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </div>
           </a>
+          </AnimateOnScroll>
 
+          <AnimateOnScroll animation="fade-up" delay={100}>
           {/* iOS */}
           <a
             href={APP_STORE_URL}
@@ -83,8 +89,10 @@ export default function DownloadPage() {
               <ExternalLink className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </div>
           </a>
+          </AnimateOnScroll>
         </div>
 
+        <AnimateOnScroll animation="fade-up" delay={200}>
         <div className="mt-12 rounded-2xl border border-white/10 bg-[#1a1a2e]/30 p-6 text-center">
           <p className="text-sm text-white/60">
             Prefer the web?{" "}
@@ -94,6 +102,7 @@ export default function DownloadPage() {
             {" "}—no download required.
           </p>
         </div>
+        </AnimateOnScroll>
       </main>
 
       <Footer />

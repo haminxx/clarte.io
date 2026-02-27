@@ -1,0 +1,27 @@
+# Ping Render voice agent /health every 10 minutes to prevent cold starts.
+# Cold start adds 5-30s to first request; keeping warm avoids this.
+# Set VOICE_AGENT_URL secret (e.g. https://your-app.onrender.com) in repo settings.
+name: Keep Render Voice Agent Warm
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+jobs:
+  ping_health:
+    runs-on: ubuntu-latest
+    env:
+      VOICE_AGENT_URL: ${{ secrets.VOICE_AGENT_URL }}
+    steps:
+      - name: Ping Render /health
+        run: |
+          url="${VOICE_AGENT_URL:-}"
+          if [ -z "$url" ]; then
+            echo "VOICE_AGENT_URL secret not set; skipping. Set it to your Render URL (e.g. https://your-app.onrender.com) to enable keep-warm."
+            exit 0
+          fi
+          base="${url%/}"
+          health="${base}/health"
+          echo "Pinging $health"
+          curl -sf --max-time 30 "$health" || true
+        env:
+          VOICE_AGENT_URL: ${{ secrets.VOICE_AGENT_URL }}

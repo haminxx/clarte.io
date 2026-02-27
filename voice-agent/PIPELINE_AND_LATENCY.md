@@ -81,7 +81,7 @@ flowchart TB
 | **Render – Health** | 50–300 | Warmup before token |
 | **LiveKit** | 50–150 | WebRTC signaling, join room |
 | **OpenAI Realtime** | 300–800 | Speech understanding + text generation (first response) |
-| **ElevenLabs TTS** | 200–600 | `streaming_latency=1` (reduced from 2); first chunk |
+| **ElevenLabs TTS** | 150–500 | `streaming_latency=0`; `eleven_turbo_v2` (EN) / `eleven_flash_v2_5` (KO) |
 | **Exa (search_web)** | 500–2000 | When tool called in Step 3 |
 | **Network (Browser ↔ Render)** | 50–200 | Depends on region |
 | **Network (Render ↔ LiveKit)** | 20–100 | Same cloud |
@@ -98,7 +98,7 @@ flowchart TB
 | **First response (voice-only)** | 1000–2000 | 800–3000 |
 | **First response (with ElevenLabs)** | 1500–2500 | 1200–3500 |
 | **Tool call (search_web)** | +2000 | +1500–3000 |
-| **Cold start (Render)** | +5000–30000 | After ~15 min idle |
+| **Cold start (Render)** | +5000–30000 | Mitigated by keep-warm cron (see below) |
 
 ### Current pipeline (from README)
 
@@ -125,6 +125,18 @@ User hears response
 
 ---
 
+## Cold-Start Mitigation
+
+Render services sleep after ~15 min idle, adding 5–30 s to the first request. Mitigations:
+
+| Method | Setup |
+|--------|-------|
+| **GitHub Actions** | `.github/workflows/render-keep-warm.yml` pings `/health` every 10 min. Set `VOICE_AGENT_URL` secret (e.g. `https://your-app.onrender.com`) in repo Settings → Secrets. |
+| **UptimeRobot** | Add monitor for `https://your-app.onrender.com/health`; check interval 5 min. No code changes. |
+| **Render Cron** | If on paid plan, add cron job `*/5 * * * *` to curl `/health`. |
+
+---
+
 ## Instrumentation
 
 Timing logs are added in `agent.py` (tts_node) to measure:
@@ -143,14 +155,23 @@ Use these to pinpoint whether the bottleneck is OpenAI Realtime, ElevenLabs, or 
 
 ---
 
-## Optimization Options
+## Applied Optimizations
+
+| Change | Status |
+|--------|--------|
+| `streaming_latency=0` | Applied |
+| `eleven_turbo_v2` (English) / `eleven_flash_v2_5` (Korean) | Applied |
+| Prompt trimmed ~30% | Applied |
+| Keep-warm workflow | `.github/workflows/render-keep-warm.yml`; set `VOICE_AGENT_URL` secret |
+
+---
+
+## Further Optimization Options
 
 | Option | Impact | Trade-off |
 |--------|--------|-----------|
-| Lower ElevenLabs `streaming_latency` (2 → 1, applied) | Moderate | May affect quality; reduces buffering |
-| Lower to 0 | Higher | More aggressive; may cause choppy audio |
-| Use OpenAI built-in voice | Large | Lower quality, ~300–800 ms |
-| Try `eleven_turbo_v2` | Moderate | If supported by LiveKit plugin |
-| Hume Octave TTS | ~100 ms TTFA | Different provider |
-| Shorter prompt | Small | Fewer tokens |
-| Render region near LiveKit | Small–moderate | Lower network latency |
+| **Hume Octave** | ~100–200 ms TTFA | Add `livekit-agents[hume]`, `HUME_API_KEY`; different voice quality |
+| **PlayHT 2.0 Turbo** | 200–400 ms TTFA | `livekit-agents[playai]`; requires `PLAYHT_API_KEY` |
+| **Cartesia Sonic-3** | Low-latency streaming | `livekit-agents[cartesia]`; 60+ emotions |
+| Use OpenAI built-in voice | Large | `FORCE_OPENAI_VOICE=1`; trades quality for speed |
+| Render region near LiveKit | Small–moderate | Set region in Render dashboard |

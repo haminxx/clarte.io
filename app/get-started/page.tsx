@@ -3,6 +3,7 @@ import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowRight, Code, Headphones, Zap, CheckCircle } from "lucide-react"
+import { AnimateOnScroll } from "@/components/animate-on-scroll"
 
 const steps = [
   {
@@ -61,6 +62,7 @@ export default function GetStartedPage() {
       <Header />
 
       <main className="relative z-10 mx-auto max-w-7xl px-4 py-24">
+        <AnimateOnScroll animation="fade-up" animateOnMount delay={100}>
         {/* Hero */}
         <div className="mb-16 text-center">
           <h1 className="text-4xl font-bold text-white md:text-5xl lg:text-6xl">
@@ -86,14 +88,16 @@ export default function GetStartedPage() {
             </Link>
           </div>
         </div>
+        </AnimateOnScroll>
 
+        <AnimateOnScroll animation="fade-up" delay={100}>
         {/* Steps */}
         <div className="mb-24">
           <h2 className="mb-12 text-center text-2xl font-bold text-white">How It Works</h2>
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-            {steps.map((step) => (
+            {steps.map((step, i) => (
+              <AnimateOnScroll key={step.number} animation="fade-up" delay={i * 80}>
               <div
-                key={step.number}
                 className="relative rounded-2xl border border-white/10 bg-[#1a1a2e]/50 p-6"
               >
                 <div className="mb-4 flex items-center gap-4">
@@ -103,17 +107,20 @@ export default function GetStartedPage() {
                 <h3 className="mb-2 font-semibold text-white">{step.title}</h3>
                 <p className="text-sm text-white/60">{step.description}</p>
               </div>
+              </AnimateOnScroll>
             ))}
           </div>
         </div>
+        </AnimateOnScroll>
 
+        <AnimateOnScroll animation="fade-up" delay={200}>
         {/* Use Cases */}
         <div className="mb-24">
           <h2 className="mb-12 text-center text-2xl font-bold text-white">What You Can Build</h2>
           <div className="grid gap-6 md:grid-cols-2">
-            {useCases.map((useCase) => (
+            {useCases.map((useCase, i) => (
+              <AnimateOnScroll key={useCase.title} animation="fade-up" delay={i * 80}>
               <div
-                key={useCase.title}
                 className="flex items-start gap-4 rounded-xl border border-white/10 bg-[#1a1a2e]/50 p-6"
               >
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-500/10">
@@ -124,10 +131,13 @@ export default function GetStartedPage() {
                   <p className="mt-1 text-sm text-white/60">{useCase.description}</p>
                 </div>
               </div>
+              </AnimateOnScroll>
             ))}
           </div>
         </div>
+        </AnimateOnScroll>
 
+        <AnimateOnScroll animation="fade-blur" delay={250}>
         {/* Code Preview */}
         <div className="mb-24">
           <h2 className="mb-8 text-center text-2xl font-bold text-white">Simple Integration</h2>
@@ -155,7 +165,9 @@ await conversation.send('Hello, how can I help you today?');`}</code>
             </pre>
           </div>
         </div>
+        </AnimateOnScroll>
 
+        <AnimateOnScroll animation="fade-up" delay={300}>
         {/* CTA */}
         <div className="rounded-2xl border border-white/10 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 p-12 text-center">
           <h2 className="text-3xl font-bold text-white">Ready to Get Started?</h2>
@@ -175,6 +187,7 @@ await conversation.send('Hello, how can I help you today?');`}</code>
             </Link>
           </div>
         </div>
+        </AnimateOnScroll>
       </main>
 
       <Footer />

@@ -3,6 +3,7 @@ import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { BookOpen, Code, Zap, Settings, MessageSquare, Shield, ArrowRight } from "lucide-react"
+import { AnimateOnScroll } from "@/components/animate-on-scroll"
 
 const sections = [
   {
@@ -68,16 +69,19 @@ export default function DocsPage() {
       <Header />
 
       <main className="relative z-10 mx-auto max-w-7xl px-4 py-24">
-        <div className="mb-12 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-500/10">
-            <BookOpen className="h-8 w-8 text-blue-400" />
+        <AnimateOnScroll animation="fade-up" animateOnMount delay={100}>
+          <div className="mb-12 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-500/10">
+              <BookOpen className="h-8 w-8 text-blue-400" />
+            </div>
+            <h1 className="text-4xl font-bold text-white md:text-5xl">Documentation</h1>
+            <p className="mx-auto mt-4 max-w-2xl text-lg text-white/60">
+              Everything you need to integrate Clarte voice AI into your applications
+            </p>
           </div>
-          <h1 className="text-4xl font-bold text-white md:text-5xl">Documentation</h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-white/60">
-            Everything you need to integrate Clarte voice AI into your applications
-          </p>
-        </div>
+        </AnimateOnScroll>
 
+        <AnimateOnScroll animation="fade-blur" delay={100}>
         {/* Search */}
         <div className="mx-auto mb-16 max-w-2xl">
           <div className="relative">
@@ -91,12 +95,13 @@ export default function DocsPage() {
             </kbd>
           </div>
         </div>
+        </AnimateOnScroll>
 
         {/* Sections Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {sections.map((section) => (
+          {sections.map((section, i) => (
+            <AnimateOnScroll key={section.title} animation="fade-up" delay={i * 80}>
             <div
-              key={section.title}
               className="group rounded-2xl border border-white/10 bg-[#1a1a2e]/50 p-6 transition-all hover:border-white/20"
             >
               <section.icon className="mb-4 h-8 w-8 text-blue-400" />
@@ -116,9 +121,11 @@ export default function DocsPage() {
                 ))}
               </ul>
             </div>
+            </AnimateOnScroll>
           ))}
         </div>
 
+        <AnimateOnScroll animation="fade-up" delay={200}>
         {/* CTA */}
         <div className="mt-16 rounded-2xl border border-white/10 bg-[#1a1a2e]/50 p-8 text-center">
           <h2 className="text-2xl font-bold text-white">Need Help?</h2>
@@ -136,6 +143,7 @@ export default function DocsPage() {
             </Button>
           </div>
         </div>
+        </AnimateOnScroll>
       </main>
 
       <Footer />

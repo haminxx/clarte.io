@@ -3,6 +3,7 @@ import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Check } from "lucide-react"
+import { AnimateOnScroll } from "@/components/animate-on-scroll"
 
 const plans = [
   {
@@ -103,18 +104,20 @@ export default function PricingPage() {
       <Header />
 
       <main className="relative z-10 mx-auto max-w-7xl px-4 py-24">
-        <div className="mb-12 text-center">
-          <h1 className="text-4xl font-bold text-white md:text-5xl">Simple, Transparent Pricing</h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-white/60">
-            Choose the plan that fits your needs. No hidden fees, no surprises.
-          </p>
-        </div>
+        <AnimateOnScroll animation="fade-up" animateOnMount delay={100}>
+          <div className="mb-12 text-center">
+            <h1 className="text-4xl font-bold text-white md:text-5xl">Simple, Transparent Pricing</h1>
+            <p className="mx-auto mt-4 max-w-2xl text-lg text-white/60">
+              Choose the plan that fits your needs. No hidden fees, no surprises.
+            </p>
+          </div>
+        </AnimateOnScroll>
 
         {/* Pricing Cards */}
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-          {plans.map((plan) => (
+          {plans.map((plan, i) => (
+            <AnimateOnScroll key={plan.name} animation="fade-up" delay={i * 80}>
             <div
-              key={plan.name}
               className={`relative rounded-2xl border p-8 ${
                 plan.highlighted
                   ? "border-blue-500/50 bg-[#1a1a2e]/70"
@@ -159,25 +162,30 @@ export default function PricingPage() {
                 </Button>
               </Link>
             </div>
+            </AnimateOnScroll>
           ))}
         </div>
 
+        <AnimateOnScroll animation="fade-up" delay={200}>
         {/* FAQs */}
         <div className="mt-24">
           <h2 className="mb-8 text-center text-2xl font-bold text-white">Frequently Asked Questions</h2>
           <div className="mx-auto max-w-3xl space-y-4">
-            {faqs.map((faq) => (
+            {faqs.map((faq, i) => (
+              <AnimateOnScroll key={faq.question} animation="fade-up" delay={250 + i * 60}>
               <div
-                key={faq.question}
                 className="rounded-xl border border-white/10 bg-[#1a1a2e]/50 p-6"
               >
                 <h3 className="font-semibold text-white">{faq.question}</h3>
                 <p className="mt-2 text-sm text-white/60">{faq.answer}</p>
               </div>
+              </AnimateOnScroll>
             ))}
           </div>
         </div>
+        </AnimateOnScroll>
 
+        <AnimateOnScroll animation="fade-up" delay={300}>
         {/* CTA */}
         <div className="mt-16 rounded-2xl border border-white/10 bg-[#1a1a2e]/50 p-8 text-center">
           <h2 className="text-2xl font-bold text-white">Need a Custom Plan?</h2>
@@ -190,6 +198,7 @@ export default function PricingPage() {
             </Button>
           </Link>
         </div>
+        </AnimateOnScroll>
       </main>
 
       <Footer />

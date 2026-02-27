@@ -144,8 +144,11 @@ The agent responds in the same language as the user. Supported languages: **Engl
 
 ### Applied
 
-- **streaming_latency=1** – Reduced from 2 in `agent.py` to lower ElevenLabs buffering.
-- **Instrumentation** – Timing logs in `agent.py` tts_node: first LLM chunk and first TTS frame (LLM→TTS ms). See `PIPELINE_AND_LATENCY.md`.
+- **streaming_latency=0** – Minimal ElevenLabs buffering.
+- **eleven_turbo_v2** – For English; `eleven_flash_v2_5` for Korean (multilingual support).
+- **Prompt trimmed ~30%** – Fewer input tokens.
+- **Keep-warm** – `.github/workflows/render-keep-warm.yml` pings `/health` every 10 min. Set `VOICE_AGENT_URL` secret.
+- **Instrumentation** – Timing logs in `agent.py` tts_node. See `PIPELINE_AND_LATENCY.md`.
 
 ### Options to explore
 

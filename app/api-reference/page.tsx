@@ -2,6 +2,7 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Code, Copy, Terminal, Zap, Shield, Globe } from "lucide-react"
+import { AnimateOnScroll } from "@/components/animate-on-scroll"
 
 const codeExample = `import Clarte from '@clarte/sdk';
 
@@ -66,13 +67,16 @@ export default function APIReferencePage() {
       <Header />
 
       <main className="relative z-10 mx-auto max-w-7xl px-4 py-24">
-        <div className="mb-12 text-center">
-          <h1 className="text-4xl font-bold text-white md:text-5xl">API Reference</h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-white/60">
-            Integrate Clarte voice capabilities into your applications with our simple REST API
-          </p>
-        </div>
+        <AnimateOnScroll animation="fade-up" animateOnMount delay={100}>
+          <div className="mb-12 text-center">
+            <h1 className="text-4xl font-bold text-white md:text-5xl">API Reference</h1>
+            <p className="mx-auto mt-4 max-w-2xl text-lg text-white/60">
+              Integrate Clarte voice capabilities into your applications with our simple REST API
+            </p>
+          </div>
+        </AnimateOnScroll>
 
+        <AnimateOnScroll animation="fade-up" delay={100}>
         {/* Features */}
         <div className="mb-16 grid gap-6 md:grid-cols-3">
           <div className="rounded-xl border border-white/10 bg-[#1a1a2e]/50 p-6">
@@ -91,7 +95,9 @@ export default function APIReferencePage() {
             <p className="text-sm text-white/60">Deployed worldwide for minimal latency everywhere</p>
           </div>
         </div>
+        </AnimateOnScroll>
 
+        <AnimateOnScroll animation="fade-blur" delay={150}>
         {/* Code Example */}
         <div className="mb-16">
           <div className="flex items-center justify-between mb-4">
@@ -110,7 +116,9 @@ export default function APIReferencePage() {
             </pre>
           </div>
         </div>
+        </AnimateOnScroll>
 
+        <AnimateOnScroll animation="fade-up" delay={200}>
         {/* Endpoints */}
         <div>
           <div className="flex items-center gap-2 mb-6">
@@ -136,7 +144,9 @@ export default function APIReferencePage() {
             ))}
           </div>
         </div>
+        </AnimateOnScroll>
 
+        <AnimateOnScroll animation="fade-up" delay={250}>
         {/* CTA */}
         <div className="mt-16 rounded-2xl border border-white/10 bg-[#1a1a2e]/50 p-8 text-center">
           <h2 className="text-2xl font-bold text-white">Ready to Build?</h2>
@@ -152,6 +162,7 @@ export default function APIReferencePage() {
             </Button>
           </div>
         </div>
+        </AnimateOnScroll>
       </main>
 
       <Footer />
