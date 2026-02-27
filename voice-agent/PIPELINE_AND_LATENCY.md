@@ -81,7 +81,7 @@ flowchart TB
 | **Render – Health** | 50–300 | Warmup before token |
 | **LiveKit** | 50–150 | WebRTC signaling, join room |
 | **OpenAI Realtime** | 300–800 | Speech understanding + text generation (first response) |
-| **ElevenLabs TTS** | 150–500 | `streaming_latency=0`; `eleven_turbo_v2` (EN) / `eleven_flash_v2_5` (KO) |
+| **ElevenLabs TTS** | 150–500 | `streaming_latency=1`; `eleven_turbo_v2` (EN) / `eleven_flash_v2_5` (KO) |
 | **Exa (search_web)** | 500–2000 | When tool called in Step 3 |
 | **Network (Browser ↔ Render)** | 50–200 | Depends on region |
 | **Network (Render ↔ LiveKit)** | 20–100 | Same cloud |
@@ -159,7 +159,7 @@ Use these to pinpoint whether the bottleneck is OpenAI Realtime, ElevenLabs, or 
 
 | Change | Status |
 |--------|--------|
-| `streaming_latency=0` | Applied |
+| `streaming_latency=1` | Applied (1 adds small buffer to reduce choppy playback; try 2 if lag persists) |
 | `eleven_turbo_v2` (English) / `eleven_flash_v2_5` (Korean) | Applied |
 | Prompt trimmed ~30% | Applied |
 | Keep-warm workflow | `.github/workflows/render-keep-warm.yml`; set `VOICE_AGENT_URL` secret |
@@ -175,3 +175,4 @@ Use these to pinpoint whether the bottleneck is OpenAI Realtime, ElevenLabs, or 
 | **Cartesia Sonic-3** | Low-latency streaming | `livekit-agents[cartesia]`; 60+ emotions |
 | Use OpenAI built-in voice | Large | `FORCE_OPENAI_VOICE=1`; trades quality for speed |
 | Render region near LiveKit | Small–moderate | Set region in Render dashboard |
+| `streaming_latency=2` | Smoother playback | If audio still lags/freezes, try 2 for more buffer; region alignment helps |

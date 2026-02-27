@@ -60,6 +60,8 @@ No premature advice. No filler ("That's a great question!"). 1–2 sentences max
 - After explaining, ask a follow-up: either an example question they can try, or a question about the problem-solving order to confirm they understood.
 - Example: "Does that order make sense? What would you do first if I gave you a similar problem?"
 
+**Stay quiet / hold:** If the user asks you to stay quiet, stay on hold, wait, or similar – acknowledge briefly (e.g. "I'll wait.") and remain silent until they speak again. Do not ask follow-up questions until they re-engage.
+
 ## TOOLS
 search_web: Step 3 only. check_schedule: availability. log_feedback: notes. request_screen_share / request_camera: when asked. switch_to_english / switch_to_korean: language switch. show_guidance: math (LaTeX), steps, screen positions (x,y 0–100).
 """
@@ -96,6 +98,8 @@ VALID_LANGUAGES = {"en", "ko"}
 
 FOLLOW_UP_PHRASES_EN = [
     "What's on your mind lately?",
+    "What have you been up to today?",
+    "What are you planning to do today?",
     "How can I help?",
     "Do you need some help?",
     "What would you like to think through today?",
@@ -103,6 +107,8 @@ FOLLOW_UP_PHRASES_EN = [
 ]
 FOLLOW_UP_PHRASES_KO = [
     "오늘 무엇을 함께 생각해 보시겠어요?",
+    "오늘 뭐 하셨어요?",
+    "오늘 뭐 하실 계획이에요?",
     "어떻게 도와드릴까요?",
     "도움이 필요하신가요?",
     "무엇이 마음에 걸리시나요?",
@@ -145,6 +151,7 @@ class ExecutiveAssistantAgent(Agent):
         super().__init__(instructions=EXECUTIVE_ASSISTANT_PROMPT)
         self._room = room
         self._session = session  # for TTS language switch tools
+        self._silence_timer: Optional[asyncio.Task] = None
 
     async def tts_node(
         self, text: AsyncIterable[str], model_settings: ModelSettings
@@ -160,6 +167,8 @@ class ExecutiveAssistantAgent(Agent):
             nonlocal buffer, tag_stripped, t_first_llm, sent_thinking
             async for chunk in text:
                 if t_first_llm is None:
+                    if self._silence_timer and not self._silence_timer.done():
+                        self._silence_timer.cancel()
                     t_first_llm = time.perf_counter()
                     logger.info("[latency] First LLM text chunk received")
                     if not sent_thinking:
@@ -197,15 +206,33 @@ class ExecutiveAssistantAgent(Agent):
 
         async def timed_audio() -> AsyncIterable[rtc.AudioFrame]:
             nonlocal t_first_tts
-            async for frame in audio_stream:
-                if t_first_tts is None:
-                    t_first_tts = time.perf_counter()
-                    if t_first_llm is not None:
-                        llm_to_tts_ms = (t_first_tts - t_first_llm) * 1000
-                        logger.info("[latency] First TTS frame ready (LLM->TTS: %.0f ms)", llm_to_tts_ms)
-                    else:
-                        logger.info("[latency] First TTS frame ready")
-                yield frame
+            try:
+                async for frame in audio_stream:
+                    if t_first_tts is None:
+                        t_first_tts = time.perf_counter()
+                        if t_first_llm is not None:
+                            llm_to_tts_ms = (t_first_tts - t_first_llm) * 1000
+                            logger.info("[latency] First TTS frame ready (LLM->TTS: %.0f ms)", llm_to_tts_ms)
+                        else:
+                            logger.info("[latency] First TTS frame ready")
+                    yield frame
+            finally:
+                if self._session and hasattr(self._session, "generate_reply"):
+
+                    async def _silence_check() -> None:
+                        try:
+                            await asyncio.sleep(6)
+                            await self._session.generate_reply(
+                                instructions='Say briefly: "[Curious] Are you still there?"'
+                            )
+                        except asyncio.CancelledError:
+                            pass
+                        except Exception as e:
+                            logger.debug("Silence check failed: %s", e)
+
+                    if self._silence_timer and not self._silence_timer.done():
+                        self._silence_timer.cancel()
+                    self._silence_timer = asyncio.create_task(_silence_check())
 
         return timed_audio()
 
@@ -393,11 +420,11 @@ async def entrypoint(ctx: agents.JobContext) -> None:
                 tts=elevenlabs.TTS(
                     voice_id=elevenlabs_voice_id,
                     model="eleven_turbo_v2" if (language or "en") == "en" else "eleven_flash_v2_5",
-                    streaming_latency=0,
+                    streaming_latency=1,
                     language=language or "en",
                     enable_ssml_parsing=True,
                     voice_settings=elevenlabs.VoiceSettings(
-                        stability=0.45,
+                        stability=0.36,
                         similarity_boost=0.75,
                     ),
                 ),
