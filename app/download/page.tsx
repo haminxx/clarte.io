@@ -2,7 +2,7 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { Monitor, Smartphone, Apple, Windows, ExternalLink } from "lucide-react"
+import { Monitor, Smartphone, Apple, LayoutGrid, ExternalLink } from "lucide-react"
 
 const DESKTOP_RELEASES_URL = "https://github.com/haminxx/clarte.io/releases"
 const APP_STORE_URL = "https://apps.apple.com/us/search?term=clarte"
@@ -46,7 +46,7 @@ export default function DownloadPage() {
             </p>
             <div className="flex flex-wrap gap-3">
               <span className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white/80">
-                <Windows className="h-4 w-4" />
+                <LayoutGrid className="h-4 w-4" />
                 Windows
               </span>
               <span className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white/80">
