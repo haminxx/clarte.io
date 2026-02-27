@@ -386,6 +386,7 @@ export default function DashboardPage() {
           <div className="mb-8">
             <VoiceAgentCard
               userId={user?.uid}
+              userDisplayName={user?.displayName ?? null}
               getAuthToken={async () => (user ? (await user.getIdToken?.()) ?? null : null)}
               onConversationSaved={refetchConversations}
             />

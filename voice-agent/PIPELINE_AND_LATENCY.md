@@ -81,7 +81,7 @@ flowchart TB
 | **Render – Health** | 50–300 | Warmup before token |
 | **LiveKit** | 50–150 | WebRTC signaling, join room |
 | **OpenAI Realtime** | 300–800 | Speech understanding + text generation (first response) |
-| **ElevenLabs TTS** | 200–600 | `streaming_latency=2`; first chunk |
+| **ElevenLabs TTS** | 200–600 | `streaming_latency=1` (reduced from 2); first chunk |
 | **Exa (search_web)** | 500–2000 | When tool called in Step 3 |
 | **Network (Browser ↔ Render)** | 50–200 | Depends on region |
 | **Network (Render ↔ LiveKit)** | 20–100 | Same cloud |
@@ -125,12 +125,32 @@ User hears response
 
 ---
 
+## Instrumentation
+
+Timing logs are added in `agent.py` (tts_node) to measure:
+
+- **First LLM text chunk:** Logged when the first text chunk arrives from OpenAI Realtime (indicates user speech → LLM processing complete).
+- **First TTS frame:** Logged when the first audio frame is ready from ElevenLabs. The log includes `LLM->TTS` duration in ms.
+
+Enable debug logging to see these: `LOG_LEVEL=DEBUG` or set logger to INFO. Example output:
+
+```
+[latency] First LLM text chunk received
+[latency] First TTS frame ready (LLM->TTS: 245 ms)
+```
+
+Use these to pinpoint whether the bottleneck is OpenAI Realtime, ElevenLabs, or network.
+
+---
+
 ## Optimization Options
 
 | Option | Impact | Trade-off |
 |--------|--------|-----------|
-| Lower ElevenLabs `streaming_latency` (2 → 0) | Moderate | May affect quality |
+| Lower ElevenLabs `streaming_latency` (2 → 1, applied) | Moderate | May affect quality; reduces buffering |
+| Lower to 0 | Higher | More aggressive; may cause choppy audio |
 | Use OpenAI built-in voice | Large | Lower quality, ~300–800 ms |
+| Try `eleven_turbo_v2` | Moderate | If supported by LiveKit plugin |
 | Hume Octave TTS | ~100 ms TTFA | Different provider |
 | Shorter prompt | Small | Fewer tokens |
 | Render region near LiveKit | Small–moderate | Lower network latency |

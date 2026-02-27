@@ -142,11 +142,16 @@ The agent responds in the same language as the user. Supported languages: **Engl
 3. **Network:** Render ↔ LiveKit ↔ client.
 4. **Turn detection:** When the model decides the user has finished speaking.
 
+### Applied
+
+- **streaming_latency=1** – Reduced from 2 in `agent.py` to lower ElevenLabs buffering.
+- **Instrumentation** – Timing logs in `agent.py` tts_node: first LLM chunk and first TTS frame (LLM→TTS ms). See `PIPELINE_AND_LATENCY.md`.
+
 ### Options to explore
 
 | Option | Description | Expected impact |
 |--------|-------------|-----------------|
-| **Lower ElevenLabs streaming_latency** | Reduce from 2 to 0 or 1 in `agent.py`. Lower = faster first chunk, less buffering. | Moderate; may affect quality. |
+| **Lower streaming_latency to 0** | Further reduce ElevenLabs buffering. | May affect quality. |
 | **Use eleven_turbo_v2** | Switch from `eleven_flash_v2_5` to `eleven_turbo_v2` if available; optimized for low latency. | Moderate. |
 | **Switch back to OpenAI built-in voice** | Disable ElevenLabs when latency is critical; OpenAI Realtime is typically ~300–800 ms. | Large; trades voice quality for speed. |
 | **Shorter prompt** | Reduce `EXECUTIVE_ASSISTANT_PROMPT` size to cut input tokens. | Small. |

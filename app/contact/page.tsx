@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Loader2, CheckCircle } from "lucide-react"
+import { AnimateOnScroll } from "@/components/animate-on-scroll"
 
 export default function ContactPage() {
   const [loading, setLoading] = useState(false)
@@ -39,13 +40,16 @@ export default function ContactPage() {
       <Header />
 
       <main className="relative z-10 mx-auto max-w-7xl px-4 py-24">
-        <div className="mb-12 text-center">
-          <h1 className="text-4xl font-bold text-white md:text-5xl">Talk to Us</h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-white/60">
-            Have questions? We&apos;d love to hear from you. Send us a message and we&apos;ll respond as soon as possible.
-          </p>
-        </div>
+        <AnimateOnScroll animation="fade-up">
+          <div className="mb-12 text-center">
+            <h1 className="text-4xl font-bold text-white md:text-5xl">Talk to Us</h1>
+            <p className="mx-auto mt-4 max-w-2xl text-lg text-white/60">
+              Have questions? We&apos;d love to hear from you. Send us a message and we&apos;ll respond as soon as possible.
+            </p>
+          </div>
+        </AnimateOnScroll>
 
+        <AnimateOnScroll animation="fade-blur" delay={100}>
         <div className="mx-auto max-w-2xl">
           {/* Contact Form */}
           <div className="rounded-2xl border border-white/10 bg-[#1a1a2e]/50 p-8">
@@ -132,6 +136,7 @@ export default function ContactPage() {
             )}
           </div>
         </div>
+        </AnimateOnScroll>
       </main>
 
       <Footer />

@@ -5,6 +5,7 @@ import { VoiceCard } from "@/components/voice-card"
 
 interface VoiceAgentCardProps {
   userId?: string | null
+  userDisplayName?: string | null
   getAuthToken?: () => Promise<string | null>
   onConversationSaved?: () => void
 }
@@ -13,7 +14,7 @@ interface VoiceAgentCardProps {
  * Voice agent card for dashboard embedding.
  * Lazy-loads Room (LiveKit) only when user clicks Connect to avoid heavy initial bundle.
  */
-export function VoiceAgentCard({ userId, getAuthToken, onConversationSaved }: VoiceAgentCardProps) {
+export function VoiceAgentCard({ userId, userDisplayName, getAuthToken, onConversationSaved }: VoiceAgentCardProps) {
   const [inCall, setInCall] = useState(false)
   const [selectedVoice, setSelectedVoice] = useState("marin")
   const [selectedLanguage, setSelectedLanguage] = useState<"en" | "ko">("en")
@@ -45,6 +46,7 @@ export function VoiceAgentCard({ userId, getAuthToken, onConversationSaved }: Vo
           selectedLanguage={selectedLanguage}
           onLanguageChange={setSelectedLanguage}
           userId={userId}
+          userDisplayName={userDisplayName}
           getAuthToken={getAuthToken}
           onConversationSaved={onConversationSaved}
         />

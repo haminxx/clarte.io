@@ -18,11 +18,13 @@ export async function POST(request: Request) {
   let voice = "marin"
   let mode = "expert"
   let language = "en"
+  let user_name: string | undefined
   try {
     const body = await request.json().catch(() => ({}))
     if (body && typeof body.voice === "string" && VALID_VOICES.has(body.voice)) voice = body.voice
     if (body && typeof body.mode === "string" && VALID_MODES.has(body.mode)) mode = body.mode
     if (body && typeof body.language === "string" && VALID_LANGUAGES.has(body.language)) language = body.language
+    if (body && typeof body.user_name === "string" && body.user_name.trim()) user_name = body.user_name.trim()
   } catch {
     // ignore
   }
@@ -49,11 +51,13 @@ export async function POST(request: Request) {
       name: identity,
     })
     at.addGrant({ roomJoin: true, room: roomName })
+    const metadata: Record<string, string> = { voice, mode, language }
+    if (user_name) metadata.user_name = user_name
     at.roomConfig = new RoomConfiguration({
       agents: [
         new RoomAgentDispatch({
           agentName: "clarte",
-          metadata: JSON.stringify({ voice, mode, language }),
+          metadata: JSON.stringify(metadata),
         }),
       ],
     })

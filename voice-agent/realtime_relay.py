@@ -6,6 +6,9 @@ import asyncio
 import json
 import logging
 import os
+import random
+from typing import Optional
+from urllib.parse import parse_qs
 
 from dotenv import load_dotenv
 from tools import do_check_schedule, do_log_feedback, do_search_web
@@ -41,6 +44,11 @@ You are Clarte, a sophisticated, wise, and guiding Voice AI Agent modeled after 
 
 ## RULES
 - Never give direct advice prematurely. No filler ("That's a great question!", "I understand."). Keep it conversational and concise.
+
+## Response Length and Repetition
+- Keep responses as short as possible. One to two sentences maximum. Get to the point.
+- Do not repeat or paraphrase what the user said. Skip acknowledgments like "So you're saying..." or "You mentioned that...". Go straight to your question or feedback.
+- Exception: When confirming a complex conclusion that requires step-by-step verification to ensure you and the user share the same understanding, you may briefly restate key points before asking for confirmation. Use this sparingly.
 
 ## Tools
 - **search_web**: Only in Step 3. Research, facts, market reality.
@@ -84,6 +92,32 @@ TOOLS = [
     },
 ]
 
+FOLLOW_UP_PHRASES_EN = [
+    "What's on your mind lately?",
+    "How can I help?",
+    "Do you need some help?",
+    "What would you like to think through today?",
+    "What's been occupying your thoughts?",
+]
+FOLLOW_UP_PHRASES_KO = [
+    "오늘 무엇을 함께 생각해 보시겠어요?",
+    "어떻게 도와드릴까요?",
+    "도움이 필요하신가요?",
+    "무엇이 마음에 걸리시나요?",
+    "요즘 어떤 생각이 드시나요?",
+]
+
+
+def _build_greeting_instructions(user_name: Optional[str], language: str) -> str:
+    """Build personalized greeting instructions for the relay."""
+    if language == "ko":
+        opening = f"안녕하세요, {user_name}님!" if user_name and user_name.strip() else "안녕하세요!"
+        follow_up = random.choice(FOLLOW_UP_PHRASES_KO)
+    else:
+        opening = f"Hello, {user_name}!" if user_name and user_name.strip() else "Hello!"
+        follow_up = random.choice(FOLLOW_UP_PHRASES_EN)
+    return f'Say exactly: "[Curious] {opening} {follow_up}"'
+
 
 def _execute_tool(name: str, arguments: str) -> str:
     """Execute a tool and return the result."""
@@ -109,6 +143,20 @@ async def handle_realtime_websocket(websocket):
     """Handle a client WebSocket connection: relay to OpenAI and handle tools."""
     import websockets
 
+    # Parse query params for personalized greeting (e.g. ?user_name=John&language=ko)
+    user_name = None
+    language = "en"
+    try:
+        query_string = websocket.scope.get("query_string", b"").decode()
+        if query_string:
+            params = parse_qs(query_string)
+            if params.get("user_name"):
+                user_name = (params["user_name"][0] or "").strip() or None
+            if params.get("language") and params["language"][0] == "ko":
+                language = "ko"
+    except Exception as e:
+        logger.debug("Could not parse WebSocket query params: %s", e)
+
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         try:
@@ -130,10 +178,10 @@ async def handle_realtime_websocket(websocket):
                     "instructions": EXECUTIVE_ASSISTANT_PROMPT,
                     "voice": "cedar",
                     "turn_detection": {
-                        "type": "server_vad",
-                        "threshold": 0.5,
-                        "prefix_padding_ms": 300,
-                        "silence_duration_ms": 500,
+                        "type": "semantic_vad",
+                        "eagerness": "high",
+                        "create_response": True,
+                        "interrupt_response": True,
                     },
                     "tools": TOOLS,
                 },
@@ -141,12 +189,13 @@ async def handle_realtime_websocket(websocket):
             await openai_ws.send(json.dumps(session_update))
             logger.info("Sent session.update to OpenAI")
 
-            # Queue for greeting
+            # Queue for personalized greeting
+            greeting_instructions = _build_greeting_instructions(user_name, language)
             greeting = {
                 "type": "response.create",
                 "response": {
                     "modalities": ["text", "audio"],
-                    "instructions": "Greet in one short sentence. Alfred-style: curious, inviting. Ask what's on their mind or what they'd like to think through. Use [Curious] tag.",
+                    "instructions": greeting_instructions,
                 },
             }
             await openai_ws.send(json.dumps(greeting))

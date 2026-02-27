@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react"
 import { Waveform } from "./waveform"
 import { Button } from "@/components/ui/button"
 import { Play, Square } from "lucide-react"
+import { AnimateOnScroll } from "./animate-on-scroll"
 
 type VoiceSample = "Marin" | "Victoria" | null
 
@@ -121,18 +122,21 @@ export function FeaturesSection() {
       </div>
       
       <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 text-center w-full">
-        <h2 className="mb-4 text-balance text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight text-foreground px-2">
-          Built for Real-Time
-          <br />
-          Voice Intelligence
-        </h2>
-        <p className="mx-auto mb-8 sm:mb-12 max-w-xl text-sm sm:text-base text-muted-foreground px-4">
-          Flawless speech precision, ultra-low latency, and human-level
-          clarity — even in complex, high-velocity conversations.
-        </p>
+        <AnimateOnScroll animation="fade-up">
+          <h2 className="mb-4 text-balance text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight text-foreground px-2">
+            Built for Real-Time
+            <br />
+            Voice Intelligence
+          </h2>
+          <p className="mx-auto mb-8 sm:mb-12 max-w-xl text-sm sm:text-base text-muted-foreground px-4">
+            Flawless speech precision, ultra-low latency, and human-level
+            clarity — even in complex, high-velocity conversations.
+          </p>
+        </AnimateOnScroll>
 
         <div className="grid gap-4 sm:gap-6 md:grid-cols-2 w-full">
           {/* AI Agent Card - Now on the left */}
+          <AnimateOnScroll animation="fade-up" delay={80}>
           <div className="rounded-2xl border border-border bg-background p-6">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-medium text-foreground">Clarte Agent</h3>
@@ -165,8 +169,10 @@ export function FeaturesSection() {
               </div>
             </div>
           </div>
+          </AnimateOnScroll>
 
           {/* Human Voice Card - Now on the right */}
+          <AnimateOnScroll animation="fade-up" delay={160}>
           <div className="rounded-2xl border border-border bg-background p-6">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-medium text-foreground">Human Voice</h3>
@@ -199,6 +205,7 @@ export function FeaturesSection() {
               </div>
             </div>
           </div>
+          </AnimateOnScroll>
         </div>
       </div>
     </section>

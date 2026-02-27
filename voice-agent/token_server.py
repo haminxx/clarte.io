@@ -44,6 +44,7 @@ class TokenRequest(BaseModel):
     voice: Optional[str] = None
     mode: Optional[str] = None
     language: Optional[str] = None
+    user_name: Optional[str] = None
 
 
 @app.get("/health")
@@ -88,12 +89,15 @@ def get_token(body: Optional[TokenRequest] = Body(None)):
         at.with_name(identity or "user")
         room = room_name or f"clarte-{uuid.uuid4().hex[:12]}"
         at.with_grants(VideoGrants(room_join=True, room=room))
+        meta = {"voice": voice, "mode": mode, "language": language}
+        if user_name:
+            meta["user_name"] = user_name
         at.with_room_config(
             RoomConfiguration(
                 agents=[
                     RoomAgentDispatch(
                         agent_name="clarte",
-                        metadata=json.dumps({"voice": voice, "mode": mode, "language": language}),
+                        metadata=json.dumps(meta),
                     )
                 ],
             ),

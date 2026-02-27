@@ -127,6 +127,51 @@
   }
 }
 
+@keyframes fade-up-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes blur-to-clear {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-up-in {
+  animation: fade-up-in 0.6s ease-out both;
+}
+
+.animate-blur-to-clear {
+  animation: blur-to-clear 0.6s ease-out both;
+}
+
+.animate-pop-in {
+  animation: pop-in 0.6s ease-out both;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

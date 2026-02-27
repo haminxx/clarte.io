@@ -288,16 +288,21 @@ async function fetchToken(
   tokenUrl: string,
   mode: CallMode,
   voice?: string,
-  language?: string
+  language?: string,
+  user_name?: string | null
 ): Promise<{ token: string; room: string } | { error: string }> {
+  const body: Record<string, string> = {
+    voice: voice ?? "marin",
+    mode: toAgentMode(mode),
+    language: language === "ko" ? "ko" : "en",
+  }
+  if (user_name && user_name.trim()) {
+    body.user_name = user_name.trim()
+  }
   const res = await fetch(tokenUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      voice: voice ?? "marin",
-      mode: toAgentMode(mode),
-      language: language === "ko" ? "ko" : "en",
-    }),
+    body: JSON.stringify(body),
   })
   const raw = await res.text()
   if (!res.ok) {
@@ -337,6 +342,8 @@ interface RoomProps {
   onLanguageChange?: (lang: "en" | "ko") => void
   /** For saving conversation to Firestore. If provided, transcript is sent on disconnect. */
   userId?: string | null
+  /** User display name for personalized greeting. Passed to token request. */
+  userDisplayName?: string | null
   getAuthToken?: () => Promise<string | null>
   /** Called after conversation is saved (e.g. to refetch list). */
   onConversationSaved?: () => void
@@ -354,6 +361,7 @@ export function Room({
   selectedLanguage = "en",
   onLanguageChange,
   userId,
+  userDisplayName,
   getAuthToken,
   onConversationSaved,
 }: RoomProps) {
@@ -441,7 +449,7 @@ export function Room({
       }
     }
     try {
-      const result = await fetchToken(tokenUrl, mode, voice, language)
+      const result = await fetchToken(tokenUrl, mode, voice, language, userDisplayName)
       if ("error" in result) {
         setError(result.error)
         setStatus("error")
@@ -454,7 +462,7 @@ export function Room({
       setError(e instanceof Error ? e.message : "Failed to get token")
       setStatus("error")
     }
-  }, [mode, voice, language])
+  }, [mode, voice, language, userDisplayName])
 
   const configured = Boolean(LIVEKIT_URL)
 

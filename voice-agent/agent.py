@@ -7,7 +7,9 @@ import asyncio
 import json
 import logging
 import os
+import random
 import re
+import time
 import urllib.request
 from typing import AsyncIterable, Optional
 
@@ -69,6 +71,11 @@ Prefix your spoken responses with an emotional tag in brackets (e.g., [Curious],
 3. **No filler.** Do not say "That's a great question!" or "I understand." Get straight to the profound question or the feedback.
 4. **Embrace the pause.** Frame questions in a way that implies you are waiting for them to think.
 
+## Response Length and Repetition
+- **Keep responses as short as possible.** One to two sentences maximum. Get to the point.
+- **Do not repeat or paraphrase what the user said.** Skip acknowledgments like "So you're saying..." or "You mentioned that...". Go straight to your question or feedback.
+- **Exception:** When confirming a complex conclusion that requires step-by-step verification to ensure you and the user share the same understanding, you may briefly restate key points before asking for confirmation. Use this sparingly.
+
 ## Speech & Delivery (for natural TTS)
 - Use ellipses (...) sparingly for thoughtful pauses; em-dashes (—) for brief breaks between ideas.
 - Vary sentence length: mix short, punchy phrases with longer sentences. Emphasize key words naturally.
@@ -121,10 +128,25 @@ def _validate_elevenlabs_key(api_key: str) -> bool:
 
 VALID_LANGUAGES = {"en", "ko"}
 
+FOLLOW_UP_PHRASES_EN = [
+    "What's on your mind lately?",
+    "How can I help?",
+    "Do you need some help?",
+    "What would you like to think through today?",
+    "What's been occupying your thoughts?",
+]
+FOLLOW_UP_PHRASES_KO = [
+    "오늘 무엇을 함께 생각해 보시겠어요?",
+    "어떻게 도와드릴까요?",
+    "도움이 필요하신가요?",
+    "무엇이 마음에 걸리시나요?",
+    "요즘 어떤 생각이 드시나요?",
+]
+
 
 def _parse_metadata(job) -> dict:
     """Parse job metadata; returns defaults if missing or invalid."""
-    out = {"voice": "marin", "mode": "expert", "language": "en"}
+    out = {"voice": "marin", "mode": "expert", "language": "en", "user_name": None}
     try:
         meta = getattr(job, "metadata", None) if job else None
         if not meta:
@@ -136,6 +158,8 @@ def _parse_metadata(job) -> dict:
             out["mode"] = data["mode"]
         if data.get("language") in VALID_LANGUAGES:
             out["language"] = data["language"]
+        if data.get("user_name") and isinstance(data["user_name"], str) and data["user_name"].strip():
+            out["user_name"] = data["user_name"].strip()
     except Exception:
         pass
     return out
@@ -158,10 +182,14 @@ class ExecutiveAssistantAgent(Agent):
         """Strip emotional tags ([Curious], [Challenging], etc.) from text before TTS synthesis."""
         buffer = ""
         tag_stripped = False
+        t_first_llm: Optional[float] = None
 
         async def stripped_text() -> AsyncIterable[str]:
-            nonlocal buffer, tag_stripped
+            nonlocal buffer, tag_stripped, t_first_llm
             async for chunk in text:
+                if t_first_llm is None:
+                    t_first_llm = time.perf_counter()
+                    logger.info("[latency] First LLM text chunk received")
                 if tag_stripped:
                     yield chunk
                     continue
@@ -180,7 +208,25 @@ class ExecutiveAssistantAgent(Agent):
             if buffer:
                 yield buffer
 
-        return await Agent.default.tts_node(self, stripped_text(), model_settings)
+        audio_stream = await Agent.default.tts_node(self, stripped_text(), model_settings)
+        if audio_stream is None:
+            return None
+
+        t_first_tts: Optional[float] = None
+
+        async def timed_audio() -> AsyncIterable[rtc.AudioFrame]:
+            nonlocal t_first_tts
+            async for frame in audio_stream:
+                if t_first_tts is None:
+                    t_first_tts = time.perf_counter()
+                    if t_first_llm is not None:
+                        llm_to_tts_ms = (t_first_tts - t_first_llm) * 1000
+                        logger.info("[latency] First TTS frame ready (LLM->TTS: %.0f ms)", llm_to_tts_ms)
+                    else:
+                        logger.info("[latency] First TTS frame ready")
+                yield frame
+
+        return timed_audio()
 
     @function_tool(
         description="Ask the user to share their screen so you can see what is on their display. Use when they ask you to look at their screen, see what's on their screen, or help with something visible on their display.",
@@ -316,7 +362,7 @@ async def entrypoint(ctx: agents.JobContext) -> None:
     """Single entrypoint: Executive Assistant only. No agent routing."""
     logger.info("entrypoint started")
     meta = _parse_metadata(getattr(ctx, "job", None))
-    voice, mode, language = meta["voice"], meta["mode"], meta["language"]
+    voice, mode, language, user_name = meta["voice"], meta["mode"], meta["language"], meta.get("user_name")
 
     auto_sub = AutoSubscribe.SUBSCRIBE_ALL  # receive audio + screen/camera when user enables them
     await ctx.connect(auto_subscribe=auto_sub)
@@ -337,7 +383,7 @@ async def entrypoint(ctx: agents.JobContext) -> None:
 
     turn_detection = TurnDetection(
         type="semantic_vad",
-        eagerness="medium",
+        eagerness="high",
         create_response=True,
         interrupt_response=True,
     )
@@ -366,7 +412,7 @@ async def entrypoint(ctx: agents.JobContext) -> None:
                 tts=elevenlabs.TTS(
                     voice_id=elevenlabs_voice_id,
                     model="eleven_flash_v2_5",
-                    streaming_latency=2,
+                    streaming_latency=1,
                     language=language or "en",
                     enable_ssml_parsing=True,
                     voice_settings=elevenlabs.VoiceSettings(
@@ -393,17 +439,20 @@ async def entrypoint(ctx: agents.JobContext) -> None:
         logger.info("Using OpenAI built-in voice (%s)", voice)
     room_opts = room_io.RoomOptions(video_input=True)  # allow video when user enables screen/camera
     agent = ExecutiveAssistantAgent(room=room, session=session)
-    logger.info("Starting Executive Assistant session (voice=%s, mode=%s, language=%s)", voice, mode, language)
+    logger.info("Starting Executive Assistant session (voice=%s, mode=%s, language=%s, user_name=%s)", voice, mode, language, user_name or "(none)")
     await session.start(
         room=room,
         agent=agent,
         room_options=room_opts,
     )
-    greeting = (
-        'Say exactly: "[Curious] 안녕하세요. 오늘 무엇을 함께 생각해 보시겠어요?"'
-        if language == "ko"
-        else 'Say exactly: "[Curious] Hello. What would you like to think through today?"'
-    )
+    # Opening: "Hello!" vs "Hello, [name]!" (or Korean equivalents)
+    if language == "ko":
+        opening = f"안녕하세요, {user_name}님!" if user_name else "안녕하세요!"
+        follow_up = random.choice(FOLLOW_UP_PHRASES_KO)
+    else:
+        opening = f"Hello, {user_name}!" if user_name else "Hello!"
+        follow_up = random.choice(FOLLOW_UP_PHRASES_EN)
+    greeting = f'Say exactly: "[Curious] {opening} {follow_up}"'
     await session.generate_reply(instructions=greeting)
 
     await asyncio.Future()

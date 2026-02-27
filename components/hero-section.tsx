@@ -6,6 +6,7 @@ import { ParticleOrb } from "./particle-orb"
 import { Room } from "@/components/voice/Room"
 import { VoiceCard } from "@/components/voice-card"
 import { Button } from "@/components/ui/button"
+import { AnimateOnScroll } from "./animate-on-scroll"
 
 export function HeroSection() {
   const [inCall, setInCall] = useState(false)
@@ -32,41 +33,50 @@ export function HeroSection() {
       <div className="pointer-events-none absolute inset-2 sm:inset-4 md:inset-8 border border-dashed border-white/10" />
 
       <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 pt-16 text-center w-full">
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2">
-          <span className="text-sm text-white/70">
-            Find your core, Fund your future
-          </span>
-        </div>
+        <AnimateOnScroll animateOnMount delay={0} animation="fade-up">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2">
+            <span className="text-sm text-white/70">
+              Find your core, Fund your future
+            </span>
+          </div>
+        </AnimateOnScroll>
 
-        <h1 className="mb-6 text-balance text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-semibold tracking-tight text-white px-2">
-          Voice AI that runs at
-          <br />
-          the speed of thought
-        </h1>
+        <AnimateOnScroll animateOnMount delay={80} animation="fade-up">
+          <h1 className="mb-6 text-balance text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-semibold tracking-tight text-white px-2">
+            Voice AI that runs at
+            <br />
+            the speed of thought
+          </h1>
+        </AnimateOnScroll>
 
-        <p className="mx-auto mb-8 max-w-xl text-base sm:text-lg text-white/60 px-4">
-          Leverage ultra-low latency synthesis and scalable APIs for real-time
-          interactions. Optimized for engineers who build the future.
-        </p>
+        <AnimateOnScroll animateOnMount delay={160} animation="fade-up">
+          <p className="mx-auto mb-8 max-w-xl text-base sm:text-lg text-white/60 px-4">
+            Leverage ultra-low latency synthesis and scalable APIs for real-time
+            interactions. Optimized for engineers who build the future.
+          </p>
+        </AnimateOnScroll>
 
-        <div className="mb-4 sm:mb-6 flex flex-wrap items-center justify-center gap-3 sm:gap-4 px-4">
-          <Link href="/download">
-            <Button className="bg-white text-black hover:bg-white/90">
-              Download
-            </Button>
-          </Link>
-          <Link href="/docs">
-            <Button
-              variant="outline"
-              className="border-white/20 bg-transparent text-white hover:bg-white/10"
-            >
-              Explore docs
-            </Button>
-          </Link>
-        </div>
+        <AnimateOnScroll animateOnMount delay={240} animation="fade-up">
+          <div className="mb-4 sm:mb-6 flex flex-wrap items-center justify-center gap-3 sm:gap-4 px-4">
+            <Link href="/download">
+              <Button className="bg-white text-black hover:bg-white/90">
+                Download
+              </Button>
+            </Link>
+            <Link href="/docs">
+              <Button
+                variant="outline"
+                className="border-white/20 bg-transparent text-white hover:bg-white/10"
+              >
+                Explore docs
+              </Button>
+            </Link>
+          </div>
+        </AnimateOnScroll>
       </div>
 
-      <div className="relative mx-auto flex h-[400px] sm:h-[500px] w-full max-w-4xl items-center justify-center px-4 -mt-8 sm:-mt-12">
+      <AnimateOnScroll animateOnMount delay={320} animation="fade-up">
+        <div className="relative mx-auto flex h-[400px] sm:h-[500px] w-full max-w-4xl items-center justify-center px-4 -mt-8 sm:-mt-12">
         <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
           <ParticleOrb />
         </div>
@@ -97,7 +107,8 @@ export function HeroSection() {
             )}
           </div>
         </div>
-      </div>
+        </div>
+      </AnimateOnScroll>
     </section>
   )
 }
