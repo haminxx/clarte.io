@@ -5,6 +5,7 @@ Also provides /realtime WebSocket for Tier 1 (voice-only, no LiveKit).
 POST /conversations/save: save conversation with summary + mindmap to Firestore.
 """
 import json
+import re
 import logging
 import os
 import uuid
@@ -81,7 +82,8 @@ def get_token(body: Optional[TokenRequest] = Body(None)):
     if raw_name and isinstance(raw_name, str):
         v = raw_name.strip()
         if v and v.lower() not in ("undefined", "null"):
-            user_name = v
+            if not v.startswith("user-") and len(v) >= 2 and not re.match(r"^[a-z0-9]{8,36}$", v):
+                user_name = v
 
     try:
         from livekit.api import (

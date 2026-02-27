@@ -4,6 +4,7 @@ Handles tool execution (search_web, check_schedule, log_feedback) server-side.
 """
 import asyncio
 import json
+import re
 import logging
 import os
 import random
@@ -27,6 +28,22 @@ You are Clarte, an Alfred-style Voice AI: guide users to their own clarity using
 
 ## EMOTIONAL TAGS (prefix responses)
 [Curious] Step 1 – calm, inquisitive. [Challenging] Step 2 – analytical, respectful. [Inspiring] When user hesitates despite clear plan – warm, fatherly, quote wisdom, trust your gut. [Objective] Step 3 – professional.
+
+## CONTEXT-AWARE HELP (when user requests specific assistance)
+
+**Translation (e.g. "translate what you see on my screen to Korean"):**
+- If they share screen/camera: Use request_screen_share or request_camera first. Once you receive the visual context, provide a complete (100%) translation. Match their requested target language.
+- If they read the text aloud: Translate exactly what they said, in full.
+- If the user asks you to translate what is on their screen, first request screen share. If you receive visual input, translate it fully. If not, ask them to read the relevant text aloud and translate exactly what they say.
+
+**Math / homework / studying:**
+- Default: Give only the first step or hint. Then suggest how they should approach the next step. Do not give the full answer unless they clearly struggle.
+- Use show_guidance for step-by-step visual hints when helpful.
+
+**Genuine understanding difficulty:**
+- If the user expresses confusion, says they don't understand the material, or has tried and failed: Provide a full step-by-step explanation. Use show_guidance for math/equations.
+- After explaining, ask a follow-up: either an example question they can try, or a question about the problem-solving order to confirm they understood.
+- Example: "Does that order make sense? What would you do first if I gave you a similar problem?"
 
 ## RULES
 No premature advice. No filler. 1–2 sentences max. Don't repeat what the user said. Exception: briefly restate only when confirming complex conclusions. Match user language.
@@ -87,13 +104,28 @@ FOLLOW_UP_PHRASES_KO = [
 ]
 
 
+def _is_valid_user_name(name: Optional[str]) -> bool:
+    """Reject identity-like or invalid names."""
+    if not name or not name.strip():
+        return False
+    val = name.strip()
+    if val.lower() in ("undefined", "null"):
+        return False
+    if val.startswith("user-") or len(val) < 2:
+        return False
+    if re.match(r"^[a-z0-9]{8,36}$", val):
+        return False
+    return True
+
+
 def _build_greeting_instructions(user_name: Optional[str], language: str) -> str:
     """Build personalized greeting instructions for the relay."""
+    valid_name = user_name if _is_valid_user_name(user_name) else None
     if language == "ko":
-        opening = f"안녕하세요, {user_name}님!" if user_name and user_name.strip() else "안녕하세요!"
+        opening = f"안녕하세요, {valid_name}님!" if valid_name else "안녕하세요!"
         follow_up = random.choice(FOLLOW_UP_PHRASES_KO)
     else:
-        opening = f"Hello, {user_name}!" if user_name and user_name.strip() else "Hello!"
+        opening = f"Hello, {valid_name}!" if valid_name else "Hello!"
         follow_up = random.choice(FOLLOW_UP_PHRASES_EN)
     return f'Say exactly: "[Curious] {opening} {follow_up}"'
 
@@ -131,7 +163,9 @@ async def handle_realtime_websocket(websocket):
             params = parse_qs(query_string)
             if params.get("user_name"):
                 raw = (params["user_name"][0] or "").strip()
-                user_name = raw if raw and raw.lower() not in ("undefined", "null") else None
+                if raw and raw.lower() not in ("undefined", "null"):
+                    if not raw.startswith("user-") and len(raw) >= 2 and not re.match(r"^[a-z0-9]{8,36}$", raw):
+                        user_name = raw
             if params.get("language") and params["language"][0] == "ko":
                 language = "ko"
     except Exception as e:

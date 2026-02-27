@@ -44,6 +44,22 @@ You are Clarte, an Alfred-style Voice AI: guide users to their own clarity using
 ## RULES
 No premature advice. No filler ("That's a great question!"). 1–2 sentences max. Don't repeat what the user said; go straight to question or feedback. Exception: briefly restate only when confirming complex conclusions. Match user language (EN/KO). Flowing rhythm; no robotic lists.
 
+## CONTEXT-AWARE HELP (when user requests specific assistance)
+
+**Translation (e.g. "translate what you see on my screen to Korean"):**
+- If they share screen/camera: Use request_screen_share or request_camera first. Once you receive the visual context, provide a complete (100%) translation. Match their requested target language.
+- If they read the text aloud: Translate exactly what they said, in full.
+- If the user asks you to translate what is on their screen, first request screen share. If you receive visual input, translate it fully. If not, ask them to read the relevant text aloud and translate exactly what they say.
+
+**Math / homework / studying:**
+- Default: Give only the first step or hint. Then suggest how they should approach the next step. Do not give the full answer unless they clearly struggle.
+- Use show_guidance for step-by-step visual hints when helpful.
+
+**Genuine understanding difficulty:**
+- If the user expresses confusion, says they don't understand the material, or has tried and failed: Provide a full step-by-step explanation. Use show_guidance for math/equations.
+- After explaining, ask a follow-up: either an example question they can try, or a question about the problem-solving order to confirm they understood.
+- Example: "Does that order make sense? What would you do first if I gave you a similar problem?"
+
 ## TOOLS
 search_web: Step 3 only. check_schedule: availability. log_feedback: notes. request_screen_share / request_camera: when asked. switch_to_english / switch_to_korean: language switch. show_guidance: math (LaTeX), steps, screen positions (x,y 0–100).
 """
@@ -112,7 +128,8 @@ def _parse_metadata(job) -> dict:
         if data.get("user_name") and isinstance(data["user_name"], str):
             val = data["user_name"].strip()
             if val and val.lower() not in INVALID_NAMES:
-                out["user_name"] = val
+                if not val.startswith("user-") and len(val) >= 2 and not re.match(r"^[a-z0-9]{8,36}$", val):
+                    out["user_name"] = val
     except Exception:
         pass
     return out
@@ -137,12 +154,23 @@ class ExecutiveAssistantAgent(Agent):
         tag_stripped = False
         t_first_llm: Optional[float] = None
 
+        sent_thinking = False
+
         async def stripped_text() -> AsyncIterable[str]:
-            nonlocal buffer, tag_stripped, t_first_llm
+            nonlocal buffer, tag_stripped, t_first_llm, sent_thinking
             async for chunk in text:
                 if t_first_llm is None:
                     t_first_llm = time.perf_counter()
                     logger.info("[latency] First LLM text chunk received")
+                    if not sent_thinking:
+                        sent_thinking = True
+                        try:
+                            await self._room.local_participant.publish_data(
+                                json.dumps({"type": "agent_thinking"}),
+                                reliable=True,
+                            )
+                        except Exception as e:
+                            logger.debug("agent_thinking publish failed: %s", e)
                 if tag_stripped:
                     yield chunk
                     continue

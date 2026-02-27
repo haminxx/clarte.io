@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     if (body && typeof body.mode === "string" && VALID_MODES.has(body.mode)) mode = body.mode
     if (body && typeof body.language === "string" && VALID_LANGUAGES.has(body.language)) language = body.language
     const raw = body?.user_name?.trim?.()
-    if (raw && raw !== "undefined" && raw !== "null") user_name = raw
+    if (raw && raw !== "undefined" && raw !== "null" && !raw.startsWith("user-") && raw.length >= 2) user_name = raw
   } catch {
     // ignore
   }

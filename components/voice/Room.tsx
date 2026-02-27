@@ -10,7 +10,14 @@ import { Button } from "@/components/ui/button"
 import { PhoneOff, Loader2, Phone, Play, Monitor, Video } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { VOICE_OPTIONS, LANGUAGE_OPTIONS } from "@/components/voice-card"
-import { LiveKitRoom, RoomAudioRenderer, useLocalParticipant, useDataChannel } from "@livekit/components-react"
+import {
+  LiveKitRoom,
+  RoomAudioRenderer,
+  useLocalParticipant,
+  useDataChannel,
+  useRemoteParticipants,
+  useIsSpeaking,
+} from "@livekit/components-react"
 import { useKrispNoiseFilter } from "@livekit/components-react/krisp"
 import {
   Dialog,
@@ -109,6 +116,11 @@ function RoomInner({
   const [cameraPending, setCameraPending] = useState(false)
   const [showScreenShareRequest, setShowScreenShareRequest] = useState(false)
   const [showCameraRequest, setShowCameraRequest] = useState(false)
+  const [isAgentThinking, setIsAgentThinking] = useState(false)
+
+  const remoteParticipants = useRemoteParticipants()
+  const agentParticipant = remoteParticipants[0] ?? null
+  const isAgentSpeaking = useIsSpeaking(agentParticipant ?? undefined)
 
   useDataChannel((msg) => {
     try {
@@ -116,6 +128,7 @@ function RoomInner({
       const data = JSON.parse(text) as { type?: string; role?: string; content?: string }
       if (data?.type === "request_screen_share") setShowScreenShareRequest(true)
       if (data?.type === "request_camera") setShowCameraRequest(true)
+      if (data?.type === "agent_thinking") setIsAgentThinking(true)
       if (data?.type === "transcript_add" && data.role && data.content && onTranscriptAdd) {
         onTranscriptAdd(data.role, data.content)
       }
@@ -123,6 +136,36 @@ function RoomInner({
       /* ignore */
     }
   })
+
+  useEffect(() => {
+    if (isAgentSpeaking && isAgentThinking) setIsAgentThinking(false)
+  }, [isAgentSpeaking, isAgentThinking])
+
+  useEffect(() => {
+    if (!isAgentThinking) return
+    const timeout = setTimeout(() => setIsAgentThinking(false), 10_000)
+    return () => clearTimeout(timeout)
+  }, [isAgentThinking])
+
+  useEffect(() => {
+    if (!isAgentThinking) return
+    const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.type = "sine"
+    osc.frequency.value = 250
+    gain.gain.value = 0.04
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+    osc.start()
+    return () => {
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1)
+      setTimeout(() => {
+        osc.stop()
+        ctx.close()
+      }, 120)
+    }
+  }, [isAgentThinking])
 
   React.useEffect(() => {
     if (microphoneTrack && krisp) {
@@ -297,7 +340,7 @@ async function fetchToken(
     language: language === "ko" ? "ko" : "en",
   }
   const trimmed = user_name?.trim?.()
-  if (trimmed && trimmed !== "undefined" && trimmed !== "null") {
+  if (trimmed && trimmed !== "undefined" && trimmed !== "null" && !trimmed.startsWith("user-") && trimmed.length >= 2) {
     body.user_name = trimmed
   }
   const res = await fetch(tokenUrl, {
@@ -374,7 +417,7 @@ export function Room({
 
   const withScreen = mode === "voice-with-screen" || mode === "voice-with-screen-camera"
   const withCamera = mode === "voice-with-screen-camera" || mode === "voice-with-camera"
-  const useKrisp = withScreen || withCamera
+  const useKrisp = true
 
   const addTranscript = useCallback((role: string, content: string) => {
     transcriptRef.current.push({ role, content })
