@@ -16,7 +16,7 @@ import {
   useLocalParticipant,
   useDataChannel,
   useRemoteParticipants,
-  useIsSpeaking,
+  useSpeakingParticipants,
 } from "@livekit/components-react"
 import { useKrispNoiseFilter } from "@livekit/components-react/krisp"
 import {
@@ -120,7 +120,8 @@ function RoomInner({
 
   const remoteParticipants = useRemoteParticipants()
   const agentParticipant = remoteParticipants[0] ?? null
-  const isAgentSpeaking = useIsSpeaking(agentParticipant ?? undefined)
+  const speakingParticipants = useSpeakingParticipants()
+  const isAgentSpeaking = agentParticipant !== null && speakingParticipants.includes(agentParticipant)
 
   useDataChannel((msg) => {
     try {
