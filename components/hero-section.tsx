@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback, useRef, useEffect } from "react"
 import Link from "next/link"
 import { ParticleOrb } from "./particle-orb"
 import { Room } from "@/components/voice/Room"
@@ -12,6 +12,8 @@ export function HeroSection() {
   const [inCall, setInCall] = useState(false)
   const [selectedVoice, setSelectedVoice] = useState("marin")
   const [selectedLanguage, setSelectedLanguage] = useState<"en" | "ko">("en")
+  const [transcriptEntries, setTranscriptEntries] = useState<{ role: string; content: string }[]>([])
+  const transcriptEndRef = useRef<HTMLDivElement>(null)
 
   const handleStartCall = () => {
     setInCall(true)
@@ -19,7 +21,16 @@ export function HeroSection() {
 
   const handleDisconnect = () => {
     setInCall(false)
+    setTranscriptEntries([])
   }
+
+  const handleTranscriptAdd = useCallback((role: string, content: string) => {
+    setTranscriptEntries((prev) => [...prev, { role, content }])
+  }, [])
+
+  useEffect(() => {
+    transcriptEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [transcriptEntries])
 
   return (
     <section className="relative min-h-screen overflow-hidden bg-background pt-16 w-full">
@@ -76,37 +87,57 @@ export function HeroSection() {
       </div>
 
       <AnimateOnScroll animateOnMount delay={320} animation="fade-up">
-        <div className="relative mx-auto flex h-[400px] sm:h-[500px] w-full max-w-4xl items-center justify-center px-4 -mt-8 sm:-mt-12">
-        <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-          <ParticleOrb />
-        </div>
-        <div className="relative z-20 w-full max-w-lg">
-          <div className="w-full max-w-lg rounded-2xl border border-border bg-card/90 p-4 sm:p-6 shadow-2xl backdrop-blur-md mx-auto">
-            {inCall ? (
-              <Room
-                mode="voice-only"
-                voice={selectedVoice}
-                language={selectedLanguage}
-                autoStart
-                onDisconnect={handleDisconnect}
-                cardLayout
-                selectedVoiceId={selectedVoice}
-                onVoiceChange={setSelectedVoice}
-                selectedLanguage={selectedLanguage}
-                onLanguageChange={setSelectedLanguage}
-              />
-            ) : (
-              <VoiceCard
-                onStartCall={handleStartCall}
-                isActive={false}
-                selectedVoiceId={selectedVoice}
-                onVoiceChange={setSelectedVoice}
-                selectedLanguage={selectedLanguage}
-                onLanguageChange={setSelectedLanguage}
-              />
-            )}
+        <div className="relative mx-auto flex min-h-[200px] w-full max-w-4xl flex-col items-center justify-center gap-4 px-4 pt-4">
+          <div className="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none">
+            <ParticleOrb />
           </div>
-        </div>
+          <div className="relative z-20 w-full max-w-lg flex flex-col gap-4">
+            <div className="w-full max-w-lg rounded-2xl border border-border bg-card/90 p-4 sm:p-6 shadow-2xl backdrop-blur-md mx-auto">
+              {inCall ? (
+                <Room
+                  mode="voice-only"
+                  voice={selectedVoice}
+                  language={selectedLanguage}
+                  autoStart
+                  onDisconnect={handleDisconnect}
+                  cardLayout
+                  selectedVoiceId={selectedVoice}
+                  onVoiceChange={setSelectedVoice}
+                  selectedLanguage={selectedLanguage}
+                  onLanguageChange={setSelectedLanguage}
+                  onTranscriptAdd={handleTranscriptAdd}
+                />
+              ) : (
+                <VoiceCard
+                  onStartCall={handleStartCall}
+                  isActive={false}
+                  selectedVoiceId={selectedVoice}
+                  onVoiceChange={setSelectedVoice}
+                  selectedLanguage={selectedLanguage}
+                  onLanguageChange={setSelectedLanguage}
+                />
+              )}
+            </div>
+            <div className="w-full max-w-lg rounded-2xl border border-border bg-card/90 p-4 shadow-xl backdrop-blur-md mx-auto">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Live transcript (Speech to text)
+              </p>
+              <div className="max-h-[120px] overflow-y-auto rounded-lg border border-border/50 bg-background/50 px-3 py-2 text-sm text-foreground">
+                {transcriptEntries.filter((e) => e.role === "user").length === 0 ? (
+                  <span className="text-muted-foreground">Your speech will appear here...</span>
+                ) : (
+                  transcriptEntries
+                    .filter((e) => e.role === "user")
+                    .map((entry, i) => (
+                      <div key={i} className="mb-1 last:mb-0">
+                        <span className="text-foreground">{entry.content}</span>
+                      </div>
+                    ))
+                )}
+                <div ref={transcriptEndRef} />
+              </div>
+            </div>
+          </div>
         </div>
       </AnimateOnScroll>
     </section>

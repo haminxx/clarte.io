@@ -394,6 +394,8 @@ interface RoomProps {
   getAuthToken?: () => Promise<string | null>
   /** Called after conversation is saved (e.g. to refetch list). */
   onConversationSaved?: () => void
+  /** Called when transcript is added (for live display, e.g. hero transcript box). */
+  onTranscriptAdd?: (role: string, content: string) => void
 }
 
 export function Room({
@@ -411,6 +413,7 @@ export function Room({
   userDisplayName,
   getAuthToken,
   onConversationSaved,
+  onTranscriptAdd,
 }: RoomProps) {
   const [token, setToken] = useState<string | null>(null)
   const [roomName, setRoomName] = useState<string | null>(null)
@@ -422,9 +425,13 @@ export function Room({
   const withCamera = mode === "voice-with-screen-camera" || mode === "voice-with-camera"
   const useKrisp = true
 
-  const addTranscript = useCallback((role: string, content: string) => {
-    transcriptRef.current.push({ role, content })
-  }, [])
+  const addTranscript = useCallback(
+    (role: string, content: string) => {
+      transcriptRef.current.push({ role, content })
+      onTranscriptAdd?.(role, content)
+    },
+    [onTranscriptAdd]
+  )
 
   const disconnect = useCallback(async () => {
     const transcript = [...transcriptRef.current]

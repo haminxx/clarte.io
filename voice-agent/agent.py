@@ -16,7 +16,7 @@ from typing import AsyncIterable, Optional
 from dotenv import load_dotenv
 from livekit import agents
 from livekit import rtc
-from livekit.agents import Agent, AgentServer, AgentSession, AutoSubscribe, ModelSettings, RunContext, function_tool
+from livekit.agents import Agent, AgentServer, AgentSession, AutoSubscribe, ModelSettings, RunContext, UserInputTranscribedEvent, function_tool
 from livekit.agents.voice import room_io
 from livekit.plugins import openai, elevenlabs
 
@@ -445,6 +445,24 @@ async def entrypoint(ctx: agents.JobContext) -> None:
             ),
         )
         logger.info("Using OpenAI built-in voice (%s)", voice)
+
+    @session.on("user_input_transcribed")
+    def on_user_input_transcribed(event: UserInputTranscribedEvent) -> None:
+        """Forward user speech transcription to frontend for live transcript display."""
+        if not event.is_final or not (event.transcript or "").strip():
+            return
+
+        async def _publish() -> None:
+            try:
+                await room.local_participant.publish_data(
+                    json.dumps({"type": "transcript_add", "role": "user", "content": event.transcript.strip()}),
+                    reliable=True,
+                )
+            except Exception as e:
+                logger.debug("transcript_add publish failed: %s", e)
+
+        asyncio.create_task(_publish())
+
     room_opts = room_io.RoomOptions(video_input=True)  # allow video when user enables screen/camera
     agent = ExecutiveAssistantAgent(room=room, session=session)
     logger.info("Starting Executive Assistant session (voice=%s, mode=%s, language=%s, user_name=%s)", voice, mode, language, user_name or "(none)")
