@@ -15,6 +15,9 @@ const RELAY_WS_URL = VOICE_AGENT_URL
 
 const SAMPLE_RATE = 24000
 
+/** High-pass cutoff (Hz) to ignore low-frequency ambient noise. 80–120 Hz typical. */
+const HIGHPASS_FREQ = 100
+
 /** Convert Float32 to Int16 PCM */
 function floatTo16BitPCM(float32: Float32Array): Int16Array {
   const int16 = new Int16Array(float32.length)
@@ -116,6 +119,10 @@ export function VoiceRoomDirect({ onDisconnect, autoStart = false }: VoiceRoomDi
       const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
       audioContextRef.current = ctx
       const source = ctx.createMediaStreamSource(streamRef.current!)
+      const highpass = ctx.createBiquadFilter()
+      highpass.type = "highpass"
+      highpass.frequency.value = HIGHPASS_FREQ
+      highpass.Q.value = 0.7
       const processor = ctx.createScriptProcessor(4096, 1, 1)
       processorRef.current = processor
       processor.onaudioprocess = (e) => {
@@ -125,7 +132,8 @@ export function VoiceRoomDirect({ onDisconnect, autoStart = false }: VoiceRoomDi
         const b64 = toBase64(pcm)
         ws.send(JSON.stringify({ type: "input_audio_buffer.append", audio: b64 }))
       }
-      source.connect(processor)
+      source.connect(highpass)
+      highpass.connect(processor)
       const gain = ctx.createGain()
       gain.gain.value = 0
       processor.connect(gain)

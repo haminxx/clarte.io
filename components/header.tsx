@@ -1,10 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
-import { getFirebaseAuth } from "@/lib/firebase"
-import { signOut, onAuthStateChanged, type User } from "firebase/auth"
 import { useRouter } from "next/navigation"
+import type { User } from "firebase/auth"
 import { Button } from "@/components/ui/button"
 import { Menu, X, LogOut, LayoutDashboard, User as UserIcon, Settings } from "lucide-react"
 import {
@@ -26,23 +25,37 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
+  const [auth, setAuth] = useState<import("firebase/auth").Auth | null>(null)
   const router = useRouter()
-  const auth = getFirebaseAuth()
 
+  useEffect(() => {
+    import("@/lib/firebase").then(({ getFirebaseAuth }) => {
+      const a = getFirebaseAuth()
+      setAuth(a)
+    })
+  }, [])
+
+  const unsubRef = useRef<(() => void) | null>(null)
   useEffect(() => {
     if (!auth) {
       setAuthChecked(true)
       return
     }
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u)
-      setAuthChecked(true)
+    import("firebase/auth").then(({ onAuthStateChanged }) => {
+      unsubRef.current = onAuthStateChanged(auth, (u) => {
+        setUser(u)
+        setAuthChecked(true)
+      })
     })
-    return () => unsub()
+    return () => {
+      unsubRef.current?.()
+      unsubRef.current = null
+    }
   }, [auth])
 
   const handleSignOut = async () => {
     if (!auth) return
+    const { signOut } = await import("firebase/auth")
     await signOut(auth)
     setMobileMenuOpen(false)
     router.replace("/")

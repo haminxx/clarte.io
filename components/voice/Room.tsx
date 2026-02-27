@@ -174,6 +174,8 @@ function RoomInner({
     }
   }, [microphoneTrack, krisp])
 
+  /* LiveKit path uses Krisp for noise filtering. High-pass filter applied in VoiceRoomDirect (WebSocket path). */
+
   React.useEffect(() => {
     if (!localParticipant) return
     const enableMic = async () => {

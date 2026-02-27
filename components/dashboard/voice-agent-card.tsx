@@ -3,6 +3,12 @@
 import { useState, useEffect } from "react"
 import { VoiceCard } from "@/components/voice-card"
 
+const LIVEKIT_URL = process.env.NEXT_PUBLIC_LIVEKIT_URL ?? ""
+const USE_DIRECT_RELAY = process.env.NEXT_PUBLIC_USE_DIRECT_RELAY === "true"
+
+/** Use lighter WebSocket relay when LiveKit not configured or flag set. */
+const useDirectRelay = !LIVEKIT_URL || USE_DIRECT_RELAY
+
 interface VoiceAgentCardProps {
   userId?: string | null
   userDisplayName?: string | null
@@ -12,19 +18,28 @@ interface VoiceAgentCardProps {
 
 /**
  * Voice agent card for dashboard embedding.
- * Lazy-loads Room (LiveKit) only when user clicks Connect to avoid heavy initial bundle.
+ * Voice-only: uses VoiceRoomDirect (WebSocket) when LiveKit unset for lighter bundle.
+ * Otherwise lazy-loads Room (LiveKit) when user clicks Connect.
  */
 export function VoiceAgentCard({ userId, userDisplayName, getAuthToken, onConversationSaved }: VoiceAgentCardProps) {
   const [inCall, setInCall] = useState(false)
   const [selectedVoice, setSelectedVoice] = useState("marin")
   const [selectedLanguage, setSelectedLanguage] = useState<"en" | "ko">("en")
   const [Room, setRoom] = useState<React.ComponentType<any> | null>(null)
+  const [VoiceRoomDirect, setVoiceRoomDirect] = useState<React.ComponentType<any> | null>(null)
 
   useEffect(() => {
-    if (inCall) {
-      import("@/components/voice/Room").then((m) => setRoom(() => m.Room))
-    } else {
+    if (!inCall) {
       setRoom(null)
+      setVoiceRoomDirect(null)
+      return
+    }
+    if (useDirectRelay) {
+      import("@/components/voice/VoiceRoomDirect").then((m) =>
+        setVoiceRoomDirect(() => m.VoiceRoomDirect)
+      )
+    } else {
+      import("@/components/voice/Room").then((m) => setRoom(() => m.Room))
     }
   }, [inCall])
 
@@ -33,7 +48,9 @@ export function VoiceAgentCard({ userId, userDisplayName, getAuthToken, onConver
 
   return (
     <div className="rounded-2xl border border-white/10 bg-[#1a1a2e]/50 p-4 sm:p-6">
-      {inCall && Room ? (
+      {inCall && VoiceRoomDirect ? (
+        <VoiceRoomDirect onDisconnect={handleDisconnect} autoStart />
+      ) : inCall && Room ? (
         <Room
           mode="voice-only"
           voice={selectedVoice}
