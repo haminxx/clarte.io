@@ -11,6 +11,9 @@
     "core:window:allow-set-focus",
     "core:window:allow-close",
     "core:window:allow-on-close-requested",
-    "core:tray:default"
+    "core:tray:default",
+    "core:invoke:allow-create_guidance_overlay_window",
+    "core:event:allow-emit",
+    "core:event:allow-listen"
   ]
 }

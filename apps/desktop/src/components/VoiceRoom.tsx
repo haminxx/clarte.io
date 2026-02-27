@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
-import { LiveKitRoom, RoomAudioRenderer, useLocalParticipant } from "@livekit/components-react"
+import { LiveKitRoom, RoomAudioRenderer, useDataChannel, useLocalParticipant } from "@livekit/components-react"
+import { GuidanceOverlay, type GuidanceContent } from "./GuidanceOverlay"
 interface VoiceRoomProps {
   livekitUrl: string
   voiceAgentUrl: string
@@ -28,6 +29,39 @@ async function getToken(
 
 function RoomInner({ onDisconnect }: { onDisconnect: () => void }) {
   const { localParticipant, isMicrophoneEnabled, microphoneTrack } = useLocalParticipant()
+  const [guidanceContent, setGuidanceContent] = useState<GuidanceContent | null>(null)
+
+  useDataChannel((msg) => {
+    try {
+      const text = new TextDecoder().decode(msg.payload)
+      const data = JSON.parse(text) as { type?: string; content?: GuidanceContent }
+      if (data?.type === "show_guidance" && data?.content) {
+        setGuidanceContent(data.content)
+        if (data.content.highlights && data.content.highlights.length > 0 && "__TAURI__" in window) {
+          import("@tauri-apps/api/core").then(({ invoke }) =>
+            import("@tauri-apps/api/event").then(({ emit }) => {
+              invoke("create_guidance_overlay_window")
+                .then(() => {
+                  setTimeout(() => {
+                    emit("guidance-highlights", data.content!.highlights).catch(console.warn)
+                  }, 600)
+                })
+                .catch(console.warn)
+            })
+          )
+        }
+      } else if (data?.type === "dismiss_guidance") {
+        setGuidanceContent(null)
+        if ("__TAURI__" in window) {
+          import("@tauri-apps/api/event").then(({ emit }) => {
+            emit("dismiss-overlay").catch(console.warn)
+          })
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  })
 
   useEffect(() => {
     if (microphoneTrack && !isMicrophoneEnabled) {
@@ -36,7 +70,20 @@ function RoomInner({ onDisconnect }: { onDisconnect: () => void }) {
   }, [localParticipant, microphoneTrack, isMicrophoneEnabled])
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div className="relative flex flex-col gap-4 p-4">
+      {guidanceContent && (
+        <GuidanceOverlay
+          content={guidanceContent}
+          onDismiss={() => {
+            setGuidanceContent(null)
+            if ("__TAURI__" in window) {
+              import("@tauri-apps/api/event").then(({ emit }) => {
+                emit("dismiss-overlay").catch(console.warn)
+              })
+            }
+          }}
+        />
+      )}
       <RoomAudioRenderer />
       <div className="flex items-center justify-between">
         <span className="text-sm text-[var(--muted-foreground)]">

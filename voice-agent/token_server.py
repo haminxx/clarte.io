@@ -2,17 +2,18 @@
 Token server: issues LiveKit access tokens for the frontend.
 Run with the agent on Render so the frontend can get a token and join a room.
 Also provides /realtime WebSocket for Tier 1 (voice-only, no LiveKit).
+POST /conversations/save: save conversation with summary + mindmap to Firestore.
 """
 import json
 import logging
 import os
 import uuid
-from typing import Optional
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
 from dotenv import load_dotenv
-from fastapi import Body, FastAPI, HTTPException, WebSocket
+from fastapi import Body, FastAPI, HTTPException, Header, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -103,3 +104,162 @@ def get_token(body: Optional[TokenRequest] = Body(None)):
         return {"token": token, "room": room}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+class SaveConversationRequest(BaseModel):
+    user_id: str
+    transcript: list[dict[str, str]] = []
+    room_name: Optional[str] = None
+
+
+def _get_firebase_admin():
+    """Lazy-init Firebase Admin. Returns None if not configured."""
+    try:
+        import firebase_admin
+        from firebase_admin import credentials, firestore
+
+        try:
+            firebase_admin.get_app()
+        except ValueError:
+            cred_json = os.getenv("FIREBASE_SERVICE_ACCOUNT")
+            if cred_json:
+                cred = credentials.Certificate(json.loads(cred_json))
+                firebase_admin.initialize_app(cred)
+            else:
+                return None
+        return firebase_admin
+    except Exception as e:
+        logger.debug("Firebase Admin not available: %s", e)
+        return None
+
+
+def _verify_firebase_token(token: str) -> Optional[str]:
+    """Verify Firebase ID token, return uid or None."""
+    try:
+        import firebase_admin
+        from firebase_admin import auth
+
+        admin = _get_firebase_admin()
+        if not admin:
+            return None
+        decoded = auth.verify_id_token(token)
+        return decoded.get("uid")
+    except Exception as e:
+        logger.debug("Token verification failed: %s", e)
+        return None
+
+
+@app.post("/conversations/save")
+def save_conversation(
+    body: SaveConversationRequest,
+    authorization: Optional[str] = Header(None),
+):
+    """Save conversation with AI-generated summary and mindmap to Firestore."""
+    token = (authorization or "").replace("Bearer ", "").strip()
+    if not token:
+        raise HTTPException(status_code=401, detail="Authorization required")
+
+    uid = _verify_firebase_token(token)
+    if not uid or uid != body.user_id:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+
+    transcript_text = (
+        "\n\n".join(f"{t.get('role', '')}: {t.get('content', '')}" for t in body.transcript)
+        if body.transcript
+        else "Voice conversation with Clarte (no transcript available)."
+    )
+
+    openai_key = os.getenv("OPENAI_API_KEY")
+    if not openai_key:
+        raise HTTPException(status_code=503, detail="OpenAI not configured")
+
+    try:
+        from openai import OpenAI
+
+        client = OpenAI(api_key=openai_key)
+    except ImportError:
+        raise HTTPException(status_code=503, detail="OpenAI client not available")
+
+    try:
+        summary_res = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Summarize this conversation in 2-4 sentences. Focus on key topics, decisions, and guidance given.",
+                },
+                {"role": "user", "content": transcript_text},
+            ],
+            max_tokens=300,
+        )
+        summary = (
+            summary_res.choices[0].message.content.strip()
+            if summary_res.choices
+            else "Voice conversation with Clarte."
+        )
+    except Exception as e:
+        logger.exception("Summary generation failed: %s", e)
+        raise HTTPException(status_code=500, detail="Summary generation failed")
+
+    mindmap: dict[str, Any] = {"nodes": [], "edges": []}
+    try:
+        mindmap_res = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": 'Generate a mindmap as JSON: { "nodes": [{ "id": "1", "label": "Topic", "type": "topic" }], "edges": [{ "from": "1", "to": "2" }] }. '
+                    "Types: topic, question, answer, guidance, change. Return only valid JSON.",
+                },
+                {"role": "user", "content": transcript_text},
+            ],
+            max_tokens=500,
+        )
+        raw = mindmap_res.choices[0].message.content.strip() if mindmap_res.choices else ""
+        if raw:
+            parsed = json.loads(raw.replace("```json", "").replace("```", "").strip())
+            if isinstance(parsed.get("nodes"), list):
+                mindmap["nodes"] = [
+                    {
+                        "id": str(n.get("id", n.get("label", ""))),
+                        "label": str(n.get("label", "")),
+                        "type": n.get("type", "topic")
+                        if n.get("type") in ("topic", "question", "answer", "guidance", "change")
+                        else "topic",
+                    }
+                    for n in parsed["nodes"]
+                ]
+            if isinstance(parsed.get("edges"), list):
+                mindmap["edges"] = [
+                    {"from": str(e.get("from", "")), "to": str(e.get("to", ""))}
+                    for e in parsed["edges"]
+                ]
+    except Exception as e:
+        logger.debug("Mindmap generation failed (non-fatal): %s", e)
+
+    admin = _get_firebase_admin()
+    if not admin:
+        raise HTTPException(status_code=503, detail="Firebase not configured for save")
+
+    try:
+        from firebase_admin import firestore
+        from firebase_admin.firestore import SERVER_TIMESTAMP
+
+        db = firestore.client()
+        doc_ref = db.collection("conversations").document()
+        title = (summary[:80] + "…") if len(summary) > 80 else summary
+        doc_ref.set(
+            {
+                "user_id": body.user_id,
+                "title": title,
+                "summary": summary,
+                "mindmap": mindmap,
+                "updated_at": SERVER_TIMESTAMP,
+                "created_at": SERVER_TIMESTAMP,
+            }
+        )
+        logger.info("Saved conversation %s for user %s", doc_ref.id, body.user_id)
+        return {"id": doc_ref.id}
+    except Exception as e:
+        logger.exception("Firestore save failed: %s", e)
+        raise HTTPException(status_code=500, detail="Save failed")

@@ -6,6 +6,9 @@ on:
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
+    env:
+      ACTIONS_STEP_DEBUG: true
+      ACTIONS_RUNNER_DEBUG: true
     steps:
       - uses: actions/checkout@v4
 
@@ -21,17 +24,30 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          NEXT_PUBLIC_LIVEKIT_URL: ${{ secrets.NEXT_PUBLIC_LIVEKIT_URL }}
-          NEXT_PUBLIC_VOICE_AGENT_URL: ${{ secrets.NEXT_PUBLIC_VOICE_AGENT_URL }}
-          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
-          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
-          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
-          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
-          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
-          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+          NEXT_PUBLIC_LIVEKIT_URL: ${{ secrets.NEXT_PUBLIC_LIVEKIT_URL || 'https://placeholder.livekit.cloud' }}
+          NEXT_PUBLIC_VOICE_AGENT_URL: ${{ secrets.NEXT_PUBLIC_VOICE_AGENT_URL || 'https://placeholder.render.com' }}
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY || 'AIzaSyAElfJYllj4ZTl1n08Imz5f7DLakygKhVg' }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || 'clarte-8aece.firebaseapp.com' }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'clarte-8aece' }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'clarte-8aece.firebasestorage.app' }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '698398127871' }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID || '1:698398127871:web:6de36f026d1f7a9b01feca' }}
 
       - name: Verify build output
-        run: ls -la out/ || (echo "Build output missing"; exit 1)
+        run: |
+          if [ ! -d "out" ]; then
+            echo "::error::Build failed: out/ directory not found. Check Build step logs."
+            exit 1
+          fi
+          echo "Build output verified: $(ls out | head -5)"
+
+      - name: Check Firebase secret
+        run: |
+          if [ -z "${{ secrets.FIREBASE_SERVICE_ACCOUNT_CLARTE_8AECE }}" ]; then
+            echo "::error::FIREBASE_SERVICE_ACCOUNT_CLARTE_8AECE secret is not set"
+            exit 1
+          fi
+          echo "Firebase service account secret is set (length hidden)"
 
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
@@ -40,3 +56,5 @@ jobs:
           channelId: live
           projectId: clarte-8aece
           force: true
+          entryPoint: "."
+          firebaseToolsVersion: "13.0.0"

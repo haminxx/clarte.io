@@ -8,7 +8,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { ExternalLink, Info, Lightbulb, Link2 } from "lucide-react"
+import { ExternalLink, Info, Lightbulb, Link2, GitBranch } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 export interface StrategyPlanLink {
   url: string
@@ -23,11 +24,25 @@ export interface StrategyPlanItem {
   created_at?: { toDate?: () => Date }
 }
 
+export interface MindmapNode {
+  id: string
+  label: string
+  type: string
+}
+export interface MindmapEdge {
+  from: string
+  to: string
+}
+
 interface StrategyPlanCardProps {
   /** Strategy plan from the selected conversation (or latest) */
   plan?: StrategyPlanItem | null
   /** Conversation title for context */
   conversationTitle?: string
+  /** AI-generated summary from save (overrides plan.summary when present) */
+  summary?: string | null
+  /** Mindmap of topics, answers, guidance from save */
+  mindmap?: { nodes: MindmapNode[]; edges: MindmapEdge[] } | null
   /** Whether data is loading */
   loading?: boolean
 }
@@ -35,9 +50,18 @@ interface StrategyPlanCardProps {
 export function StrategyPlanCard({
   plan,
   conversationTitle,
+  summary: convSummary,
+  mindmap,
   loading = false,
 }: StrategyPlanCardProps) {
-  const hasPlan = plan && (plan.summary || (plan.links?.length ?? 0) > 0 || (plan.action_items?.length ?? 0) > 0)
+  const summary = convSummary ?? plan?.summary
+  const hasPlan =
+    !!(
+      summary ||
+      (plan?.links?.length ?? 0) > 0 ||
+      (plan?.action_items?.length ?? 0) > 0 ||
+      (mindmap?.nodes?.length ?? 0) > 0
+    )
 
   if (loading) {
     return (
@@ -89,10 +113,10 @@ export function StrategyPlanCard({
 
       {hasPlan ? (
         <div className="space-y-4">
-          {plan.summary && (
+          {summary && (
             <div>
               <p className="text-sm font-medium text-white/60">Summary</p>
-              <p className="mt-1 text-sm text-white/90">{plan.summary}</p>
+              <p className="mt-1 text-sm text-white/90">{summary}</p>
             </div>
           )}
           {plan.links && plan.links.length > 0 && (
@@ -118,7 +142,7 @@ export function StrategyPlanCard({
               </ul>
             </div>
           )}
-          {plan.action_items && plan.action_items.length > 0 && (
+          {plan?.action_items && plan.action_items.length > 0 && (
             <div>
               <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-white/60">
                 <Lightbulb className="h-4 w-4" />
@@ -129,6 +153,33 @@ export function StrategyPlanCard({
                   <li key={i}>{item}</li>
                 ))}
               </ul>
+            </div>
+          )}
+          {mindmap && mindmap.nodes && mindmap.nodes.length > 0 && (
+            <div>
+              <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-white/60">
+                <GitBranch className="h-4 w-4" />
+                Mindmap
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {mindmap.nodes.map((node) => (
+                  <span
+                    key={node.id}
+                    className={cn(
+                      "rounded-full px-2.5 py-1 text-xs font-medium",
+                      node.type === "topic" && "bg-blue-500/20 text-blue-300",
+                      node.type === "question" && "bg-amber-500/20 text-amber-300",
+                      node.type === "answer" && "bg-emerald-500/20 text-emerald-300",
+                      node.type === "guidance" && "bg-purple-500/20 text-purple-300",
+                      node.type === "change" && "bg-rose-500/20 text-rose-300",
+                      !["topic", "question", "answer", "guidance", "change"].includes(node.type) &&
+                        "bg-white/10 text-white/80"
+                    )}
+                  >
+                    {node.label}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
           {conversationTitle && (

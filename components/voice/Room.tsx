@@ -35,14 +35,25 @@ function RoomInnerKrispProvider({
   withScreen,
   withCamera,
   compact,
+  onTranscriptAdd,
 }: {
   onDisconnect: () => void
   withScreen: boolean
   withCamera: boolean
   compact?: boolean
+  onTranscriptAdd?: (role: string, content: string) => void
 }) {
   const krisp = useKrispNoiseFilter()
-  return <RoomInner onDisconnect={onDisconnect} withScreen={withScreen} withCamera={withCamera} krisp={krisp} compact={compact} />
+  return (
+    <RoomInner
+      onDisconnect={onDisconnect}
+      withScreen={withScreen}
+      withCamera={withCamera}
+      krisp={krisp}
+      compact={compact}
+      onTranscriptAdd={onTranscriptAdd}
+    />
+  )
 }
 
 class KrispErrorBoundary extends React.Component<
@@ -63,6 +74,7 @@ function RoomInnerWithKrisp(props: {
   withCamera: boolean
   useKrisp: boolean
   compact?: boolean
+  onTranscriptAdd?: (role: string, content: string) => void
 }) {
   const { useKrisp, compact, ...innerProps } = props
   if (!useKrisp) {
@@ -82,12 +94,14 @@ function RoomInner({
   withCamera,
   krisp,
   compact,
+  onTranscriptAdd,
 }: {
   onDisconnect: () => void
   withScreen: boolean
   withCamera: boolean
   krisp: { setNoiseFilterEnabled: (v: boolean) => Promise<void> } | null
   compact?: boolean
+  onTranscriptAdd?: (role: string, content: string) => void
 }) {
   const { localParticipant, isMicrophoneEnabled, microphoneTrack, isScreenShareEnabled, isCameraEnabled } =
     useLocalParticipant()
@@ -99,9 +113,12 @@ function RoomInner({
   useDataChannel((msg) => {
     try {
       const text = new TextDecoder().decode(msg.payload)
-      const data = JSON.parse(text) as { type?: string }
+      const data = JSON.parse(text) as { type?: string; role?: string; content?: string }
       if (data?.type === "request_screen_share") setShowScreenShareRequest(true)
       if (data?.type === "request_camera") setShowCameraRequest(true)
+      if (data?.type === "transcript_add" && data.role && data.content && onTranscriptAdd) {
+        onTranscriptAdd(data.role, data.content)
+      }
     } catch {
       /* ignore */
     }
@@ -318,6 +335,11 @@ interface RoomProps {
   onVoiceChange?: (voiceId: string) => void
   selectedLanguage?: "en" | "ko"
   onLanguageChange?: (lang: "en" | "ko") => void
+  /** For saving conversation to Firestore. If provided, transcript is sent on disconnect. */
+  userId?: string | null
+  getAuthToken?: () => Promise<string | null>
+  /** Called after conversation is saved (e.g. to refetch list). */
+  onConversationSaved?: () => void
 }
 
 export function Room({
@@ -331,23 +353,60 @@ export function Room({
   onVoiceChange,
   selectedLanguage = "en",
   onLanguageChange,
+  userId,
+  getAuthToken,
+  onConversationSaved,
 }: RoomProps) {
   const [token, setToken] = useState<string | null>(null)
   const [roomName, setRoomName] = useState<string | null>(null)
   const [status, setStatus] = useState<"idle" | "starting" | "active" | "error">("idle")
   const [error, setError] = useState<string | null>(null)
+  const transcriptRef = React.useRef<{ role: string; content: string }[]>([])
 
   const withScreen = mode === "voice-with-screen" || mode === "voice-with-screen-camera"
   const withCamera = mode === "voice-with-screen-camera" || mode === "voice-with-camera"
   const useKrisp = withScreen || withCamera
 
-  const disconnect = useCallback(() => {
+  const addTranscript = useCallback((role: string, content: string) => {
+    transcriptRef.current.push({ role, content })
+  }, [])
+
+  const disconnect = useCallback(async () => {
+    const transcript = [...transcriptRef.current]
+    const savedRoomName = roomName
+    transcriptRef.current = []
     setToken(null)
     setRoomName(null)
     setStatus("idle")
     setError(null)
+
+    if (userId && getAuthToken) {
+      try {
+        const authToken = await getAuthToken()
+        if (authToken) {
+          const baseUrl = (VOICE_AGENT_URL ?? "").replace(/\/$/, "")
+          const saveUrl = baseUrl ? `${baseUrl}/conversations/save` : "/api/conversations/save"
+          const res = await fetch(saveUrl, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              user_id: userId,
+              transcript,
+              room_name: savedRoomName,
+            }),
+          })
+          if (res.ok) onConversationSaved?.()
+        }
+      } catch (e) {
+        console.warn("[Clarte Voice] Save conversation failed:", e)
+      }
+    }
+
     onDisconnect?.()
-  }, [onDisconnect])
+  }, [onDisconnect, userId, getAuthToken, roomName, onConversationSaved])
 
   const startCall = useCallback(async () => {
     if (!LIVEKIT_URL) {
@@ -515,6 +574,7 @@ export function Room({
                   withCamera={withCamera}
                   useKrisp={useKrisp}
                   compact
+                  onTranscriptAdd={addTranscript}
                 />
               </LiveKitRoom>
             </div>
@@ -541,7 +601,13 @@ export function Room({
           }}
           className="rounded-2xl overflow-hidden"
         >
-          <RoomInnerWithKrisp onDisconnect={disconnect} withScreen={withScreen} withCamera={withCamera} useKrisp={useKrisp} />
+          <RoomInnerWithKrisp
+            onDisconnect={disconnect}
+            withScreen={withScreen}
+            withCamera={withCamera}
+            useKrisp={useKrisp}
+            onTranscriptAdd={addTranscript}
+          />
         </LiveKitRoom>
       </div>
     )

@@ -73,6 +73,7 @@ You are Clarte, a friendly Executive Assistant who talks like a supportive frien
 - **request_camera**: When the user asks you to see them or their camera. Call once; they will see a prompt. Use only when explicitly asked.
 - **switch_to_english**: When the user asks you to speak in English. Call to switch TTS to English.
 - **switch_to_korean**: When the user asks you to speak in Korean (e.g. "한국어로 말해줘"). Call to switch TTS to Korean.
+- **show_guidance**: When the user needs visual guidance (math, steps, or where to click). Use for step-by-step help, math explanation, or to show where to look. For math, use LaTeX (e.g. x = \\frac{-b}{2a}). For screen highlights, use percentages: x and y 0-100 for position, radius or width/height for size.
 """
 
 VALID_VOICES = {"alloy", "ash", "ballad", "coral", "echo", "marin", "sage", "shimmer", "verse", "cedar"}
@@ -191,6 +192,54 @@ class ExecutiveAssistantAgent(Agent):
                 logger.info("Switched TTS to English")
                 return "Switched to English. I will now respond in English."
         return "Language switch not available (using OpenAI voice). I will still respond in English."
+
+    @function_tool(
+        description="Show visual guidance to the user: text explanation, math equation, or highlight circles/boxes on screen. Use when user needs step-by-step help, math explanation, or to be shown where to look or click. For math use LaTeX. For highlights use percentages (0-100) for x, y, radius, width, height.",
+    )
+    async def show_guidance(
+        self,
+        context: RunContext,
+        title: str = "",
+        text: str = "",
+        math: str = "",
+        steps_json: str = "",
+        highlights_json: str = "",
+    ) -> str:
+        """Send guidance payload to desktop app for in-app popup and/or screen overlay."""
+        try:
+            steps = []
+            if steps_json.strip():
+                try:
+                    parsed = json.loads(steps_json)
+                    steps = parsed if isinstance(parsed, list) else [s.strip() for s in steps_json.split("\n") if s.strip()]
+                except json.JSONDecodeError:
+                    steps = [s.strip() for s in steps_json.split("\n") if s.strip()]
+            highlights = []
+            if highlights_json.strip():
+                try:
+                    parsed = json.loads(highlights_json)
+                    highlights = parsed if isinstance(parsed, list) else []
+                except json.JSONDecodeError:
+                    highlights = []
+            payload = {
+                "type": "show_guidance",
+                "content": {
+                    "title": title.strip() or "",
+                    "text": text.strip() or "",
+                    "math": math.strip() or "",
+                    "steps": steps,
+                    "highlights": highlights,
+                },
+            }
+            await self._room.local_participant.publish_data(
+                json.dumps(payload),
+                reliable=True,
+            )
+            logger.info("Sent show_guidance to client (title=%s, steps=%d, highlights=%d)", title or "(none)", len(steps), len(highlights))
+            return "Guidance sent. The user will see the explanation and highlights on their screen."
+        except Exception as e:
+            logger.exception("show_guidance failed: %s", e)
+            return "Could not send guidance. Describe the steps verbally instead."
 
     @function_tool(
         description="Switch to speaking in Korean. Call when the user asks you to speak in Korean (e.g. '한국어로 말해줘').",
