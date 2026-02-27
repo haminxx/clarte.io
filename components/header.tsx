@@ -16,6 +16,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 const navLinks = [
+  { href: "/download", label: "Download" },
   { href: "/api-reference", label: "API" },
   { href: "/docs", label: "Docs" },
   { href: "/pricing", label: "Pricing" },

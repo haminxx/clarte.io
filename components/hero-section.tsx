@@ -50,17 +50,9 @@ export function HeroSection() {
         </p>
 
         <div className="mb-4 sm:mb-6 flex flex-wrap items-center justify-center gap-3 sm:gap-4 px-4">
-          <Link href="/auth/login">
-            <Button
-              variant="outline"
-              className="border-white/20 bg-transparent text-white hover:bg-white/10"
-            >
-              Log in
-            </Button>
-          </Link>
-          <Link href="/auth/sign-up">
+          <Link href="/download">
             <Button className="bg-white text-black hover:bg-white/90">
-              Get started
+              Download
             </Button>
           </Link>
           <Link href="/docs">
