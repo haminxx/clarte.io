@@ -104,13 +104,13 @@ export function Header() {
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href="/dashboard" className="cursor-pointer text-white">
+            <Link href="/profile" className="cursor-pointer text-white">
               <UserIcon className="mr-2 h-4 w-4" />
               Profile
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href="/dashboard" className="cursor-pointer text-white">
+            <Link href="/settings" className="cursor-pointer text-white">
               <Settings className="mr-2 h-4 w-4" />
               Settings
             </Link>

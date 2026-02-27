@@ -36,6 +36,9 @@ next-env.d.ts
 apps/desktop/src-tauri/target/
 apps/desktop/dist/
 
+# Chrome extension
+apps/chrome-extension/dist/
+
 # iOS
 apps/ios/*.xcodeproj/xcuserdata/
 apps/ios/*.xcworkspace/xcuserdata/

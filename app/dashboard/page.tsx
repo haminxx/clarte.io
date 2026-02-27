@@ -14,10 +14,8 @@ import {
   MessageSquare,
   Settings,
   User as UserIcon,
-  LayoutDashboard,
   Bell,
   Menu,
-  ChevronLeft,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -33,6 +31,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { StrategyPlanCard, type StrategyPlanItem } from "@/components/dashboard/strategy-plan-card"
+import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar"
 import { cn } from "@/lib/utils"
 
 /** Lazy-load VoiceAgentCard to avoid pulling LiveKit into initial bundle. Firestore index: user_id + updated_at. */
@@ -57,84 +56,6 @@ interface ConversationDoc {
   strategy_plan?: StrategyPlanItem
   summary?: string
   mindmap?: { nodes: MindmapNode[]; edges: MindmapEdge[] }
-}
-
-interface DashboardSidebarProps {
-  onMobileMenuToggle?: () => void
-}
-
-function DashboardSidebar({ onMobileMenuToggle }: DashboardSidebarProps) {
-  return (
-    <aside className="fixed left-0 top-0 z-0 flex h-screen w-16 flex-col border-r border-white/10 bg-[#0a0a14]/95 backdrop-blur-md lg:w-16">
-      <div className="flex flex-col items-center gap-4 py-4">
-        <TooltipProvider delayDuration={0}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                href="/"
-                className="flex h-10 w-10 items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right">Back to home</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                href="/dashboard"
-                className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 text-white"
-              >
-                <LayoutDashboard className="h-5 w-5" />
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right">Dashboard</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                href="/dashboard"
-                className="flex h-10 w-10 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/10 hover:text-white"
-              >
-                <MessageSquare className="h-5 w-5" />
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right">Conversations</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                href="/dashboard"
-                className="flex h-10 w-10 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/10 hover:text-white"
-              >
-                <Settings className="h-5 w-5" />
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right">Settings</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                href="/dashboard"
-                className="flex h-10 w-10 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/10 hover:text-white"
-              >
-                <UserIcon className="h-5 w-5" />
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right">Profile</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-      <div className="mt-auto flex flex-col items-center gap-2 pb-4">
-        <Link href="/" className="flex items-center gap-2 px-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10">
-            <span className="text-xs font-bold text-white">C</span>
-          </div>
-          <span className="hidden text-sm font-semibold text-white lg:inline">Clarte</span>
-        </Link>
-      </div>
-    </aside>
-  )
 }
 
 export default function DashboardPage() {
@@ -353,13 +274,13 @@ export default function DashboardPage() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 border-white/10 bg-[#1a1a2e]">
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard" className="cursor-pointer text-white">
+                    <Link href="/profile" className="cursor-pointer text-white">
                       <UserIcon className="mr-2 h-4 w-4" />
                       Profile
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard" className="cursor-pointer text-white">
+                    <Link href="/settings" className="cursor-pointer text-white">
                       <Settings className="mr-2 h-4 w-4" />
                       Settings
                     </Link>

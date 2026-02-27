@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { getFirebaseAuth } from "@/lib/firebase"
 import {
   signInWithEmailAndPassword,
@@ -15,13 +16,15 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Mail, Github, Loader2 } from "lucide-react"
 
-export default function LoginPage() {
+function LoginPageContent() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const auth = getFirebaseAuth()
+  const nextUrl = searchParams.get("next") ?? "/dashboard"
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,7 +36,7 @@ export default function LoginPage() {
     setError(null)
     try {
       await signInWithEmailAndPassword(auth, email, password)
-      router.push("/dashboard")
+      router.push(nextUrl)
       router.refresh()
     } catch (err: unknown) {
       setError(getAuthErrorMessage(err))
@@ -53,7 +56,7 @@ export default function LoginPage() {
       const providerInstance =
         provider === "google" ? new GoogleAuthProvider() : new GithubAuthProvider()
       await signInWithPopup(auth, providerInstance)
-      router.push("/dashboard")
+      router.push(nextUrl)
       router.refresh()
     } catch (err: unknown) {
       setError(getAuthErrorMessage(err))
@@ -168,5 +171,17 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <p className="text-muted-foreground">Loading…</p>
+      </div>
+    }>
+      <LoginPageContent />
+    </Suspense>
   )
 }

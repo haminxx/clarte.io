@@ -108,8 +108,11 @@ def _parse_metadata(job) -> dict:
             out["mode"] = data["mode"]
         if data.get("language") in VALID_LANGUAGES:
             out["language"] = data["language"]
-        if data.get("user_name") and isinstance(data["user_name"], str) and data["user_name"].strip():
-            out["user_name"] = data["user_name"].strip()
+        INVALID_NAMES = frozenset({"undefined", "null", ""})
+        if data.get("user_name") and isinstance(data["user_name"], str):
+            val = data["user_name"].strip()
+            if val and val.lower() not in INVALID_NAMES:
+                out["user_name"] = val
     except Exception:
         pass
     return out

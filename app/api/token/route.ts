@@ -24,7 +24,8 @@ export async function POST(request: Request) {
     if (body && typeof body.voice === "string" && VALID_VOICES.has(body.voice)) voice = body.voice
     if (body && typeof body.mode === "string" && VALID_MODES.has(body.mode)) mode = body.mode
     if (body && typeof body.language === "string" && VALID_LANGUAGES.has(body.language)) language = body.language
-    if (body && typeof body.user_name === "string" && body.user_name.trim()) user_name = body.user_name.trim()
+    const raw = body?.user_name?.trim?.()
+    if (raw && raw !== "undefined" && raw !== "null") user_name = raw
   } catch {
     // ignore
   }

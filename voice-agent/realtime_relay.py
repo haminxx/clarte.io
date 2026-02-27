@@ -130,7 +130,8 @@ async def handle_realtime_websocket(websocket):
         if query_string:
             params = parse_qs(query_string)
             if params.get("user_name"):
-                user_name = (params["user_name"][0] or "").strip() or None
+                raw = (params["user_name"][0] or "").strip()
+                user_name = raw if raw and raw.lower() not in ("undefined", "null") else None
             if params.get("language") and params["language"][0] == "ko":
                 language = "ko"
     except Exception as e:

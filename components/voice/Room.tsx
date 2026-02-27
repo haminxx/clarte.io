@@ -296,8 +296,9 @@ async function fetchToken(
     mode: toAgentMode(mode),
     language: language === "ko" ? "ko" : "en",
   }
-  if (user_name && user_name.trim()) {
-    body.user_name = user_name.trim()
+  const trimmed = user_name?.trim?.()
+  if (trimmed && trimmed !== "undefined" && trimmed !== "null") {
+    body.user_name = trimmed
   }
   const res = await fetch(tokenUrl, {
     method: "POST",

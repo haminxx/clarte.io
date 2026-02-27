@@ -76,6 +76,13 @@ def get_token(body: Optional[TokenRequest] = Body(None)):
     raw_language = (body.language if body else None) or "en"
     language = raw_language if raw_language in VALID_LANGUAGES else "en"
 
+    raw_name = (body.user_name if body else None)
+    user_name = None
+    if raw_name and isinstance(raw_name, str):
+        v = raw_name.strip()
+        if v and v.lower() not in ("undefined", "null"):
+            user_name = v
+
     try:
         from livekit.api import (
             AccessToken,
