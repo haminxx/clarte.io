@@ -56,7 +56,12 @@ export default function DashboardPage() {
             })) as ConversationDoc[]
           )
         })
-        .catch(() => setConversations([]))
+        .catch((err) => {
+          if (err?.message?.includes("index")) {
+            console.warn("Firestore index required. Create the composite index at the URL in the error:", err)
+          }
+          setConversations([])
+        })
         .finally(() => setLoading(false))
     })
     return () => unsub()
@@ -82,14 +87,55 @@ export default function DashboardPage() {
 
   if (loading || !user) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0a0a14]">
-        <p className="text-white/60">Loading...</p>
+      <div className="flex min-h-screen flex-col bg-[#0a0a14]">
+        <div className="pointer-events-none fixed inset-0">
+          <div className="absolute left-1/2 top-1/3 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-blue-600/10 via-indigo-500/5 to-transparent blur-3xl" />
+        </div>
+        <header className="relative z-10 border-b border-white/10 bg-[#0a0a14]/80 backdrop-blur-md">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
+            <div className="h-7 w-24 animate-pulse rounded bg-white/10" />
+            <div className="h-9 w-20 animate-pulse rounded bg-white/10" />
+          </div>
+        </header>
+        <main className="relative z-10 mx-auto flex-1 max-w-7xl px-4 py-12">
+          <div className="mb-8">
+            <div className="h-9 w-48 animate-pulse rounded bg-white/10" />
+            <div className="mt-2 h-5 w-72 animate-pulse rounded bg-white/10" />
+          </div>
+          <div className="grid gap-6 md:grid-cols-3">
+            <div className="rounded-2xl border border-white/10 bg-[#1a1a2e]/50 p-6">
+              <div className="mb-4 h-6 w-32 animate-pulse rounded bg-white/10" />
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-10 w-full animate-pulse rounded bg-white/10" />
+                ))}
+              </div>
+            </div>
+            <div className="md:col-span-2 rounded-2xl border border-white/10 bg-[#1a1a2e]/50 p-6">
+              <div className="mb-4 h-6 w-40 animate-pulse rounded bg-white/10" />
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-16 w-full animate-pulse rounded bg-white/10" />
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="mt-8 grid gap-6 md:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="rounded-xl border border-white/10 bg-[#1a1a2e]/50 p-6">
+                <div className="h-4 w-24 animate-pulse rounded bg-white/10" />
+                <div className="mt-2 h-8 w-12 animate-pulse rounded bg-white/10" />
+              </div>
+            ))}
+          </div>
+        </main>
+        <Footer />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a14]">
+    <div className="flex min-h-screen flex-col bg-[#0a0a14]">
       <div className="pointer-events-none fixed inset-0">
         <div className="absolute left-1/2 top-1/3 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-blue-600/10 via-indigo-500/5 to-transparent blur-3xl" />
       </div>
@@ -115,7 +161,7 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <main className="relative z-10 mx-auto max-w-7xl px-4 py-12">
+      <main className="relative z-10 mx-auto flex-1 max-w-7xl px-4 py-12">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white">Welcome back</h1>
           <p className="mt-2 text-white/60">Manage your voice conversations and settings</p>

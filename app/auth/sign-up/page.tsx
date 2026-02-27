@@ -4,6 +4,7 @@ import { useState } from "react"
 import { getFirebaseAuth } from "@/lib/firebase"
 import {
   createUserWithEmailAndPassword,
+  sendEmailVerification,
   signInWithPopup,
   GoogleAuthProvider,
   GithubAuthProvider,
@@ -35,6 +36,7 @@ export default function SignUpPage() {
     setError(null)
     try {
       const { user } = await createUserWithEmailAndPassword(auth, email, password)
+      await sendEmailVerification(user)
       if (fullName.trim()) {
         await updateProfile(user, { displayName: fullName.trim() })
       }
