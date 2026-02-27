@@ -1,10 +1,74 @@
 "use client"
 
+import { useState, useCallback, useEffect } from "react"
 import { Waveform } from "./waveform"
 import { Button } from "@/components/ui/button"
-import { Play } from "lucide-react"
+import { Play, Square } from "lucide-react"
+
+type VoiceSample = "Jane" | "Victoria" | null
+
+function getVoices(): SpeechSynthesisVoice[] {
+  if (typeof window === "undefined") return []
+  return window.speechSynthesis.getVoices()
+}
 
 export function FeaturesSection() {
+  const [playingSample, setPlayingSample] = useState<VoiceSample>(null)
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
+
+  useEffect(() => {
+    const loadVoices = () => setVoices(getVoices())
+    loadVoices()
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.onvoiceschanged = loadVoices
+    }
+    return () => {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.onvoiceschanged = null
+      }
+    }
+  }, [])
+
+  const playSample = useCallback(
+    (name: "Jane" | "Victoria") => {
+      if (typeof window === "undefined" || !("speechSynthesis" in window)) return
+
+      const synth = window.speechSynthesis
+      synth.cancel()
+
+      if (playingSample === name) {
+        setPlayingSample(null)
+        return
+      }
+
+      const text = `Hello! My name is ${name}.`
+      const utterance = new SpeechSynthesisUtterance(text)
+      utterance.rate = 0.95
+      utterance.pitch = 1
+
+      const enVoices = voices.filter((v) => v.lang.startsWith("en"))
+      const femaleVoices = enVoices.filter(
+        (v) =>
+          v.name.toLowerCase().includes("female") ||
+          v.name.includes("Zira") ||
+          v.name.includes("Samantha") ||
+          v.name.includes("Karen") ||
+          v.name.includes("Victoria") ||
+          v.name.includes("Google")
+      )
+      const candidates = femaleVoices.length > 0 ? femaleVoices : enVoices
+      const preferred = name === "Jane" ? candidates[0] : candidates[1] ?? candidates[0]
+      if (preferred) utterance.voice = preferred
+
+      utterance.onend = () => setPlayingSample(null)
+      utterance.onerror = () => setPlayingSample(null)
+
+      setPlayingSample(name)
+      synth.speak(utterance)
+    },
+    [playingSample, voices]
+  )
+
   return (
     <section className="relative bg-card py-12 sm:py-16 md:py-24 w-full overflow-x-hidden">
       {/* Subtle gradient overlay */}
@@ -38,8 +102,14 @@ export function FeaturesSection() {
               <Button
                 size="icon"
                 className="h-10 w-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+                onClick={() => playSample("Jane")}
+                aria-label={playingSample === "Jane" ? "Stop sample" : "Play Jane sample"}
               >
-                <Play className="h-4 w-4" />
+                {playingSample === "Jane" ? (
+                  <Square className="h-4 w-4" />
+                ) : (
+                  <Play className="h-4 w-4" />
+                )}
               </Button>
               <div className="text-left">
                 <p className="text-sm font-medium text-foreground">
@@ -66,8 +136,14 @@ export function FeaturesSection() {
               <Button
                 size="icon"
                 className="h-10 w-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+                onClick={() => playSample("Victoria")}
+                aria-label={playingSample === "Victoria" ? "Stop sample" : "Play Victoria sample"}
               >
-                <Play className="h-4 w-4" />
+                {playingSample === "Victoria" ? (
+                  <Square className="h-4 w-4" />
+                ) : (
+                  <Play className="h-4 w-4" />
+                )}
               </Button>
               <div className="text-left">
                 <p className="text-sm font-medium text-foreground">

@@ -61,7 +61,7 @@ export function Header() {
               Log in
             </Button>
           </Link>
-          <Link href="/get-started" className="hidden sm:block">
+          <Link href="/auth/sign-up" className="hidden sm:block">
             <Button size="sm" className="bg-white text-black hover:bg-white/90">
               Get Started
             </Button>
@@ -70,9 +70,20 @@ export function Header() {
       )
     }
     return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
+      <>
+        <Link href="/dashboard" className="hidden sm:block">
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-white/20 bg-transparent text-white hover:bg-white/10"
+          >
+            <LayoutDashboard className="mr-2 h-4 w-4" />
+            Dashboard
+          </Button>
+        </Link>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
             type="button"
             className="hidden sm:flex items-center gap-2 rounded-full ring-2 ring-white/20 p-0.5 transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-white/40"
           >
@@ -112,6 +123,7 @@ export function Header() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      </>
     )
   }
 
@@ -127,7 +139,7 @@ export function Header() {
               Log in
             </Button>
           </Link>
-          <Link href="/get-started" onClick={() => setMobileMenuOpen(false)}>
+          <Link href="/auth/sign-up" onClick={() => setMobileMenuOpen(false)}>
             <Button className="w-full bg-white text-black hover:bg-white/90">
               Get Started
             </Button>
