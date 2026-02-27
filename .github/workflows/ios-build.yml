@@ -1,12 +1,6 @@
 name: Build Clarte iOS
 
 on:
-  push:
-    branches:
-      - v0/clarte_main
-    paths:
-      - "apps/ios/**"
-      - ".github/workflows/ios-build.yml"
   workflow_dispatch:
 
 jobs:

@@ -140,7 +140,8 @@ function DashboardSidebar({ onMobileMenuToggle }: DashboardSidebarProps) {
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null)
   const [conversations, setConversations] = useState<ConversationDoc[]>([])
-  const [loading, setLoading] = useState(true)
+  const [authLoading, setAuthLoading] = useState(true)
+  const [conversationsLoading, setConversationsLoading] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null)
   const router = useRouter()
@@ -149,6 +150,7 @@ export default function DashboardPage() {
 
   const refetchConversations = useCallback(() => {
     if (!db || !user) return
+    setConversationsLoading(true)
     const q = query(
       collection(db, "conversations"),
       where("user_id", "==", user.uid),
@@ -174,11 +176,12 @@ export default function DashboardPage() {
         }
         setConversations([])
       })
+      .finally(() => setConversationsLoading(false))
   }, [db, user])
 
   useEffect(() => {
     if (!auth) {
-      setLoading(false)
+      setAuthLoading(false)
       router.replace("/auth/login")
       return
     }
@@ -188,41 +191,41 @@ export default function DashboardPage() {
         router.replace("/auth/login")
         return
       }
-      if (!db) {
-        setLoading(false)
-        return
-      }
-      const q = query(
-        collection(db, "conversations"),
-        where("user_id", "==", u.uid),
-        orderBy("updated_at", "desc"),
-        limit(10)
-      )
-      getDocs(q)
-        .then((snap) => {
-          const docs = snap.docs.map((d) => ({
-            id: d.id,
-            ...d.data(),
-            updated_at: d.data().updated_at,
-            strategy_plan: d.data().strategy_plan as StrategyPlanItem | undefined,
-            summary: d.data().summary,
-            mindmap: d.data().mindmap,
-          })) as ConversationDoc[]
-          setConversations(docs)
-          if (docs.length > 0 && !selectedConvId) {
-            setSelectedConvId(docs[0].id)
-          }
-        })
-        .catch((err) => {
-          if (err?.message?.includes("index")) {
-            console.warn("Firestore index required. Create the composite index at the URL in the error:", err)
-          }
-          setConversations([])
-        })
-        .finally(() => setLoading(false))
+      setAuthLoading(false)
     })
     return () => unsub()
-  }, [auth, db, router])
+  }, [auth, router])
+
+  useEffect(() => {
+    if (!user || !db) return
+    setConversationsLoading(true)
+    const q = query(
+      collection(db, "conversations"),
+      where("user_id", "==", user.uid),
+      orderBy("updated_at", "desc"),
+      limit(10)
+    )
+    getDocs(q)
+      .then((snap) => {
+        const docs = snap.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+          updated_at: d.data().updated_at,
+          strategy_plan: d.data().strategy_plan as StrategyPlanItem | undefined,
+          summary: d.data().summary,
+          mindmap: d.data().mindmap,
+        })) as ConversationDoc[]
+        setConversations(docs)
+        setSelectedConvId((prev) => (prev && docs.some((d) => d.id === prev) ? prev : docs[0]?.id ?? null))
+      })
+      .catch((err) => {
+        if (err?.message?.includes("index")) {
+          console.warn("Firestore index required. Create the composite index at the URL in the error:", err)
+        }
+        setConversations([])
+      })
+      .finally(() => setConversationsLoading(false))
+  }, [user, db])
 
   const handleSignOut = async () => {
     if (!auth) return
@@ -249,7 +252,7 @@ export default function DashboardPage() {
     )
   }
 
-  if (loading || !user) {
+  if (authLoading || !user) {
     return (
       <div className="flex min-h-screen flex-col bg-[#0a0a14]">
         <div className="pointer-events-none fixed inset-0">
@@ -405,7 +408,13 @@ export default function DashboardPage() {
                   <Link href="/dashboard">View Conversations</Link>
                 </Button>
               </div>
-              {conversations.length > 0 ? (
+              {conversationsLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-20 w-full animate-pulse rounded-lg bg-white/10" />
+                  ))}
+                </div>
+              ) : conversations.length > 0 ? (
                 <div className="space-y-3">
                   {conversations.slice(0, 5).map((conv) => (
                     <div
