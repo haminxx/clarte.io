@@ -327,7 +327,7 @@ export default function DashboardPage() {
                   className="border-white/20 bg-transparent text-white hover:bg-white/10"
                   asChild
                 >
-                  <Link href="/dashboard">View Conversations</Link>
+                  <Link href="/dashboard/conversations">View Conversations</Link>
                 </Button>
               </div>
               {conversationsLoading ? (
@@ -350,7 +350,7 @@ export default function DashboardPage() {
                       <div className="flex items-start justify-between">
                         <p className="font-medium text-white">{conv.title || "Untitled Conversation"}</p>
                         <Button size="sm" variant="outline" className="shrink-0 border-white/20 bg-transparent text-white hover:bg-white/10" asChild>
-                          <Link href="/dashboard">View</Link>
+                          <Link href="/dashboard/conversations">View</Link>
                         </Button>
                       </div>
                       {conv.summary && (

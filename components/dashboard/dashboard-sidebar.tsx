@@ -22,7 +22,7 @@ export function DashboardSidebar() {
 
   const navItems = [
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    { href: "/dashboard", icon: MessageSquare, label: "Conversations" },
+    { href: "/dashboard/conversations", icon: MessageSquare, label: "Conversations" },
     { href: "/settings", icon: Settings, label: "Settings" },
     { href: "/profile", icon: UserIcon, label: "Profile" },
   ]
@@ -45,6 +45,7 @@ export function DashboardSidebar() {
           {navItems.map(({ href, icon: Icon, label }) => {
             const isActive =
               (href === "/dashboard" && pathname === "/dashboard") ||
+              (href === "/dashboard/conversations" && pathname === "/dashboard/conversations") ||
               (href === "/profile" && pathname === "/profile") ||
               (href === "/settings" && pathname === "/settings")
             return (

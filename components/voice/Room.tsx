@@ -657,10 +657,14 @@ export function Room({
       role="group"
       aria-label="Voice selection"
       className={cn(
-        "inline-flex rounded-full bg-muted/50 p-1 ring-1 ring-border/50 shadow-sm",
+        "relative inline-flex rounded-full bg-muted/50 p-1 ring-1 ring-border/50 shadow-sm",
         (status === "starting" || status === "active") && "opacity-60 pointer-events-none"
       )}
     >
+      <span
+        className="absolute inset-y-0 left-0 w-1/2 h-full rounded-full bg-primary shadow-md transition-transform duration-200 ease-out"
+        style={{ transform: selectedVoiceId === "cedar" ? "translateX(100%)" : "translateX(0)" }}
+      />
       {VOICE_OPTIONS.map(({ name, voiceId }) => (
         <button
           key={voiceId}
@@ -670,10 +674,10 @@ export function Room({
           aria-label={`Voice: ${name}`}
           disabled={status === "starting" || status === "active"}
           className={cn(
-            "relative px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
+            "relative z-10 w-[72px] px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200",
             selectedVoiceId === voiceId
-              ? "bg-primary text-primary-foreground shadow-md"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              ? "text-primary-foreground"
+              : "text-muted-foreground hover:text-foreground hover:bg-transparent"
           )}
         >
           {name}

@@ -72,7 +72,7 @@ export function HeroSection() {
 
       <div className="pointer-events-none absolute inset-2 sm:inset-4 md:inset-8 border border-dashed border-white/10" />
 
-      <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 pt-6 text-center w-full">
+      <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 pt-6 mt-[30px] text-center w-full">
         <AnimateOnScroll animateOnMount delay={0} animation="fade-up">
           <div className="mt-0 mb-12 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2">
             <span className="text-sm text-white/70">
