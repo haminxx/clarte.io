@@ -45,16 +45,17 @@ export function VoiceCard({
       </div>
 
       <div className="space-y-3">
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-          Start with voice. Ask Clarte to see your screen or camera when you need it.
-        </p>
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
           <div className="flex items-center gap-3">
             <div
               role="group"
               aria-label="Language selection"
-              className="inline-flex rounded-full bg-muted/50 p-1 ring-1 ring-border/50 shadow-sm"
+              className="relative inline-flex rounded-full bg-muted/50 p-1 ring-1 ring-border/50 shadow-sm"
             >
+              <span
+                className="absolute inset-y-0 left-0 w-1/2 h-full rounded-full bg-primary shadow-md transition-transform duration-200 ease-out"
+                style={{ transform: selectedLanguage === "ko" ? "translateX(100%)" : "translateX(0)" }}
+              />
               {LANGUAGE_OPTIONS.map(({ name, langId }) => (
                 <button
                   key={langId}
@@ -63,10 +64,10 @@ export function VoiceCard({
                   aria-pressed={selectedLanguage === langId}
                   aria-label={`Language: ${name}`}
                   className={cn(
-                    "relative px-3 py-2 rounded-full text-sm font-medium transition-all duration-200",
+                    "relative z-10 w-[52px] px-3 py-2 rounded-full text-sm font-medium transition-colors duration-200",
                     selectedLanguage === langId
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      ? "text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-transparent"
                   )}
                 >
                   {name}

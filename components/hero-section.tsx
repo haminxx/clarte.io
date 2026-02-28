@@ -154,26 +154,29 @@ export function HeroSection() {
               </p>
               <div
                 ref={transcriptContainerRef}
-                className="max-h-[120px] overflow-y-auto rounded-lg border border-border/50 bg-background/50 px-3 py-2 text-sm text-foreground"
+                className="max-h-[3rem] overflow-hidden rounded-lg border border-border/50 bg-background/50 px-3 py-2 text-sm text-foreground flex flex-col justify-end"
               >
                 {transcriptEntries.filter((e) => e.role === "user").length === 0 && !transcriptPartial ? (
                   <span className="text-muted-foreground">Your speech will appear here...</span>
                 ) : (
-                  <>
+                  <div className="line-clamp-2 leading-tight">
                     {transcriptEntries
                       .filter((e) => e.role === "user")
+                      .slice(-2)
                       .map((entry, i) => (
-                        <div key={i} className="mb-1 last:mb-0">
-                          <span className="text-foreground">{entry.content}</span>
+                        <div key={i} className="truncate">
+                          {entry.content}
                         </div>
                       ))}
                     {transcriptPartial && (
-                      <div className="mb-1 last:mb-0">
-                        <span className="text-foreground/80">{transcriptPartial}</span>
-                        <span className="animate-pulse">|</span>
+                      <div className="truncate">
+                        <span className="text-foreground/90">
+                          {transcriptPartial}
+                          <span className="animate-pulse">|</span>
+                        </span>
                       </div>
                     )}
-                  </>
+                  </div>
                 )}
                 <div ref={transcriptEndRef} />
               </div>

@@ -301,40 +301,86 @@ function RoomInner({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <div className="flex items-center gap-2">
-        {isScreenShareEnabled && (
-          <Button
-            variant="default"
-            size="sm"
-            onClick={toggleScreenShare}
-            disabled={screenSharePending}
-            className="gap-2"
-          >
-            <Monitor className="h-4 w-4" />
-            Stop sharing
-          </Button>
+      <div className={compact ? "flex flex-col items-center gap-2" : "flex items-center gap-2"}>
+        {compact ? (
+          <>
+            <div className="min-w-[180px] flex justify-center">
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={onDisconnect}
+                className="gap-2 h-12 px-6 rounded-full"
+              >
+                <PhoneOff className="h-4 w-4" />
+                End call
+              </Button>
+            </div>
+            {(isScreenShareEnabled || isCameraEnabled) && (
+              <div className="flex items-center gap-2">
+                {isScreenShareEnabled && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={toggleScreenShare}
+                    disabled={screenSharePending}
+                    className="gap-2"
+                  >
+                    <Monitor className="h-4 w-4" />
+                    Stop sharing
+                  </Button>
+                )}
+                {isCameraEnabled && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={toggleCamera}
+                    disabled={cameraPending}
+                    className="gap-2"
+                  >
+                    <Video className="h-4 w-4" />
+                    Camera off
+                  </Button>
+                )}
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            {isScreenShareEnabled && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={toggleScreenShare}
+                disabled={screenSharePending}
+                className="gap-2"
+              >
+                <Monitor className="h-4 w-4" />
+                Stop sharing
+              </Button>
+            )}
+            {isCameraEnabled && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={toggleCamera}
+                disabled={cameraPending}
+                className="gap-2"
+              >
+                <Video className="h-4 w-4" />
+                Camera off
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onDisconnect}
+              className="gap-2"
+            >
+              <PhoneOff className="h-4 w-4" />
+              End call
+            </Button>
+          </>
         )}
-        {isCameraEnabled && (
-          <Button
-            variant="default"
-            size="sm"
-            onClick={toggleCamera}
-            disabled={cameraPending}
-            className="gap-2"
-          >
-            <Video className="h-4 w-4" />
-            Camera off
-          </Button>
-        )}
-        <Button
-          variant="outline"
-          size={compact ? "lg" : "sm"}
-          onClick={onDisconnect}
-          className={compact ? "gap-2 h-12 px-6 rounded-full" : "gap-2"}
-        >
-          <PhoneOff className="h-4 w-4" />
-          End call
-        </Button>
       </div>
     </div>
   )
@@ -571,10 +617,14 @@ export function Room({
       role="group"
       aria-label="Language selection"
       className={cn(
-        "inline-flex rounded-full bg-muted/50 p-1 ring-1 ring-border/50 shadow-sm",
+        "relative inline-flex rounded-full bg-muted/50 p-1 ring-1 ring-border/50 shadow-sm",
         (status === "starting" || status === "active") && "opacity-60 pointer-events-none"
       )}
     >
+      <span
+        className="absolute inset-y-0 left-0 w-1/2 h-full rounded-full bg-primary shadow-md transition-transform duration-200 ease-out"
+        style={{ transform: selectedLanguage === "ko" ? "translateX(100%)" : "translateX(0)" }}
+      />
       {LANGUAGE_OPTIONS.map(({ name, langId }) => (
         <button
           key={langId}
@@ -584,10 +634,10 @@ export function Room({
           aria-label={`Language: ${name}`}
           disabled={status === "starting" || status === "active"}
           className={cn(
-            "relative px-3 py-2 rounded-full text-sm font-medium transition-all duration-200",
+            "relative z-10 w-[52px] px-3 py-2 rounded-full text-sm font-medium transition-colors duration-200",
             selectedLanguage === langId
-              ? "bg-primary text-primary-foreground shadow-md"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              ? "text-primary-foreground"
+              : "text-muted-foreground hover:text-foreground hover:bg-transparent"
           )}
         >
           {name}
@@ -632,9 +682,6 @@ export function Room({
         <>
           {cardHeader}
           <div className="space-y-3">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Start with voice. Ask Clarte to see your screen or camera when you need it.
-            </p>
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
               <div className="flex items-center gap-3">{languageToggle}{voiceToggle}</div>
               <LiveKitRoom
@@ -703,12 +750,9 @@ export function Room({
 
   if (cardLayout) {
     return (
-      <>
-        {cardHeader}
-        <div className="space-y-3">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Start with voice. Ask Clarte to see your screen or camera when you need it.
-          </p>
+        <>
+          {cardHeader}
+          <div className="space-y-3">
           <div className="flex flex-col items-center gap-4 py-2">
             {error && (
               <p className="text-sm text-destructive text-center">{error}</p>
