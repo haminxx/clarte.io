@@ -36,6 +36,29 @@ const VOICE_AGENT_URL = process.env.NEXT_PUBLIC_VOICE_AGENT_URL ?? ""
 
 // LIVEKIT_URL required only for Tier 2/3 (screen share, camera). Tier 1 uses VoiceRoomDirect.
 
+/** Mobile detection for mic error messaging */
+function isMobile(): boolean {
+  if (typeof navigator === "undefined") return false
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+}
+
+/** User-friendly mic error message based on error type */
+function getMicErrorMessage(err: unknown): string {
+  const name = err instanceof Error ? err.name : ""
+  if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+    return isMobile()
+      ? "Tap Allow when your browser asks for microphone access. If you already allowed, try refreshing the page."
+      : "Microphone access was denied. Please allow microphone permission and try again."
+  }
+  if (name === "NotFoundError") {
+    return "No microphone found. Please connect a microphone and try again."
+  }
+  if (name === "NotReadableError") {
+    return "Microphone is in use by another app. Close other apps using the mic and try again."
+  }
+  return "Microphone access is required. Please allow microphone permission and try again."
+}
+
 /** Wrapper that provides Krisp to RoomInner. Uses error boundary to fall back to no-Krisp if unsupported. */
 function RoomInnerKrispProvider({
   onDisconnect,
@@ -441,6 +464,8 @@ interface RoomProps {
   language?: "en" | "ko"
   autoStart?: boolean
   onDisconnect?: () => void
+  /** Called when voice connection is active (mic acquired). Use to delay client SpeechRecognition. */
+  onConnectionActive?: () => void
   /** When true, use VoiceCard-style layout (header, badge, voice toggle) for idle/starting/active. */
   cardLayout?: boolean
   selectedVoiceId?: string
@@ -466,6 +491,7 @@ export function Room({
   language = "en",
   autoStart = false,
   onDisconnect,
+  onConnectionActive,
   cardLayout = false,
   selectedVoiceId = "marin",
   onVoiceChange,
@@ -557,7 +583,7 @@ export function Room({
         stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       } catch (micErr2) {
         console.error("[Clarte Voice] Microphone access denied or failed:", micErr2)
-        setError("Microphone access is required. Please allow microphone permission and try again.")
+        setError(getMicErrorMessage(micErr2))
         setStatus("error")
         return
       }
@@ -588,11 +614,12 @@ export function Room({
       setToken(result.token)
       setRoomName(result.room)
       setStatus("active")
+      onConnectionActive?.()
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to get token")
       setStatus("error")
     }
-  }, [mode, voice, language, userDisplayName])
+  }, [mode, voice, language, userDisplayName, onConnectionActive])
 
   const configured = Boolean(LIVEKIT_URL)
 

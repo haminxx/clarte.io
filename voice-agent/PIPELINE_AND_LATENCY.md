@@ -180,3 +180,34 @@ Use these to pinpoint whether the bottleneck is OpenAI Realtime, ElevenLabs, or 
 | Use OpenAI built-in voice | Large | `FORCE_OPENAI_VOICE=1`; trades quality for speed |
 | Render region near LiveKit | Small–moderate | Set region in Render dashboard |
 | `streaming_latency=2` | Smoother playback | If audio still lags/freezes, try 2 for more buffer; region alignment helps |
+
+---
+
+## Alternative Stacks (LLM & TTS)
+
+The current pipeline (OpenAI Realtime + ElevenLabs) balances quality and latency. If you want to reduce cost or latency, consider these alternatives.
+
+### LLM Options
+
+| Option | Latency | Notes |
+|--------|---------|-------|
+| **OpenAI Realtime** (current) | 300–800 ms | All-in-one STT+LLM; hard to beat for realtime voice |
+| **Groq (Claude, Llama)** | ~50–200 ms | Very fast LPU; needs separate STT (Deepgram, Whisper) — adds hop |
+| **Claude API** | Moderate | No built-in realtime; custom pipeline: STT → Claude → TTS |
+
+### TTS Options
+
+| Option | Latency | Notes |
+|--------|---------|-------|
+| **ElevenLabs** (current) | 150–500 ms | High quality; `eleven_turbo_v2` / `eleven_flash_v2_5` |
+| **Groq Orpheus** | ~100 chars/sec | Fast; `livekit-agents[groq]` integration |
+| **PlayAI Dialog (Groq)** | ~200 ms TTFA | 15x realtime; good for voice agents |
+| **OpenAI built-in** | Fastest | `FORCE_OPENAI_VOICE=1`; lower quality |
+| **Hugging Face TTS** | Variable | Self-host or Inference API; cost control |
+| **Deepgram Aura** | Low latency | Primarily STT; Aura TTS also available |
+
+### Recommendations
+
+- **Lower cost:** `FORCE_OPENAI_VOICE=1` to skip ElevenLabs; or Groq Orpheus/PlayAI if adopting Groq for LLM.
+- **Lower latency:** Groq Orpheus + Groq LLM requires custom agent (STT → Groq LLM → Groq TTS) — more engineering, potentially faster.
+- **Hugging Face TTS:** Best for cost control if self-hosting; quality and latency depend on model and hardware.

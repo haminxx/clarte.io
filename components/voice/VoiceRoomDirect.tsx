@@ -43,6 +43,29 @@ function resampleTo24k(input: Float32Array, fromRate: number): Int16Array {
   return floatTo16BitPCM(output)
 }
 
+/** Mobile detection for mic error messaging */
+function isMobile(): boolean {
+  if (typeof navigator === "undefined") return false
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+}
+
+/** User-friendly mic error message based on error type */
+function getMicErrorMessage(err: unknown): string {
+  const name = err instanceof Error ? err.name : ""
+  if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+    return isMobile()
+      ? "Tap Allow when your browser asks for microphone access. If you already allowed, try refreshing the page."
+      : "Microphone access was denied. Please allow microphone permission and try again."
+  }
+  if (name === "NotFoundError") {
+    return "No microphone found. Please connect a microphone and try again."
+  }
+  if (name === "NotReadableError") {
+    return "Microphone is in use by another app. Close other apps using the mic and try again."
+  }
+  return "Microphone access is required. Please allow and try again."
+}
+
 /** Base64 encode Int16Array */
 function toBase64(int16: Int16Array): string {
   const bytes = new Uint8Array(int16.buffer)
@@ -102,14 +125,20 @@ export function VoiceRoomDirect({ onDisconnect, autoStart = false }: VoiceRoomDi
     }
     setStatus("connecting")
     setError(null)
+    let stream: MediaStream | null = null
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      streamRef.current = stream
-    } catch (e) {
-      setError("Microphone access is required. Please allow and try again.")
-      setStatus("error")
-      return
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    } catch (micErr) {
+      await new Promise((r) => setTimeout(r, 400))
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      } catch (micErr2) {
+        setError(getMicErrorMessage(micErr2))
+        setStatus("error")
+        return
+      }
     }
+    streamRef.current = stream
 
     const ws = new WebSocket(RELAY_WS_URL)
     wsRef.current = ws

@@ -11,6 +11,7 @@ import { useClientSpeechRecognition, isClientSpeechRecognitionSupported } from "
 
 export function HeroSection() {
   const [inCall, setInCall] = useState(false)
+  const [connectionActive, setConnectionActive] = useState(false)
   const [selectedVoice, setSelectedVoice] = useState("marin")
   const [selectedLanguage, setSelectedLanguage] = useState<"en" | "ko">("en")
   const [transcriptEntries, setTranscriptEntries] = useState<{ role: string; content: string }[]>([])
@@ -24,6 +25,7 @@ export function HeroSection() {
 
   const handleDisconnect = () => {
     setInCall(false)
+    setConnectionActive(false)
     setTranscriptEntries([])
     setTranscriptPartial("")
   }
@@ -43,7 +45,7 @@ export function HeroSection() {
 
   const useClientSTT = isClientSpeechRecognitionSupported()
   useClientSpeechRecognition({
-    enabled: inCall && useClientSTT,
+    enabled: inCall && useClientSTT && connectionActive,
     language: selectedLanguage,
     onTranscriptPartial: handleTranscriptPartial,
     onTranscriptAdd: handleTranscriptAdd,
@@ -133,6 +135,7 @@ export function HeroSection() {
                   language={selectedLanguage}
                   autoStart
                   onDisconnect={handleDisconnect}
+                  onConnectionActive={() => setConnectionActive(true)}
                   cardLayout
                   selectedVoiceId={selectedVoice}
                   onVoiceChange={setSelectedVoice}
