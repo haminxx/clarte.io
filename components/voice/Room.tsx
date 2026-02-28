@@ -304,7 +304,7 @@ function RoomInner({
       <div className={compact ? "flex flex-col items-center gap-2" : "flex items-center gap-2"}>
         {compact ? (
           <>
-            <div className="min-w-[180px] flex justify-center">
+            <div className="flex justify-end w-full">
               <Button
                 variant="outline"
                 size="lg"

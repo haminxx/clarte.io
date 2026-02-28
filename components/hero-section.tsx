@@ -29,7 +29,11 @@ export function HeroSection() {
   }
 
   const handleTranscriptAdd = useCallback((role: string, content: string) => {
-    setTranscriptEntries((prev) => [...prev, { role, content }])
+    if (role === "user") {
+      setTranscriptEntries([{ role, content }])
+    } else {
+      setTranscriptEntries((prev) => [...prev, { role, content }])
+    }
     setTranscriptPartial("")
   }, [])
 
@@ -74,7 +78,7 @@ export function HeroSection() {
 
       <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 pt-6 mt-[30px] text-center w-full">
         <AnimateOnScroll animateOnMount delay={0} animation="fade-up">
-          <div className="mt-0 mb-12 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2">
+          <div className="mt-[20px] mb-12 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2">
             <span className="text-sm text-white/70">
               Find your core, Fund your future
             </span>
@@ -160,21 +164,22 @@ export function HeroSection() {
                   <span className="text-muted-foreground">Your speech will appear here...</span>
                 ) : (
                   <div className="line-clamp-2 leading-tight">
-                    {transcriptEntries
-                      .filter((e) => e.role === "user")
-                      .slice(-2)
-                      .map((entry, i) => (
-                        <div key={i} className="truncate">
-                          {entry.content}
-                        </div>
-                      ))}
-                    {transcriptPartial && (
+                    {transcriptPartial ? (
                       <div className="truncate">
                         <span className="text-foreground/90">
                           {transcriptPartial}
                           <span className="animate-pulse">|</span>
                         </span>
                       </div>
+                    ) : (
+                      transcriptEntries
+                        .filter((e) => e.role === "user")
+                        .slice(-1)
+                        .map((entry, i) => (
+                          <div key={i} className="truncate">
+                            {entry.content}
+                          </div>
+                        ))
                     )}
                   </div>
                 )}
