@@ -479,7 +479,7 @@ async def entrypoint(ctx: agents.JobContext) -> None:
     else:
         opening = f"Hello, {user_name}!" if user_name else "Hello!"
         follow_up = random.choice(FOLLOW_UP_PHRASES_EN)
-    greeting = f'Say exactly: "[Curious] {opening} {follow_up}"'
+    greeting = f'Say exactly: "{opening} {follow_up}"'
     await session.generate_reply(instructions=greeting)
 
     await asyncio.Future()

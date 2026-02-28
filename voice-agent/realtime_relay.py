@@ -142,7 +142,7 @@ def _build_greeting_instructions(user_name: Optional[str], language: str) -> str
     else:
         opening = f"Hello, {valid_name}!" if valid_name else "Hello!"
         follow_up = random.choice(FOLLOW_UP_PHRASES_EN)
-    return f'Say exactly: "[Curious] {opening} {follow_up}"'
+    return f'Say exactly: "{opening} {follow_up}"'
 
 
 def _execute_tool(name: str, arguments: str) -> str:
