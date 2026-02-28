@@ -62,7 +62,7 @@ export function HeroSection() {
   }, [transcriptEntries, transcriptPartial])
 
   return (
-    <section className="relative min-h-screen overflow-hidden bg-background pt-12 w-full">
+    <section className="relative min-h-screen overflow-hidden bg-background pt-6 w-full">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] md:h-[900px] md:w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-blue-600/25 via-indigo-600/15 to-transparent blur-3xl" />
         <div className="absolute right-1/4 top-1/3 h-[300px] w-[300px] md:h-[500px] md:w-[500px] rounded-full bg-blue-500/10 blur-3xl" />
@@ -72,9 +72,9 @@ export function HeroSection() {
 
       <div className="pointer-events-none absolute inset-2 sm:inset-4 md:inset-8 border border-dashed border-white/10" />
 
-      <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 pt-12 text-center w-full">
+      <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 pt-6 text-center w-full">
         <AnimateOnScroll animateOnMount delay={0} animation="fade-up">
-          <div className="mt-6 mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2">
+          <div className="mt-0 mb-12 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2">
             <span className="text-sm text-white/70">
               Find your core, Fund your future
             </span>

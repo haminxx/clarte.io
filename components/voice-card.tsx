@@ -100,12 +100,12 @@ export function VoiceCard({
           </div>
           <Button
             size="lg"
-            className="h-12 px-6 rounded-full gap-2"
+            className="h-12 px-6 rounded-full gap-2 ml-auto"
             onClick={() => onStartCall?.()}
             disabled={isActive}
           >
             <Play className="h-4 w-4" />
-            Connect to Assistant
+            Call Clarte
           </Button>
         </div>
       </div>

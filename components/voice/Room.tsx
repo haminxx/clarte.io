@@ -548,15 +548,21 @@ export function Room({
     }
     setStatus("starting")
     setError(null)
+    let stream: MediaStream | null = null
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      stream.getTracks().forEach((t) => t.stop())
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true })
     } catch (micErr) {
-      console.error("[Clarte Voice] Microphone access denied or failed:", micErr)
-      setError("Microphone access is required. Please allow microphone permission and try again.")
-      setStatus("error")
-      return
+      await new Promise((r) => setTimeout(r, 400))
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      } catch (micErr2) {
+        console.error("[Clarte Voice] Microphone access denied or failed:", micErr2)
+        setError("Microphone access is required. Please allow microphone permission and try again.")
+        setStatus("error")
+        return
+      }
     }
+    if (stream) stream.getTracks().forEach((t) => t.stop())
 
     const baseUrl = VOICE_AGENT_URL?.replace(/\/$/, "") ?? ""
     const tokenUrl = baseUrl ? `${baseUrl}/token` : "/api/token"
@@ -760,7 +766,7 @@ export function Room({
             <div className="flex flex-wrap items-center justify-between gap-3 w-full">
               <div className="flex items-center gap-3">{languageToggle}{voiceToggle}</div>
               <div className="flex items-center gap-2">
-                {autoStart && onDisconnect && (
+                {autoStart && onDisconnect && status !== "starting" && (
                   <Button variant="outline" size="sm" onClick={onDisconnect} className="gap-2">
                     <PhoneOff className="h-4 w-4" />
                     Back
@@ -776,7 +782,7 @@ export function Room({
                   ) : (
                     <Play className="h-4 w-4" />
                   )}
-                  {status === "starting" ? "Connecting…" : "Connect to Assistant"}
+                  {status === "starting" ? "Connecting…" : "Call Clarte"}
                 </Button>
               </div>
             </div>
@@ -808,7 +814,7 @@ export function Room({
           <p className="text-sm text-destructive text-center">{error}</p>
         )}
         <div className="flex items-center gap-2">
-          {autoStart && onDisconnect && (
+          {autoStart && onDisconnect && status !== "starting" && (
             <Button variant="outline" size="sm" onClick={onDisconnect} className="gap-2">
               <PhoneOff className="h-4 w-4" />
               Back
