@@ -74,7 +74,7 @@ export function HeroSection() {
 
       <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 pt-12 text-center w-full">
         <AnimateOnScroll animateOnMount delay={0} animation="fade-up">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2">
+          <div className="mt-6 mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2">
             <span className="text-sm text-white/70">
               Find your core, Fund your future
             </span>
