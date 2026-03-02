@@ -1,14 +1,40 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { AnimateOnScroll } from "./animate-on-scroll"
+import { cn } from "@/lib/utils"
 
 const footerLinkClass =
   "group relative inline-block text-sm text-white/60 transition-all duration-300 ease-out hover:text-white"
 
 export function Footer() {
+  const pathname = usePathname()
+  const isHome = pathname === "/"
+  const [scrolled, setScrolled] = useState(isHome)
+
+  useEffect(() => {
+    if (isHome) {
+      setScrolled(true)
+      return
+    }
+    setScrolled(false)
+    const onScroll = () => setScrolled((s) => s || window.scrollY > 80)
+    window.addEventListener("scroll", onScroll, { passive: true })
+    onScroll()
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [isHome, pathname])
+
+  const showFooter = isHome || scrolled
+
   return (
-    <footer className="relative z-10 border-t border-white/10 bg-gradient-to-b from-[#0a0a14] via-[#0d0d1a] to-[#0a0a14] backdrop-blur-sm">
+    <footer
+      className={cn(
+        "relative z-10 border-t border-white/10 bg-gradient-to-b from-[#0a0a14] via-[#0d0d1a] to-[#0a0a14] backdrop-blur-sm transition-opacity duration-300",
+        showFooter ? "opacity-100" : "opacity-0 pointer-events-none"
+      )}
+    >
       {/* Soft gradient accent at top edge */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
       <div className="mx-auto max-w-7xl px-4 py-12">

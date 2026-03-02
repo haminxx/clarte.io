@@ -46,12 +46,16 @@ export function HeroSection() {
               </div>
               <div className="order-1 lg:order-3">
                 <h1 className="text-[56px] font-semibold leading-[1.1] tracking-tight text-white">
-                  Voice AI that runs at the speed of thought
+                  Find absolute{" "}
+                  <span className="group relative inline-block cursor-default rounded border border-white/20 bg-white/5 px-1.5 py-0.5 blur-[2px] transition-all duration-300 hover:blur-none hover:border-white/40 hover:bg-white/10">
+                    clarity
+                  </span>
+                  {" "}with a voice AI that questions, debates, and validates
                 </h1>
               </div>
               <div className="order-3 lg:order-4">
                 <p className="text-[24px] leading-relaxed text-white/60 max-w-[400px] text-left">
-                  Leverage ultra-low latency synthesis and scalable APIs for real-time interactions. Optimized for engineers who build the future.
+                  Learning is about how you think, not just what you know. Clarte is an interactive learning partner dedicated to deep ideation, practicing critical thinking, and actively challenging your assumptions
                 </p>
               </div>
             </div>
