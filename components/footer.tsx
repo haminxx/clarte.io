@@ -5,11 +5,15 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { AnimateOnScroll } from "./animate-on-scroll"
 import { cn } from "@/lib/utils"
-
-const footerLinkClass =
-  "group relative inline-block text-sm text-white/60 transition-all duration-300 ease-out hover:text-white"
+import { useClarteTheme } from "@/lib/clarte-theme-context"
 
 export function Footer() {
+  const { theme } = useClarteTheme()
+  const isBright = theme === "bright"
+  const footerLinkClass = cn(
+    "group relative inline-block text-sm transition-all duration-300 ease-out",
+    isBright ? "text-black/60 hover:text-black" : "text-white/60 hover:text-white"
+  )
   const pathname = usePathname()
   const isHome = pathname === "/"
   const [scrolled, setScrolled] = useState(isHome)
@@ -31,23 +35,24 @@ export function Footer() {
   return (
     <footer
       className={cn(
-        "relative z-10 border-t border-white/10 bg-gradient-to-b from-[#0a0a14] via-[#0d0d1a] to-[#0a0a14] backdrop-blur-sm transition-opacity duration-300",
+        "relative z-10 border-t backdrop-blur-sm transition-opacity duration-300",
+        isBright ? "border-black/10 bg-gradient-to-b from-white via-blue-50/50 to-indigo-100/50" : "border-white/10 bg-gradient-to-b from-[#0a0a14] via-[#0d0d1a] to-[#0a0a14]",
         showFooter ? "opacity-100" : "opacity-0 pointer-events-none"
       )}
     >
       {/* Soft gradient accent at top edge */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
+      <div className={cn("absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent to-transparent", isBright ? "via-blue-500/40" : "via-blue-500/30")} />
       <div className="mx-auto max-w-7xl px-4 py-12">
         <AnimateOnScroll animation="fade-up">
         <div className="grid gap-8 md:grid-cols-4">
           {/* Brand */}
           <div className="md:col-span-1">
-            <p className="text-lg italic text-white/80">Your thoughts, refined</p>
+            <p className={cn("text-lg italic", isBright ? "text-black/80" : "text-white/80")}>Your thoughts, refined</p>
           </div>
 
           {/* Main Links */}
           <div>
-            <h3 className="mb-4 text-sm font-semibold text-white">Main</h3>
+            <h3 className={cn("mb-4 text-sm font-semibold", isBright ? "text-black" : "text-white")}>Main</h3>
             <ul className="space-y-3">
               <li>
                 <Link href="/" className={footerLinkClass}>
@@ -74,7 +79,7 @@ export function Footer() {
 
           {/* Resources */}
           <div>
-            <h3 className="mb-4 text-sm font-semibold text-white">Resources</h3>
+            <h3 className={cn("mb-4 text-sm font-semibold", isBright ? "text-black" : "text-white")}>Resources</h3>
             <ul className="space-y-3">
               <li>
                 <Link href="/download" className={footerLinkClass}>
@@ -96,7 +101,7 @@ export function Footer() {
 
           {/* Legal */}
           <div>
-            <h3 className="mb-4 text-sm font-semibold text-white">Legal</h3>
+            <h3 className={cn("mb-4 text-sm font-semibold", isBright ? "text-black" : "text-white")}>Legal</h3>
             <ul className="space-y-3">
               <li>
                 <Link href="/privacy" className={footerLinkClass}>
@@ -114,8 +119,8 @@ export function Footer() {
         </AnimateOnScroll>
 
         {/* Copyright */}
-        <div className="mt-8 border-t border-white/10 pt-8 text-center">
-          <p className="text-sm text-white/60">
+        <div className={cn("mt-8 border-t pt-8 text-center", isBright ? "border-black/10" : "border-white/10")}>
+          <p className={cn("text-sm", isBright ? "text-black/60" : "text-white/60")}>
             © {new Date().getFullYear()} Clarte. All rights reserved.
           </p>
         </div>
