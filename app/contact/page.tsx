@@ -69,7 +69,7 @@ export default function ContactPage() {
         </AnimateOnScroll>
 
         <AnimateOnScroll animation="fade-blur" delay={100}>
-          <div className="mx-auto max-w-2xl">
+          <div className="mx-auto max-w-2xl" id="form">
             {/* Contact Form */}
             <div className="rounded-2xl border border-white/10 bg-[#1a1a2e]/50 p-8">
               {submitted ? (

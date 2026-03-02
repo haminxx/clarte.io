@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import type { User } from "firebase/auth"
 import { Button } from "@/components/ui/button"
 import { Menu, X, LogOut, User as UserIcon, Settings } from "lucide-react"
@@ -29,6 +29,7 @@ export function Header() {
   const [auth, setAuth] = useState<import("firebase/auth").Auth | null>(null)
   const [scrolled, setScrolled] = useState(false)
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -159,28 +160,31 @@ export function Header() {
           : "border-b border-transparent bg-transparent"
       )}
     >
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 w-full">
-        <div className="flex items-center gap-10">
-          <Link href="/" className="text-lg font-semibold text-white">
-            Clarte
-          </Link>
+      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 w-full">
+        <Link href="/" className="text-lg font-semibold text-white">
+          Clarte
+        </Link>
 
+        <div className="flex items-center gap-1">
           <nav className="hidden items-center gap-1 lg:flex">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="rounded-md px-3 py-2 text-sm text-white/70 transition-colors hover:bg-white/5 hover:text-white"
-              >
-                {link.label}
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href))
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "rounded-md px-3 py-2 text-sm transition-colors hover:bg-white/5 hover:text-white",
+                    isActive ? "bg-white/10 text-white" : "text-white/70"
+                  )}
+                >
+                  {link.label}
+                </Link>
+              )
+            })}
           </nav>
-        </div>
-
-        <div className="flex items-center gap-3">
           <Link
-            href="/contact"
+            href="/contact#form"
             className="hidden md:inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-black bg-gradient-to-r from-white to-white/90 hover:from-white/95 hover:to-white/80 transition-all shadow-sm"
           >
             Request Access
@@ -202,18 +206,24 @@ export function Header() {
         <div className="border-t border-white/10 bg-background/95 backdrop-blur-md lg:hidden w-full">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 py-4 w-full">
             <nav className="flex flex-col gap-1">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="rounded-md px-3 py-2.5 text-sm text-white/70 transition-colors hover:bg-white/5 hover:text-white"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {navLinks.map((link) => {
+                const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href))
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={cn(
+                      "rounded-md px-3 py-2.5 text-sm transition-colors hover:bg-white/5 hover:text-white",
+                      isActive ? "bg-white/10 text-white" : "text-white/70"
+                    )}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                )
+              })}
               <Link
-                href="/contact"
+                href="/contact#form"
                 className="rounded-md px-4 py-2.5 text-sm font-medium text-black bg-gradient-to-r from-white to-white/90 hover:from-white/95 hover:to-white/80 transition-all"
                 onClick={() => setMobileMenuOpen(false)}
               >
