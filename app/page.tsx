@@ -11,6 +11,7 @@ import { HeroSection } from "@/components/hero-section"
 import { CompanyLogos } from "@/components/company-logos"
 import { AIStrategySection } from "@/components/ai-strategy-section"
 import { FeaturesSection } from "@/components/features-section"
+import { DemoPreviewSection } from "@/components/demo-preview-section"
 
 export default function Home() {
   return (
@@ -25,6 +26,8 @@ export default function Home() {
         <AIStrategySection />
 
         <FeaturesSection />
+
+        <DemoPreviewSection />
       </main>
 
       <Footer />
