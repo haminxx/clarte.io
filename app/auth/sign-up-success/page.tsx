@@ -28,7 +28,7 @@ export default function SignUpSuccessPage() {
     setResendSuccess(false)
     try {
       await sendEmailVerification(user, {
-        url: typeof window !== "undefined" ? `${window.location.origin}/auth/login` : undefined,
+        url: typeof window !== "undefined" ? `${window.location.origin}/` : undefined,
         handleCodeInApp: true,
       })
       setResendSuccess(true)
@@ -86,9 +86,9 @@ export default function SignUpSuccessPage() {
               )}
               Resend verification email
             </Button>
-            <Link href="/auth/login">
+            <Link href="/">
               <Button variant="outline" className="w-full border-white/20 bg-transparent text-white hover:bg-white/10">
-                Back to Sign In
+                Back to Home
               </Button>
             </Link>
           </div>

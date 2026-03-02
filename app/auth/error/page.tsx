@@ -22,7 +22,7 @@ export default function AuthErrorPage() {
           </p>
           
           <div className="mt-8 flex gap-4 justify-center">
-            <Link href="/auth/login">
+            <Link href="/">
               <Button variant="outline" className="border-white/20 bg-transparent text-white hover:bg-white/10">
                 Try Again
               </Button>

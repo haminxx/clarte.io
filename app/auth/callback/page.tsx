@@ -9,7 +9,7 @@ import { useSearchParams } from "next/navigation"
  */
 function AuthCallbackContent() {
   const searchParams = useSearchParams()
-  const next = searchParams.get("next") ?? "/dashboard"
+  const next = searchParams.get("next") ?? "/"
 
   useEffect(() => {
     window.location.replace(next)

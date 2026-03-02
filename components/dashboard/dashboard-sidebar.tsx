@@ -2,13 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import {
-  ChevronLeft,
-  LayoutDashboard,
-  MessageSquare,
-  Settings,
-  User as UserIcon,
-} from "lucide-react"
+import { ChevronLeft, Settings, User as UserIcon } from "lucide-react"
 import {
   Tooltip,
   TooltipContent,
@@ -21,8 +15,6 @@ export function DashboardSidebar() {
   const pathname = usePathname()
 
   const navItems = [
-    { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    { href: "/dashboard/conversations", icon: MessageSquare, label: "Conversations" },
     { href: "/settings", icon: Settings, label: "Settings" },
     { href: "/profile", icon: UserIcon, label: "Profile" },
   ]
@@ -44,8 +36,6 @@ export function DashboardSidebar() {
           </Tooltip>
           {navItems.map(({ href, icon: Icon, label }) => {
             const isActive =
-              (href === "/dashboard" && pathname === "/dashboard") ||
-              (href === "/dashboard/conversations" && pathname === "/dashboard/conversations") ||
               (href === "/profile" && pathname === "/profile") ||
               (href === "/settings" && pathname === "/settings")
             return (

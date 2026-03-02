@@ -29,13 +29,13 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!auth) {
       setAuthLoading(false)
-      router.replace("/auth/login")
+      router.replace("/")
       return
     }
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u)
       if (!u) {
-        router.replace("/auth/login")
+        router.replace("/")
         return
       }
       setAuthLoading(false)

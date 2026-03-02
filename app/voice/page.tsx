@@ -29,13 +29,13 @@ function VoicePageContent() {
   useEffect(() => {
     if (!auth) {
       setAuthLoading(false)
-      router.replace("/auth/login?next=/voice")
+      router.replace("/?next=/voice")
       return
     }
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u)
       if (!u) {
-        router.replace("/auth/login?next=/voice")
+        router.replace("/?next=/voice")
         return
       }
       setAuthLoading(false)
@@ -78,7 +78,7 @@ function VoicePageContent() {
               Clarte
             </Link>
             <Link
-              href="/dashboard"
+              href="/"
               className="text-sm text-white/60 hover:text-white"
             >
               Dashboard

@@ -24,45 +24,43 @@ export function HeroSection() {
 
       <div className="pointer-events-none absolute inset-2 sm:inset-4 md:inset-8 border border-dashed border-white/10" />
 
-      <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 pt-6 mt-[30px] text-center w-full">
-        <AnimateOnScroll animateOnMount delay={0} animation="fade-up">
-          <div className="mt-[20px] mb-12 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2">
-            <span className="text-sm text-white/70">
-              Find your core, Fund your future
-            </span>
-          </div>
-        </AnimateOnScroll>
+      <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 pt-4 mt-[20px] w-full">
+        <AnimateOnScroll animateOnMount delay={80} animation="fade-blur">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8 lg:gap-12">
+            {/* Left column: motto + headline */}
+            <div className="lg:flex-1 lg:max-w-[60%]">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 backdrop-blur-sm px-4 py-2">
+                <span className="text-sm text-white/70">
+                  Find your core, Fund your future
+                </span>
+              </div>
+              <h1 className="text-balance text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-white">
+                Voice AI that runs at the speed of thought
+              </h1>
+            </div>
 
-        <AnimateOnScroll animateOnMount delay={80} animation="fade-up">
-          <h1 className="mb-6 text-balance text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-semibold tracking-tight text-white px-2">
-            Voice AI that runs at
-            <br />
-            the speed of thought
-          </h1>
-        </AnimateOnScroll>
-
-        <AnimateOnScroll animateOnMount delay={160} animation="fade-up">
-          <p className="mx-auto mb-8 max-w-xl text-base sm:text-lg text-white/60 px-4">
-            Leverage ultra-low latency synthesis and scalable APIs for real-time
-            interactions. Optimized for engineers who build the future.
-          </p>
-        </AnimateOnScroll>
-
-        <AnimateOnScroll animateOnMount delay={240} animation="fade-up">
-          <div className="mb-4 sm:mb-6 flex flex-wrap items-center justify-center gap-3 sm:gap-4 px-4">
-            <Link href="/download">
-              <Button className="bg-white text-black hover:bg-white/90">
-                Download
-              </Button>
-            </Link>
-            <Link href="/docs">
-              <Button
-                variant="outline"
-                className="border-white/20 bg-transparent text-white hover:bg-white/10"
-              >
-                Explore docs
-              </Button>
-            </Link>
+            {/* Right column: buttons + description */}
+            <div className="lg:flex-1 lg:max-w-[40%] lg:pt-12">
+              <div className="flex flex-wrap gap-3 sm:gap-4 mb-6">
+                <Link href="/download">
+                  <Button className="bg-white text-black hover:bg-white/90">
+                    Download
+                  </Button>
+                </Link>
+                <Link href="/demo">
+                  <Button
+                    variant="outline"
+                    className="border-white/20 bg-transparent text-white hover:bg-white/10"
+                  >
+                    Demo
+                  </Button>
+                </Link>
+              </div>
+              <p className="text-base sm:text-lg text-white/60 leading-relaxed">
+                Leverage ultra-low latency synthesis and scalable APIs for real-time
+                interactions. Optimized for engineers who build the future.
+              </p>
+            </div>
           </div>
         </AnimateOnScroll>
       </div>

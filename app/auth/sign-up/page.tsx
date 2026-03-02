@@ -40,7 +40,7 @@ export default function SignUpPage() {
         await updateProfile(user, { displayName: fullName.trim() })
       }
       await sendEmailVerification(user, {
-        url: typeof window !== "undefined" ? `${window.location.origin}/auth/login` : undefined,
+        url: typeof window !== "undefined" ? `${window.location.origin}/` : undefined,
         handleCodeInApp: true,
       })
       router.push("/auth/sign-up-success")
@@ -180,9 +180,8 @@ export default function SignUpPage() {
           </form>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <Link href="/auth/login" className="text-foreground hover:underline">
-              Sign in
+            <Link href="/" className="text-foreground hover:underline">
+              Back to home
             </Link>
           </p>
         </div>

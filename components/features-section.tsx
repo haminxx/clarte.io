@@ -124,9 +124,7 @@ export function FeaturesSection() {
       <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 text-center w-full">
         <AnimateOnScroll animation="fade-up">
           <h2 className="mb-4 text-balance text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight text-foreground px-2">
-            Built for Real-Time
-            <br />
-            Voice Intelligence
+            Built for Real-Time Voice Intelligence
           </h2>
           <p className="mx-auto mb-8 sm:mb-12 max-w-xl text-sm sm:text-base text-muted-foreground px-4">
             Flawless speech precision, ultra-low latency, and human-level
