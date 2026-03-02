@@ -8,8 +8,13 @@
 import React, { useCallback, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { PhoneOff, Loader2, Phone, Play, Monitor, Video } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { VOICE_OPTIONS, LANGUAGE_OPTIONS } from "@/components/voice-card"
+import {
+  VOICE_OPTIONS,
+  LANGUAGE_OPTIONS,
+  LANGUAGE_PICKER_OPTIONS,
+  VOICE_PICKER_OPTIONS,
+} from "@/components/voice-card"
+import { ScrollPicker } from "@/components/ui/scroll-picker"
 import {
   LiveKitRoom,
   RoomAudioRenderer,
@@ -645,72 +650,26 @@ export function Room({
     </div>
   )
 
-  const languageToggle = (
-    <div
-      role="group"
-      aria-label="Language selection"
-      className={cn(
-        "relative inline-flex rounded-full bg-muted/50 p-1 ring-1 ring-border/50 shadow-sm",
-        (status === "starting" || status === "active") && "opacity-60 pointer-events-none"
-      )}
-    >
-      <span
-        className="absolute inset-y-0 left-0 w-1/2 h-full rounded-full bg-primary shadow-md transition-transform duration-200 ease-out"
-        style={{ transform: selectedLanguage === "ko" ? "translateX(100%)" : "translateX(0)" }}
-      />
-      {LANGUAGE_OPTIONS.map(({ name, langId }) => (
-        <button
-          key={langId}
-          type="button"
-          onClick={() => (status !== "starting" && status !== "active") && onLanguageChange?.(langId)}
-          aria-pressed={selectedLanguage === langId}
-          aria-label={`Language: ${name}`}
-          disabled={status === "starting" || status === "active"}
-          className={cn(
-            "relative z-10 w-[52px] px-3 py-2 rounded-full text-sm font-medium transition-colors duration-200",
-            selectedLanguage === langId
-              ? "text-primary-foreground"
-              : "text-muted-foreground hover:text-foreground hover:bg-transparent"
-          )}
-        >
-          {name}
-        </button>
-      ))}
-    </div>
+  const pickerDisabled = status === "starting" || status === "active"
+
+  const languagePicker = (
+    <ScrollPicker
+      options={LANGUAGE_PICKER_OPTIONS}
+      value={selectedLanguage}
+      onChange={(id) => onLanguageChange?.(id as "en" | "ko")}
+      placeholder="Language"
+      disabled={pickerDisabled}
+    />
   )
 
-  const voiceToggle = (
-    <div
-      role="group"
-      aria-label="Voice selection"
-      className={cn(
-        "relative inline-flex rounded-full bg-muted/50 p-1 ring-1 ring-border/50 shadow-sm",
-        (status === "starting" || status === "active") && "opacity-60 pointer-events-none"
-      )}
-    >
-      <span
-        className="absolute inset-y-0 left-0 w-1/2 h-full rounded-full bg-primary shadow-md transition-transform duration-200 ease-out"
-        style={{ transform: selectedVoiceId === "cedar" ? "translateX(100%)" : "translateX(0)" }}
-      />
-      {VOICE_OPTIONS.map(({ name, voiceId }) => (
-        <button
-          key={voiceId}
-          type="button"
-          onClick={() => (status !== "starting" && status !== "active") && onVoiceChange?.(voiceId)}
-          aria-pressed={selectedVoiceId === voiceId}
-          aria-label={`Voice: ${name}`}
-          disabled={status === "starting" || status === "active"}
-          className={cn(
-            "relative z-10 w-[72px] px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200",
-            selectedVoiceId === voiceId
-              ? "text-primary-foreground"
-              : "text-muted-foreground hover:text-foreground hover:bg-transparent"
-          )}
-        >
-          {name}
-        </button>
-      ))}
-    </div>
+  const voicePicker = (
+    <ScrollPicker
+      options={VOICE_PICKER_OPTIONS}
+      value={selectedVoiceId}
+      onChange={(id) => onVoiceChange?.(id)}
+      placeholder="Voice"
+      disabled={pickerDisabled}
+    />
   )
 
   if (status === "active" && token && roomName) {
@@ -720,7 +679,7 @@ export function Room({
           {cardHeader}
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-              <div className="flex items-center gap-3">{languageToggle}{voiceToggle}</div>
+              <div className="flex items-center gap-3">{languagePicker}{voicePicker}</div>
               <LiveKitRoom
                 serverUrl={LIVEKIT_URL}
                 token={token}
@@ -795,7 +754,7 @@ export function Room({
               <p className="text-sm text-destructive text-center">{error}</p>
             )}
             <div className="flex flex-wrap items-center justify-between gap-3 w-full">
-              <div className="flex items-center gap-3">{languageToggle}{voiceToggle}</div>
+              <div className="flex items-center gap-3">{languagePicker}{voicePicker}</div>
               <div className="flex items-center gap-2">
                 {autoStart && onDisconnect && status !== "starting" && (
                   <Button variant="outline" size="sm" onClick={onDisconnect} className="gap-2">

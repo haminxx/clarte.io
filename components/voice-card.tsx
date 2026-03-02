@@ -2,7 +2,7 @@
 
 import { Play } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { ScrollPicker, type ScrollPickerOption } from "@/components/ui/scroll-picker"
 
 /** Voice name (UI) -> OpenAI voice ID. Marin = female, Cedar = male (both high-quality Realtime voices). */
 export const VOICE_OPTIONS = [
@@ -14,6 +14,16 @@ export const LANGUAGE_OPTIONS = [
   { name: "EN", langId: "en" as const },
   { name: "KO", langId: "ko" as const },
 ] as const
+
+export const LANGUAGE_PICKER_OPTIONS: ScrollPickerOption[] = LANGUAGE_OPTIONS.map((o) => ({
+  id: o.langId,
+  label: o.name,
+}))
+
+export const VOICE_PICKER_OPTIONS: ScrollPickerOption[] = VOICE_OPTIONS.map((o) => ({
+  id: o.voiceId,
+  label: o.name,
+}))
 
 interface VoiceCardProps {
   onStartCall?: () => void
@@ -47,60 +57,18 @@ export function VoiceCard({
       <div className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
           <div className="flex items-center gap-3">
-            <div
-              role="group"
-              aria-label="Language selection"
-              className="relative inline-flex rounded-full bg-muted/50 p-1 ring-1 ring-border/50 shadow-sm"
-            >
-              <span
-                className="absolute inset-y-0 left-0 w-1/2 h-full rounded-full bg-primary shadow-md transition-transform duration-200 ease-out"
-                style={{ transform: selectedLanguage === "ko" ? "translateX(100%)" : "translateX(0)" }}
-              />
-              {LANGUAGE_OPTIONS.map(({ name, langId }) => (
-                <button
-                  key={langId}
-                  type="button"
-                  onClick={() => onLanguageChange?.(langId)}
-                  aria-pressed={selectedLanguage === langId}
-                  aria-label={`Language: ${name}`}
-                  className={cn(
-                    "relative z-10 w-[52px] px-3 py-2 rounded-full text-sm font-medium transition-colors duration-200",
-                    selectedLanguage === langId
-                      ? "text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-transparent"
-                  )}
-                >
-                  {name}
-                </button>
-              ))}
-            </div>
-            <div
-              role="group"
-              aria-label="Voice selection"
-              className="relative inline-flex rounded-full bg-muted/50 p-1 ring-1 ring-border/50 shadow-sm"
-            >
-              <span
-                className="absolute inset-y-0 left-0 w-1/2 h-full rounded-full bg-primary shadow-md transition-transform duration-200 ease-out"
-                style={{ transform: selectedVoiceId === "cedar" ? "translateX(100%)" : "translateX(0)" }}
-              />
-              {VOICE_OPTIONS.map(({ name, voiceId }) => (
-                <button
-                  key={voiceId}
-                  type="button"
-                  onClick={() => onVoiceChange?.(voiceId)}
-                  aria-pressed={selectedVoiceId === voiceId}
-                  aria-label={`Voice: ${name}`}
-                  className={cn(
-                    "relative z-10 w-[72px] px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200",
-                    selectedVoiceId === voiceId
-                      ? "text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-transparent"
-                  )}
-                >
-                  {name}
-                </button>
-              ))}
-            </div>
+            <ScrollPicker
+              options={LANGUAGE_PICKER_OPTIONS}
+              value={selectedLanguage}
+              onChange={(id) => onLanguageChange?.(id as "en" | "ko")}
+              placeholder="Language"
+            />
+            <ScrollPicker
+              options={VOICE_PICKER_OPTIONS}
+              value={selectedVoiceId}
+              onChange={(id) => onVoiceChange?.(id)}
+              placeholder="Voice"
+            />
           </div>
           <Button
             size="lg"

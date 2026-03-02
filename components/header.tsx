@@ -15,6 +15,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 const navLinks = [
+  { href: "/demo", label: "Demo" },
   { href: "/download", label: "Download" },
   { href: "/api-reference", label: "API" },
   { href: "/docs", label: "Docs" },
@@ -65,22 +66,15 @@ export function Header() {
   const AuthButtons = () => {
     if (!authChecked || !user) {
       return (
-        <>
-          <Link href="/auth/login" className="hidden sm:block">
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-white/20 bg-transparent text-white hover:bg-white/10"
-            >
-              Log in
-            </Button>
-          </Link>
-          <Link href="/auth/sign-up" className="hidden sm:block">
-            <Button size="sm" className="bg-white text-black hover:bg-white/90">
-              Get Started
-            </Button>
-          </Link>
-        </>
+        <Link href="/auth/login" className="hidden sm:block">
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-white/20 bg-transparent text-white hover:bg-white/10"
+          >
+            Log in
+          </Button>
+        </Link>
       )
     }
     return (
@@ -151,11 +145,6 @@ export function Header() {
               className="w-full border-white/20 bg-transparent text-white hover:bg-white/10"
             >
               Log in
-            </Button>
-          </Link>
-          <Link href="/auth/sign-up" onClick={() => setMobileMenuOpen(false)}>
-            <Button className="w-full bg-white text-black hover:bg-white/90">
-              Get Started
             </Button>
           </Link>
         </div>
@@ -229,7 +218,7 @@ export function Header() {
             href="/contact"
             className="hidden rounded-md px-3 py-2 text-sm text-white/70 transition-colors hover:bg-white/5 hover:text-white md:block"
           >
-            Talk to Us
+            Request Access
           </Link>
           <AuthButtons />
 
@@ -263,7 +252,7 @@ export function Header() {
                 className="rounded-md px-3 py-2.5 text-sm text-white/70 transition-colors hover:bg-white/5 hover:text-white"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Talk to Us
+                Request Access
               </Link>
               <MobileAuthButtons />
             </nav>
