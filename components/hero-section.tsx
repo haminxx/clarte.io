@@ -22,13 +22,13 @@ export function HeroSection() {
         <div className="absolute bottom-0 left-0 right-0 h-[250px] md:h-[400px] bg-gradient-to-t from-blue-900/30 via-indigo-900/10 to-transparent" />
       </div>
 
-      {/* Content bottom baseline at vertical middle (50vh) - Anthropic-style: 120px left/right margins, fixed header spacing */}
-      <div className="relative z-10 flex min-h-screen flex-col justify-end pb-[50vh] pt-[200px]">
+      {/* Content: headline left, buttons + description right, aligned per reference image */}
+      <div className="relative z-10 flex min-h-screen flex-col justify-center pt-[120px] pb-24">
         <div className="mx-auto w-full max-w-[1400px] pl-6 pr-6 sm:pl-12 sm:pr-12 lg:pl-[120px] lg:pr-[120px]">
           <AnimateOnScroll animateOnMount delay={80} animation="fade-blur">
-            <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[1fr_1fr] lg:grid-rows-[auto_1fr] lg:items-baseline lg:gap-x-[130px] lg:gap-y-2">
-              {/* Desktop: row1 = headline + buttons, row2 = empty + description (right-aligned with Demo) */}
-              <div className="order-1 lg:order-1">
+            <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[1fr_1fr] lg:grid-rows-[auto_auto] lg:items-start lg:gap-x-[80px] lg:gap-y-4">
+              {/* Left: headline. Right: buttons above description, right-aligned */}
+              <div className="order-1">
                 <h1 className="text-[56px] font-semibold leading-[1.1] tracking-tight text-white">
                   Find absolute{" "}
                   <span className="group relative inline-block cursor-default rounded border border-white/20 bg-white/5 px-1.5 py-0.5 blur-[2px] transition-all duration-300 hover:blur-none hover:border-white/40 hover:bg-white/10">
@@ -37,23 +37,22 @@ export function HeroSection() {
                   {" "}with a voice AI that questions, debates, and validates
                 </h1>
               </div>
-              <div className="order-2 flex flex-wrap gap-3 sm:gap-4 lg:justify-end">
-                <Link href="/download">
-                  <Button className="bg-white text-black hover:bg-white/90">
-                    Download
-                  </Button>
-                </Link>
-                <Link href="/demo">
-                  <Button
-                    variant="outline"
-                    className="border-white/20 bg-transparent text-white hover:bg-white/10"
-                  >
-                    Demo
-                  </Button>
-                </Link>
-              </div>
-              <div className="hidden lg:block" />
-              <div className="order-3 lg:order-4 flex justify-end">
+              <div className="order-2 flex flex-col items-start lg:items-end gap-4">
+                <div className="flex flex-wrap gap-3 sm:gap-4">
+                  <Link href="/download">
+                    <Button className="bg-white text-black hover:bg-white/90">
+                      Download
+                    </Button>
+                  </Link>
+                  <Link href="/demo">
+                    <Button
+                      variant="outline"
+                      className="border-white/20 bg-transparent text-white hover:bg-white/10"
+                    >
+                      Demo
+                    </Button>
+                  </Link>
+                </div>
                 <p className="text-[24px] leading-relaxed text-white/60 max-w-[400px] text-left lg:text-right">
                   Learning is about how you think, not just what you know. Clarte is an interactive learning partner dedicated to deep ideation, practicing critical thinking, and actively challenging your assumptions
                 </p>
