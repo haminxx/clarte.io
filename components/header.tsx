@@ -165,8 +165,8 @@ export function Header() {
           Clarte
         </Link>
 
-        <div className="flex items-center gap-1">
-          <nav className="hidden items-center gap-1 lg:flex">
+        <div className="flex items-center gap-3">
+          <nav className="hidden items-center gap-3 lg:flex">
             {navLinks.map((link) => {
               const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href))
               return (
@@ -175,7 +175,7 @@ export function Header() {
                   href={link.href}
                   className={cn(
                     "rounded-md px-3 py-2 text-sm transition-colors hover:bg-white/5 hover:text-white",
-                    isActive ? "bg-white/10 text-white" : "text-white/70"
+                    isActive ? "bg-white/15 text-white" : "text-white/70"
                   )}
                 >
                   {link.label}
@@ -205,7 +205,7 @@ export function Header() {
       {mobileMenuOpen && (
         <div className="border-t border-white/10 bg-background/95 backdrop-blur-md lg:hidden w-full">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 py-4 w-full">
-            <nav className="flex flex-col gap-1">
+            <nav className="flex flex-col gap-3">
               {navLinks.map((link) => {
                 const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href))
                 return (
@@ -214,7 +214,7 @@ export function Header() {
                     href={link.href}
                     className={cn(
                       "rounded-md px-3 py-2.5 text-sm transition-colors hover:bg-white/5 hover:text-white",
-                      isActive ? "bg-white/10 text-white" : "text-white/70"
+                      isActive ? "bg-white/15 text-white" : "text-white/70"
                     )}
                     onClick={() => setMobileMenuOpen(false)}
                   >

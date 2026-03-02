@@ -19,7 +19,7 @@ export default function DownloadPage() {
 
       <Header />
 
-      <main className="relative z-10 mx-auto max-w-4xl px-4 py-24">
+      <main className="relative z-10 mx-auto max-w-4xl px-4 pt-28 pb-24">
         <AnimateOnScroll animation="fade-up" animateOnMount delay={100}>
           <div className="mb-16 text-center">
             <h1 className="text-4xl font-bold text-white md:text-5xl lg:text-6xl">
@@ -44,7 +44,7 @@ export default function DownloadPage() {
             <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-blue-500/10">
               <Monitor className="h-7 w-7 text-blue-400" />
             </div>
-            <h2 className="mb-2 text-xl font-semibold text-white">Desktop App</h2>
+            <h2 className="mb-2 text-xl font-semibold text-white">Desktop Application</h2>
             <p className="mb-6 text-sm text-white/60">
               Full-featured desktop experience for Windows and macOS. Screen share, camera, and voice—all in one.
             </p>
@@ -66,6 +66,32 @@ export default function DownloadPage() {
           </AnimateOnScroll>
 
           <AnimateOnScroll animation="fade-up" delay={50}>
+          {/* iOS App */}
+          <a
+            href={APP_STORE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group block rounded-2xl border border-white/10 bg-[#1a1a2e]/50 p-8 transition-all hover:border-blue-500/30 hover:bg-[#1a1a2e]/80"
+          >
+            <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-blue-500/10">
+              <Smartphone className="h-7 w-7 text-blue-400" />
+            </div>
+            <h2 className="mb-2 text-xl font-semibold text-white">iOS App</h2>
+            <p className="mb-6 text-sm text-white/60">
+              Take Clarte with you. Voice AI on iPhone with Siri integration and background support.
+            </p>
+            <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 w-fit">
+              <Apple className="h-5 w-5 text-white/80" />
+              <span className="text-sm font-medium text-white/80">App Store</span>
+            </div>
+            <div className="mt-6 flex items-center gap-2 text-blue-400">
+              <span className="text-sm font-medium">Download on the App Store</span>
+              <ExternalLink className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </div>
+          </a>
+          </AnimateOnScroll>
+
+          <AnimateOnScroll animation="fade-up" delay={100}>
           {/* Chrome Extension */}
           <a
             href={CHROME_WEB_STORE_URL}
@@ -86,32 +112,6 @@ export default function DownloadPage() {
             </div>
             <div className="mt-6 flex items-center gap-2 text-blue-400">
               <span className="text-sm font-medium">Add to Chrome</span>
-              <ExternalLink className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </div>
-          </a>
-          </AnimateOnScroll>
-
-          <AnimateOnScroll animation="fade-up" delay={100}>
-          {/* iOS */}
-          <a
-            href={APP_STORE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group block rounded-2xl border border-white/10 bg-[#1a1a2e]/50 p-8 transition-all hover:border-blue-500/30 hover:bg-[#1a1a2e]/80"
-          >
-            <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-blue-500/10">
-              <Smartphone className="h-7 w-7 text-blue-400" />
-            </div>
-            <h2 className="mb-2 text-xl font-semibold text-white">iOS App</h2>
-            <p className="mb-6 text-sm text-white/60">
-              Take Clarte with you. Voice AI on iPhone with Siri integration and background support.
-            </p>
-            <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 w-fit">
-              <Apple className="h-5 w-5 text-white/80" />
-              <span className="text-sm font-medium text-white/80">App Store</span>
-            </div>
-            <div className="mt-6 flex items-center gap-2 text-blue-400">
-              <span className="text-sm font-medium">Download on the App Store</span>
               <ExternalLink className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </div>
           </a>

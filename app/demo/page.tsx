@@ -73,7 +73,7 @@ export default function DemoPage() {
 
       <Header />
 
-      <main className="relative z-10 mx-auto max-w-7xl px-4 py-24">
+      <main className="relative z-10 mx-auto max-w-7xl px-4 pt-28 pb-24">
         <AnimateOnScroll animation="fade-up" animateOnMount delay={100}>
           <div className="mb-12 text-center">
             <h1 className="text-4xl font-bold text-white md:text-5xl">Try Clarte</h1>
