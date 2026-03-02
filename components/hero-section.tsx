@@ -49,8 +49,8 @@ export function HeroSection() {
                   Voice AI that runs at the speed of thought
                 </h1>
               </div>
-              <div className="order-3 lg:order-4 lg:text-right">
-                <p className="text-[24px] leading-relaxed text-white/60 max-w-[400px] lg:ml-auto">
+              <div className="order-3 lg:order-4">
+                <p className="text-[24px] leading-relaxed text-white/60 max-w-[400px] text-left">
                   Leverage ultra-low latency synthesis and scalable APIs for real-time interactions. Optimized for engineers who build the future.
                 </p>
               </div>
