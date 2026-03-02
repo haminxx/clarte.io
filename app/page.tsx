@@ -9,6 +9,7 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { HeroSection } from "@/components/hero-section"
 import { CompanyLogos } from "@/components/company-logos"
+import { AIStrategySection } from "@/components/ai-strategy-section"
 import { FeaturesSection } from "@/components/features-section"
 
 export default function Home() {
@@ -20,6 +21,8 @@ export default function Home() {
         <HeroSection />
 
         <CompanyLogos />
+
+        <AIStrategySection />
 
         <FeaturesSection />
       </main>

@@ -31,9 +31,8 @@ export function AIStrategySection() {
         <AnimateOnScroll animation="fade-blur">
           <div className="mb-12 text-left">
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight text-foreground leading-tight">
-              <span className="text-muted-foreground">As your</span>{" "}
-              <span className="text-foreground">AI Strategy & Implementation Partner,</span>{" "}
-              <span className="text-muted-foreground">we help you</span>
+              <span className="text-muted-foreground">How Clarte</span>{" "}
+              <span className="text-foreground">helps you think</span>
             </h2>
           </div>
         </AnimateOnScroll>

@@ -23,12 +23,20 @@ export function HeroSection() {
       </div>
 
       {/* Content bottom baseline at vertical middle (50vh) - Anthropic-style: 120px left/right margins, fixed header spacing */}
-      <div className="relative z-10 flex min-h-screen flex-col justify-end pb-[50vh] pt-[120px]">
+      <div className="relative z-10 flex min-h-screen flex-col justify-end pb-[50vh] pt-[200px]">
         <div className="mx-auto w-full max-w-[1400px] pl-6 pr-6 sm:pl-12 sm:pr-12 lg:pl-[120px] lg:pr-[120px]">
           <AnimateOnScroll animateOnMount delay={80} animation="fade-blur">
             <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[1fr_1fr] lg:grid-rows-[auto_1fr] lg:items-baseline lg:gap-x-[130px] lg:gap-y-2">
-              {/* Mobile order: headline, buttons, description. Desktop: row1=buttons right, row2=headline+description */}
-              <div className="hidden lg:block" />
+              {/* Desktop: row1 = headline + buttons, row2 = empty + description (right-aligned with Demo) */}
+              <div className="order-1 lg:order-1">
+                <h1 className="text-[56px] font-semibold leading-[1.1] tracking-tight text-white">
+                  Find absolute{" "}
+                  <span className="group relative inline-block cursor-default rounded border border-white/20 bg-white/5 px-1.5 py-0.5 blur-[2px] transition-all duration-300 hover:blur-none hover:border-white/40 hover:bg-white/10">
+                    clarity
+                  </span>
+                  {" "}with a voice AI that questions, debates, and validates
+                </h1>
+              </div>
               <div className="order-2 flex flex-wrap gap-3 sm:gap-4 lg:justify-end">
                 <Link href="/download">
                   <Button className="bg-white text-black hover:bg-white/90">
@@ -44,17 +52,9 @@ export function HeroSection() {
                   </Button>
                 </Link>
               </div>
-              <div className="order-1 lg:order-3">
-                <h1 className="text-[56px] font-semibold leading-[1.1] tracking-tight text-white">
-                  Find absolute{" "}
-                  <span className="group relative inline-block cursor-default rounded border border-white/20 bg-white/5 px-1.5 py-0.5 blur-[2px] transition-all duration-300 hover:blur-none hover:border-white/40 hover:bg-white/10">
-                    clarity
-                  </span>
-                  {" "}with a voice AI that questions, debates, and validates
-                </h1>
-              </div>
-              <div className="order-3 lg:order-4">
-                <p className="text-[24px] leading-relaxed text-white/60 max-w-[400px] text-left">
+              <div className="hidden lg:block" />
+              <div className="order-3 lg:order-4 flex justify-end">
+                <p className="text-[24px] leading-relaxed text-white/60 max-w-[400px] text-left lg:text-right">
                   Learning is about how you think, not just what you know. Clarte is an interactive learning partner dedicated to deep ideation, practicing critical thinking, and actively challenging your assumptions
                 </p>
               </div>
