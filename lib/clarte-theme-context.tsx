@@ -14,7 +14,14 @@ const ClarteThemeContext = React.createContext<{
 
 export function useClarteTheme() {
   const ctx = React.useContext(ClarteThemeContext)
-  if (!ctx) throw new Error("useClarteTheme must be used within ClarteThemeProvider")
+  // During prerender/SSR, provider may not be in tree yet; return default
+  if (!ctx) {
+    return {
+      theme: "dark" as ClarteTheme,
+      setTheme: () => {},
+      toggleTheme: () => {},
+    }
+  }
   return ctx
 }
 
