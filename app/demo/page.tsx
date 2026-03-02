@@ -75,7 +75,7 @@ export default function DemoPage() {
 
       <main className="relative z-10 mx-auto max-w-7xl px-4 pt-28 pb-24">
         <AnimateOnScroll animation="fade-up" animateOnMount delay={100}>
-          <div className="mb-12 text-center">
+          <div className="mb-8 text-center">
             <h1 className="text-4xl font-bold text-white md:text-5xl">Try Clarte</h1>
             <p className="mx-auto mt-4 max-w-2xl text-lg text-white/60">
               Start a voice call with Clarte and see the live transcript in real time.
@@ -84,8 +84,8 @@ export default function DemoPage() {
         </AnimateOnScroll>
 
         <AnimateOnScroll animation="fade-up" delay={200}>
-          <div className="relative mx-auto flex min-h-[200px] w-full max-w-4xl flex-col items-center justify-center gap-4 px-4">
-            <div className="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none">
+          <div className="relative flex min-h-[calc(100vh-12rem)] w-full flex-col items-center justify-center">
+            <div className="pointer-events-none absolute left-1/2 top-1/2 h-[1100px] w-[1100px] -translate-x-1/2 -translate-y-1/2 overflow-hidden">
               <ParticleOrb />
             </div>
             <div className="relative z-20 w-full max-w-lg flex flex-col gap-4">

@@ -33,7 +33,7 @@ export function HeroSection() {
       <div className="relative z-10 flex min-h-screen flex-col justify-center pt-[120px] pb-24">
         <div className="mx-auto w-full max-w-[1400px] pl-6 pr-6 sm:pl-12 sm:pr-12 lg:pl-[120px] lg:pr-[120px]">
           <AnimateOnScroll animateOnMount delay={80} animation="fade-blur">
-            <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[1fr_1fr] lg:grid-rows-[auto_auto] lg:items-start lg:gap-x-[80px] lg:gap-y-4">
+            <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[1fr_1fr] lg:grid-rows-[auto_auto] lg:items-end lg:gap-x-[80px] lg:gap-y-4">
               {/* Left: headline. Right: buttons above description, right-aligned */}
               <div className="order-1">
                 <h1 className={cn("text-[56px] font-semibold leading-[1.1] tracking-tight", isBright ? "text-black" : "text-white")}>
@@ -44,7 +44,7 @@ export function HeroSection() {
                   {" "}with a voice AI that questions, debates, and validates
                 </h1>
               </div>
-              <div className="order-2 flex flex-col items-start lg:items-end gap-4">
+              <div className="order-2 flex flex-col items-start lg:items-end lg:justify-end gap-4">
                 <div className="flex flex-wrap gap-3 sm:gap-4">
                   <Link href="/download">
                     <Button className={isBright ? "bg-black text-white hover:bg-black/90" : "bg-white text-black hover:bg-white/90"}>

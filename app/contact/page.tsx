@@ -58,7 +58,7 @@ export default function ContactPage() {
 
       <Header />
 
-      <main className="relative z-10 mx-auto max-w-7xl px-4 pt-28 pb-24">
+      <main className="relative z-10 mx-auto max-w-7xl px-4 pt-24 pb-24">
         <AnimateOnScroll animation="fade-up">
           <div className="mb-12 text-center">
             <h1 className="text-4xl font-bold text-white md:text-5xl">Request Access</h1>
