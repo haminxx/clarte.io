@@ -160,7 +160,7 @@ export function Header() {
           : "border-b border-transparent bg-transparent"
       )}
     >
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 w-full">
+      <div className="mx-auto flex h-20 max-w-[1400px] items-center justify-between pl-6 pr-6 sm:pl-12 sm:pr-12 lg:pl-[120px] lg:pr-[120px] w-full">
         <Link href="/" className="text-2xl font-semibold text-white">
           Clarte
         </Link>
@@ -204,7 +204,7 @@ export function Header() {
 
       {mobileMenuOpen && (
         <div className="border-t border-white/10 bg-background/95 backdrop-blur-md lg:hidden w-full">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-4 w-full">
+          <div className="mx-auto max-w-[1400px] pl-6 pr-6 sm:pl-12 sm:pr-12 lg:pl-[120px] lg:pr-[120px] py-4 w-full">
             <nav className="flex flex-col gap-3">
               {navLinks.map((link) => {
                 const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href))
