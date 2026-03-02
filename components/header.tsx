@@ -161,7 +161,7 @@ export function Header() {
       )}
     >
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 w-full">
-        <Link href="/" className="text-lg font-semibold text-white">
+        <Link href="/" className="text-2xl font-semibold text-white">
           Clarte
         </Link>
 

@@ -14,7 +14,7 @@ export function HeroSection() {
   }, [])
 
   return (
-    <section className="relative min-h-screen overflow-hidden bg-background pt-12 md:pt-20 lg:pt-24 xl:pt-[120px] w-full">
+    <section className="relative min-h-screen overflow-hidden bg-background w-full">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] md:h-[900px] md:w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-blue-600/25 via-indigo-600/15 to-transparent blur-3xl" />
         <div className="absolute right-1/4 top-1/3 h-[300px] w-[300px] md:h-[500px] md:w-[500px] rounded-full bg-blue-500/10 blur-3xl" />
@@ -22,20 +22,14 @@ export function HeroSection() {
         <div className="absolute bottom-0 left-0 right-0 h-[250px] md:h-[400px] bg-gradient-to-t from-blue-900/30 via-indigo-900/10 to-transparent" />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 w-full">
-        <AnimateOnScroll animateOnMount delay={80} animation="fade-blur">
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8 lg:gap-12">
-            {/* Left: headline (56px), two rows */}
-            <div className="lg:flex-1 lg:max-w-[55%]">
-              <h1 className="text-[56px] font-semibold leading-[1.1] tracking-tight text-white">
-                Voice AI that runs at the speed of thought
-              </h1>
-            </div>
-
-            {/* Right: buttons above description (only when space); stacks below on narrow */}
-            <div className="lg:flex-1 lg:max-w-[45%] lg:text-right flex flex-col gap-6">
-              {/* Buttons above description */}
-              <div className="flex flex-wrap gap-3 sm:gap-4 lg:justify-end">
+      {/* Content bottom baseline at vertical middle (50vh) */}
+      <div className="relative z-10 flex min-h-screen flex-col justify-end pb-[50vh] pt-12 md:pt-20 lg:pt-24 xl:pt-[120px]">
+        <div className="mx-auto max-w-6xl w-full px-4 sm:px-6">
+          <AnimateOnScroll animateOnMount delay={80} animation="fade-blur">
+            <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[1fr_1fr] lg:grid-rows-[auto_1fr] lg:items-baseline lg:gap-x-12 lg:gap-y-6">
+              {/* Mobile order: headline, buttons, description. Desktop: row1=buttons right, row2=headline+description */}
+              <div className="hidden lg:block" />
+              <div className="order-2 flex flex-wrap gap-3 sm:gap-4 lg:justify-end">
                 <Link href="/download">
                   <Button className="bg-white text-black hover:bg-white/90">
                     Download
@@ -50,16 +44,19 @@ export function HeroSection() {
                   </Button>
                 </Link>
               </div>
-
-              {/* Description: 24px, staircase (shorter top lines, longer lower lines) */}
-              <p className="text-[24px] leading-relaxed text-white/60 max-w-[340px] lg:ml-auto">
-                Leverage ultra-low latency synthesis and scalable APIs
-                <br />
-                for real-time interactions. Optimized for engineers who build the future.
-              </p>
+              <div className="order-1 lg:order-3">
+                <h1 className="text-[56px] font-semibold leading-[1.1] tracking-tight text-white">
+                  Voice AI that runs at the speed of thought
+                </h1>
+              </div>
+              <div className="order-3 lg:order-4 lg:text-right">
+                <p className="text-[24px] leading-relaxed text-white/60 max-w-[400px] lg:ml-auto">
+                  Leverage ultra-low latency synthesis and scalable APIs for real-time interactions. Optimized for engineers who build the future.
+                </p>
+              </div>
             </div>
-          </div>
-        </AnimateOnScroll>
+          </AnimateOnScroll>
+        </div>
       </div>
     </section>
   )
