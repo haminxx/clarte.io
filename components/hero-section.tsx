@@ -24,36 +24,35 @@ export function HeroSection() {
 
       <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 w-full">
         <AnimateOnScroll animateOnMount delay={80} animation="fade-blur">
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8 lg:gap-12">
-            {/* Left: headline only */}
-            <div className="lg:flex-1 lg:max-w-[60%]">
-              <h1 className="text-balance text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-white">
-                Voice AI that runs at the speed of thought
-              </h1>
+          <div className="flex flex-col gap-6">
+            {/* Headline: fixed size, left margin (Anthropic-style) */}
+            <h1 className="text-[2.5rem] font-semibold tracking-tight text-white max-w-3xl">
+              Voice AI that runs at the speed of thought
+            </h1>
+
+            {/* Buttons: between headline and description */}
+            <div className="flex flex-wrap gap-3 sm:gap-4">
+              <Link href="/download">
+                <Button className="bg-white text-black hover:bg-white/90">
+                  Download
+                </Button>
+              </Link>
+              <Link href="/demo">
+                <Button
+                  variant="outline"
+                  className="border-white/20 bg-transparent text-white hover:bg-white/10"
+                >
+                  Demo
+                </Button>
+              </Link>
             </div>
 
-            {/* Right: description + buttons (right-aligned) */}
-            <div className="lg:flex-1 lg:max-w-[40%] lg:text-right">
-              <p className="text-base sm:text-lg text-white/60 leading-relaxed">
-                Leverage ultra-low latency synthesis and scalable APIs for real-time
-                interactions. Optimized for engineers who build the future.
-              </p>
-              <div className="flex flex-wrap justify-end gap-3 sm:gap-4 mt-6">
-                <Link href="/download">
-                  <Button className="bg-white text-black hover:bg-white/90">
-                    Download
-                  </Button>
-                </Link>
-                <Link href="/demo">
-                  <Button
-                    variant="outline"
-                    className="border-white/20 bg-transparent text-white hover:bg-white/10"
-                  >
-                    Demo
-                  </Button>
-                </Link>
-              </div>
-            </div>
+            {/* Description: line break after APIs, responsive shrinking */}
+            <p className="text-xs sm:text-sm md:text-base max-w-2xl text-white/60 leading-relaxed">
+              Leverage ultra-low latency synthesis and scalable APIs
+              <br />
+              for real-time interactions. Optimized for engineers who build the future.
+            </p>
           </div>
         </AnimateOnScroll>
       </div>
