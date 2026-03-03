@@ -79,18 +79,21 @@ export default function DownloadPage() {
             href={APP_STORE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="group block rounded-2xl border border-white/10 bg-[#1a1a2e]/50 p-8 transition-all hover:border-blue-500/30 hover:bg-[#1a1a2e]/80"
+            className={cn(
+              "group block rounded-2xl border p-8 transition-all",
+              isBright ? "border-black/10 bg-white/70 hover:border-blue-500/30 hover:bg-white/85" : "border-white/10 bg-[#1a1a2e]/50 hover:border-blue-500/30 hover:bg-[#1a1a2e]/80"
+            )}
           >
             <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-blue-500/10">
               <Smartphone className="h-7 w-7 text-blue-400" />
             </div>
-            <h2 className="mb-2 text-xl font-semibold text-white">iOS App</h2>
-            <p className="mb-6 text-sm text-white/60">
+            <h2 className={cn("mb-2 text-xl font-semibold", isBright ? "text-black" : "text-white")}>iOS App</h2>
+            <p className={cn("mb-6 text-sm", isBright ? "text-black/60" : "text-white/60")}>
               Take Clarte with you. Voice AI on iPhone with Siri integration and background support.
             </p>
-            <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 w-fit">
-              <Apple className="h-5 w-5 text-white/80" />
-              <span className="text-sm font-medium text-white/80">App Store</span>
+            <div className={cn("flex items-center gap-2 rounded-lg border px-4 py-2 w-fit", isBright ? "border-black/10 bg-black/5" : "border-white/10 bg-white/5")}>
+              <Apple className={cn("h-5 w-5", isBright ? "text-black/80" : "text-white/80")} />
+              <span className={cn("text-sm font-medium", isBright ? "text-black/80" : "text-white/80")}>App Store</span>
             </div>
             <div className="mt-6 flex items-center gap-2 text-blue-400">
               <span className="text-sm font-medium">Download on the App Store</span>
@@ -105,18 +108,21 @@ export default function DownloadPage() {
             href={CHROME_WEB_STORE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="group block rounded-2xl border border-white/10 bg-[#1a1a2e]/50 p-8 transition-all hover:border-blue-500/30 hover:bg-[#1a1a2e]/80"
+            className={cn(
+              "group block rounded-2xl border p-8 transition-all",
+              isBright ? "border-black/10 bg-white/70 hover:border-blue-500/30 hover:bg-white/85" : "border-white/10 bg-[#1a1a2e]/50 hover:border-blue-500/30 hover:bg-[#1a1a2e]/80"
+            )}
           >
             <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-blue-500/10">
               <Chrome className="h-7 w-7 text-blue-400" />
             </div>
-            <h2 className="mb-2 text-xl font-semibold text-white">Chrome Extension</h2>
-            <p className="mb-6 text-sm text-white/60">
+            <h2 className={cn("mb-2 text-xl font-semibold", isBright ? "text-black" : "text-white")}>Chrome Extension</h2>
+            <p className={cn("mb-6 text-sm", isBright ? "text-black/60" : "text-white/60")}>
               Access Clarte from any tab. Quick voice AI without leaving your browser.
             </p>
-            <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 w-fit">
-              <Chrome className="h-5 w-5 text-white/80" />
-              <span className="text-sm font-medium text-white/80">Chrome Web Store</span>
+            <div className={cn("flex items-center gap-2 rounded-lg border px-4 py-2 w-fit", isBright ? "border-black/10 bg-black/5" : "border-white/10 bg-white/5")}>
+              <Chrome className={cn("h-5 w-5", isBright ? "text-black/80" : "text-white/80")} />
+              <span className={cn("text-sm font-medium", isBright ? "text-black/80" : "text-white/80")}>Chrome Web Store</span>
             </div>
             <div className="mt-6 flex items-center gap-2 text-blue-400">
               <span className="text-sm font-medium">Add to Chrome</span>
@@ -127,8 +133,8 @@ export default function DownloadPage() {
         </div>
 
         <AnimateOnScroll animation="fade-up" delay={200}>
-        <div className="mt-12 rounded-2xl border border-white/10 bg-[#1a1a2e]/30 p-6 text-center">
-          <p className="text-sm text-white/60">
+        <div className={cn("mt-12 rounded-2xl border p-6 text-center backdrop-blur-md", isBright ? "border-black/10 bg-white/60" : "border-white/10 bg-[#1a1a2e]/30")}>
+          <p className={cn("text-sm", isBright ? "text-black/60" : "text-white/60")}>
             Prefer the web?{" "}
             <Link href="/" className="text-blue-400 hover:underline">
               Use Clarte in your browser

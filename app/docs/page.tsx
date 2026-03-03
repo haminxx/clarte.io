@@ -92,9 +92,14 @@ export default function DocsPage() {
             <input
               type="text"
               placeholder="Search documentation..."
-              className="w-full rounded-xl border border-white/10 bg-[#1a1a2e]/50 px-6 py-4 text-white placeholder:text-white/40 focus:border-white/20 focus:outline-none focus:ring-0"
+              className={cn(
+                "w-full rounded-xl border px-6 py-4 focus:outline-none focus:ring-0",
+                isBright
+                  ? "border-black/10 bg-white/70 text-black placeholder:text-black/40 focus:border-black/15"
+                  : "border-white/10 bg-[#1a1a2e]/50 text-white placeholder:text-white/40 focus:border-white/20"
+              )}
             />
-            <kbd className="absolute right-4 top-1/2 -translate-y-1/2 rounded bg-white/10 px-2 py-1 text-xs text-white/40">
+            <kbd className={cn("absolute right-4 top-1/2 -translate-y-1/2 rounded px-2 py-1 text-xs", isBright ? "bg-black/10 text-black/50" : "bg-white/10 text-white/40")}>
               ⌘K
             </kbd>
           </div>
@@ -106,17 +111,23 @@ export default function DocsPage() {
           {sections.map((section, i) => (
             <AnimateOnScroll key={section.title} animation="fade-up" delay={i * 80}>
             <div
-              className="group rounded-2xl border border-white/10 bg-[#1a1a2e]/50 p-6 transition-all hover:border-white/20"
+              className={cn(
+                "group rounded-2xl border p-6 transition-all backdrop-blur-md",
+                isBright ? "border-black/10 bg-white/70 hover:border-black/15" : "border-white/10 bg-[#1a1a2e]/50 hover:border-white/20"
+              )}
             >
               <section.icon className="mb-4 h-8 w-8 text-blue-400" />
-              <h2 className="mb-2 text-xl font-semibold text-white">{section.title}</h2>
-              <p className="mb-4 text-sm text-white/60">{section.description}</p>
+              <h2 className={cn("mb-2 text-xl font-semibold", isBright ? "text-black" : "text-white")}>{section.title}</h2>
+              <p className={cn("mb-4 text-sm", isBright ? "text-black/60" : "text-white/60")}>{section.description}</p>
               <ul className="space-y-2">
                 {section.links.map((link) => (
                   <li key={link.title}>
                     <Link
                       href={link.href}
-                      className="flex items-center text-sm text-white/70 transition-colors hover:text-white"
+                      className={cn(
+                        "flex items-center text-sm transition-colors",
+                        isBright ? "text-black/70 hover:text-black" : "text-white/70 hover:text-white"
+                      )}
                     >
                       <ArrowRight className="mr-2 h-3 w-3" />
                       {link.title}
@@ -131,18 +142,24 @@ export default function DocsPage() {
 
         <AnimateOnScroll animation="fade-up" delay={200}>
         {/* CTA */}
-        <div className="mt-16 rounded-2xl border border-white/10 bg-[#1a1a2e]/50 p-8 text-center">
-          <h2 className="text-2xl font-bold text-white">Need Help?</h2>
-          <p className="mx-auto mt-4 max-w-xl text-white/60">
+        <div className={cn("mt-16 rounded-2xl border p-8 text-center backdrop-blur-md", isBright ? "border-black/10 bg-white/70" : "border-white/10 bg-[#1a1a2e]/50")}>
+          <h2 className={cn("text-2xl font-bold", isBright ? "text-black" : "text-white")}>Need Help?</h2>
+          <p className={cn("mx-auto mt-4 max-w-xl", isBright ? "text-black/60" : "text-white/60")}>
             Can&apos;t find what you&apos;re looking for? Our team is here to help.
           </p>
           <div className="mt-6 flex justify-center gap-4">
             <Link href="/contact">
-              <Button className="bg-white text-black hover:bg-white/90">
+              <Button className={cn(isBright ? "bg-black text-white hover:bg-black/90" : "bg-white text-black hover:bg-white/90")}>
                 Contact Support
               </Button>
             </Link>
-            <Button variant="outline" className="border-white/20 bg-transparent text-white hover:bg-white/10">
+            <Button
+              variant="outline"
+              className={cn(
+                "bg-transparent",
+                isBright ? "border-black/20 text-black hover:bg-black/5" : "border-white/20 text-white hover:bg-white/10"
+              )}
+            >
               Join Discord
             </Button>
           </div>

@@ -83,20 +83,20 @@ export default function APIReferencePage() {
         <AnimateOnScroll animation="fade-up" delay={100}>
         {/* Features */}
         <div className="mb-16 grid gap-6 md:grid-cols-3">
-          <div className="rounded-xl border border-white/10 bg-[#1a1a2e]/50 p-6">
+          <div className={cn("rounded-xl border p-6 backdrop-blur-md", isBright ? "border-black/10 bg-white/70" : "border-white/10 bg-[#1a1a2e]/50")}>
             <Zap className="mb-4 h-8 w-8 text-yellow-400" />
-            <h3 className="mb-2 font-semibold text-white">Low Latency</h3>
-            <p className="text-sm text-white/60">Sub-100ms response times for real-time conversations</p>
+            <h3 className={cn("mb-2 font-semibold", isBright ? "text-black" : "text-white")}>Low Latency</h3>
+            <p className={cn("text-sm", isBright ? "text-black/60" : "text-white/60")}>Sub-100ms response times for real-time conversations</p>
           </div>
-          <div className="rounded-xl border border-white/10 bg-[#1a1a2e]/50 p-6">
+          <div className={cn("rounded-xl border p-6 backdrop-blur-md", isBright ? "border-black/10 bg-white/70" : "border-white/10 bg-[#1a1a2e]/50")}>
             <Shield className="mb-4 h-8 w-8 text-green-400" />
-            <h3 className="mb-2 font-semibold text-white">Secure</h3>
-            <p className="text-sm text-white/60">Enterprise-grade security with end-to-end encryption</p>
+            <h3 className={cn("mb-2 font-semibold", isBright ? "text-black" : "text-white")}>Secure</h3>
+            <p className={cn("text-sm", isBright ? "text-black/60" : "text-white/60")}>Enterprise-grade security with end-to-end encryption</p>
           </div>
-          <div className="rounded-xl border border-white/10 bg-[#1a1a2e]/50 p-6">
+          <div className={cn("rounded-xl border p-6 backdrop-blur-md", isBright ? "border-black/10 bg-white/70" : "border-white/10 bg-[#1a1a2e]/50")}>
             <Globe className="mb-4 h-8 w-8 text-blue-400" />
-            <h3 className="mb-2 font-semibold text-white">Global CDN</h3>
-            <p className="text-sm text-white/60">Deployed worldwide for minimal latency everywhere</p>
+            <h3 className={cn("mb-2 font-semibold", isBright ? "text-black" : "text-white")}>Global CDN</h3>
+            <p className={cn("text-sm", isBright ? "text-black/60" : "text-white/60")}>Deployed worldwide for minimal latency everywhere</p>
           </div>
         </div>
         </AnimateOnScroll>
@@ -106,16 +106,20 @@ export default function APIReferencePage() {
         <div className="mb-16">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Code className="h-5 w-5 text-white/60" />
-              <h2 className="text-xl font-semibold text-white">Quick Start</h2>
+              <Code className={cn("h-5 w-5", isBright ? "text-black/60" : "text-white/60")} />
+              <h2 className={cn("text-xl font-semibold", isBright ? "text-black" : "text-white")}>Quick Start</h2>
             </div>
-            <Button variant="outline" size="sm" className="border-white/20 bg-transparent text-white hover:bg-white/10">
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn("bg-transparent", isBright ? "border-black/20 text-black hover:bg-black/5" : "border-white/20 text-white hover:bg-white/10")}
+            >
               <Copy className="mr-2 h-4 w-4" />
               Copy
             </Button>
           </div>
-          <div className="rounded-xl border border-white/10 bg-[#0d0d1a] p-6 overflow-x-auto">
-            <pre className="text-sm text-white/80">
+          <div className={cn("rounded-xl border p-6 overflow-x-auto", isBright ? "border-black/10 bg-white/80" : "border-white/10 bg-[#0d0d1a]")}>
+            <pre className={cn("text-sm", isBright ? "text-black/80" : "text-white/80")}>
               <code>{codeExample}</code>
             </pre>
           </div>
@@ -126,14 +130,17 @@ export default function APIReferencePage() {
         {/* Endpoints */}
         <div>
           <div className="flex items-center gap-2 mb-6">
-            <Terminal className="h-5 w-5 text-white/60" />
-            <h2 className="text-xl font-semibold text-white">Endpoints</h2>
+            <Terminal className={cn("h-5 w-5", isBright ? "text-black/60" : "text-white/60")} />
+            <h2 className={cn("text-xl font-semibold", isBright ? "text-black" : "text-white")}>Endpoints</h2>
           </div>
           <div className="space-y-4">
             {endpoints.map((endpoint) => (
               <div
                 key={endpoint.path}
-                className="flex items-center justify-between rounded-xl border border-white/10 bg-[#1a1a2e]/50 p-4"
+                className={cn(
+                  "flex items-center justify-between rounded-xl border p-4 backdrop-blur-md",
+                  isBright ? "border-black/10 bg-white/70" : "border-white/10 bg-[#1a1a2e]/50"
+                )}
               >
                 <div className="flex items-center gap-4">
                   <span className={`rounded px-2 py-1 text-xs font-mono font-bold ${
@@ -141,9 +148,9 @@ export default function APIReferencePage() {
                   }`}>
                     {endpoint.method}
                   </span>
-                  <code className="text-sm text-white/80">{endpoint.path}</code>
+                  <code className={cn("text-sm", isBright ? "text-black/80" : "text-white/80")}>{endpoint.path}</code>
                 </div>
-                <p className="text-sm text-white/40 hidden md:block">{endpoint.description}</p>
+                <p className={cn("text-sm hidden md:block", isBright ? "text-black/50" : "text-white/40")}>{endpoint.description}</p>
               </div>
             ))}
           </div>
@@ -152,16 +159,16 @@ export default function APIReferencePage() {
 
         <AnimateOnScroll animation="fade-up" delay={250}>
         {/* CTA */}
-        <div className="mt-16 rounded-2xl border border-white/10 bg-[#1a1a2e]/50 p-8 text-center">
-          <h2 className="text-2xl font-bold text-white">Ready to Build?</h2>
-          <p className="mx-auto mt-4 max-w-xl text-white/60">
+        <div className={cn("mt-16 rounded-2xl border p-8 text-center backdrop-blur-md", isBright ? "border-black/10 bg-white/70" : "border-white/10 bg-[#1a1a2e]/50")}>
+          <h2 className={cn("text-2xl font-bold", isBright ? "text-black" : "text-white")}>Ready to Build?</h2>
+          <p className={cn("mx-auto mt-4 max-w-xl", isBright ? "text-black/60" : "text-white/60")}>
             Get your API key and start building voice-powered applications in minutes.
           </p>
           <div className="mt-6 flex justify-center gap-4">
-            <Button className="bg-white text-black hover:bg-white/90">
+            <Button className={cn(isBright ? "bg-black text-white hover:bg-black/90" : "bg-white text-black hover:bg-white/90")}>
               Get API Key
             </Button>
-            <Button variant="outline" className="border-white/20 bg-transparent text-white hover:bg-white/10">
+            <Button variant="outline" className={cn("bg-transparent", isBright ? "border-black/20 text-black hover:bg-black/5" : "border-white/20 text-white hover:bg-white/10")}>
               View Full Docs
             </Button>
           </div>

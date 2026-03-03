@@ -221,7 +221,7 @@ export function Header() {
             })}
           </nav>
           <Link
-            href="/contact#form"
+            href="/contact"
             className={cn(
               "hidden md:inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-all",
               theme === "bright" ? "bg-black text-white hover:bg-black/90" : "text-black bg-gradient-to-r from-white to-white/90 hover:from-white/95 hover:to-white/80 shadow-sm"
@@ -284,7 +284,7 @@ export function Header() {
                 )
               })}
               <Link
-                href="/contact#form"
+                href="/contact"
                 className={cn(
                   "rounded-md px-4 py-2.5 text-sm font-medium transition-all",
                   theme === "dark" ? "text-black bg-gradient-to-r from-white to-white/90 hover:from-white/95 hover:to-white/80" : "bg-black text-white hover:bg-black/90"

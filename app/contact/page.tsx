@@ -109,32 +109,47 @@ export default function ContactPage() {
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div>
-                    <label className="mb-2 block text-sm text-white/60">Email</label>
+                    <label className={cn("mb-2 block text-sm", isBright ? "text-black/60" : "text-white/60")}>Email</label>
                     <Input
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="border-white/20 bg-white/5 text-white placeholder:text-white/40"
+                      className={cn(
+                        isBright
+                          ? "border-black/15 bg-white/80 text-black placeholder:text-black/40"
+                          : "border-white/20 bg-white/5 text-white placeholder:text-white/40"
+                      )}
                       placeholder="you@company.com"
                       required
                     />
                   </div>
                   <div>
-                    <label className="mb-2 block text-sm text-white/60">Job title</label>
+                    <label className={cn("mb-2 block text-sm", isBright ? "text-black/60" : "text-white/60")}>Job title</label>
                     <Select
                       value={formData.jobTitle}
                       onValueChange={(value) => setFormData({ ...formData, jobTitle: value })}
                       required
                     >
-                      <SelectTrigger className="w-full border-white/20 bg-white/5 text-white [&>span]:text-white/90">
+                      <SelectTrigger
+                        className={cn(
+                          "w-full [&>span]:font-normal",
+                          isBright
+                            ? "border-black/15 bg-white/80 text-black [&>span]:text-black/90"
+                            : "border-white/20 bg-white/5 text-white [&>span]:text-white/90"
+                        )}
+                      >
                         <SelectValue placeholder="Select your job title" />
                       </SelectTrigger>
-                      <SelectContent className="border-white/10 bg-[#1a1a2e]">
+                      <SelectContent className={cn(isBright ? "border-black/10 bg-white" : "border-white/10 bg-[#1a1a2e]")}>
                         {JOB_TITLE_OPTIONS.map((opt) => (
                           <SelectItem
                             key={opt.value}
                             value={opt.value}
-                            className="text-white focus:bg-white/10 focus:text-white"
+                            className={cn(
+                              isBright
+                                ? "text-black focus:bg-black/5 focus:text-black"
+                                : "text-white focus:bg-white/10 focus:text-white"
+                            )}
                           >
                             {opt.label}
                           </SelectItem>
@@ -143,43 +158,56 @@ export default function ContactPage() {
                     </Select>
                   </div>
                   <div>
-                    <label className="mb-2 block text-sm text-white/60">Industry</label>
+                    <label className={cn("mb-2 block text-sm", isBright ? "text-black/60" : "text-white/60")}>Industry</label>
                     <Input
                       type="text"
                       value={formData.industry}
                       onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                      className="border-white/20 bg-white/5 text-white placeholder:text-white/40"
+                      className={cn(
+                        isBright
+                          ? "border-black/15 bg-white/80 text-black placeholder:text-black/40"
+                          : "border-white/20 bg-white/5 text-white placeholder:text-white/40"
+                      )}
                       placeholder="e.g. Technology, Healthcare, Education"
                       required
                     />
                   </div>
                   <div>
-                    <label className="mb-2 block text-sm text-white/60">
+                    <label className={cn("mb-2 block text-sm", isBright ? "text-black/60" : "text-white/60")}>
                       What do you plan to use Clarte for?
                     </label>
                     <Textarea
                       value={formData.useCase}
                       onChange={(e) => setFormData({ ...formData, useCase: e.target.value })}
-                      className="min-h-[150px] border-white/20 bg-white/5 text-white placeholder:text-white/40"
+                      className={cn(
+                        "min-h-[150px]",
+                        isBright
+                          ? "border-black/15 bg-white/80 text-black placeholder:text-black/40"
+                          : "border-white/20 bg-white/5 text-white placeholder:text-white/40"
+                      )}
                       placeholder="Describe how you plan to use Clarte..."
                       required
                     />
                   </div>
                   {isStudent && (
                     <div>
-                      <label className="mb-2 block text-sm text-white/60">School email</label>
+                      <label className={cn("mb-2 block text-sm", isBright ? "text-black/60" : "text-white/60")}>School email</label>
                       <Input
                         type="email"
                         value={formData.schoolEmail}
                         onChange={(e) => setFormData({ ...formData, schoolEmail: e.target.value })}
-                        className="border-white/20 bg-white/5 text-white placeholder:text-white/40"
+                        className={cn(
+                          isBright
+                            ? "border-black/15 bg-white/80 text-black placeholder:text-black/40"
+                            : "border-white/20 bg-white/5 text-white placeholder:text-white/40"
+                        )}
                         placeholder="you@university.edu"
                       />
                     </div>
                   )}
                   <Button
                     type="submit"
-                    className="w-full bg-white text-black hover:bg-white/90"
+                    className={cn("w-full", isBright ? "bg-black text-white hover:bg-black/90" : "bg-white text-black hover:bg-white/90")}
                     disabled={loading}
                   >
                     {loading ? (
