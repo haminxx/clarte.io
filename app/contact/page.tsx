@@ -23,6 +23,8 @@ const JOB_TITLE_OPTIONS = [
   { value: "engineer", label: "Engineer" },
   { value: "product_manager", label: "Product Manager" },
   { value: "student", label: "Student" },
+  { value: "researcher", label: "Researcher" },
+  { value: "educator", label: "Educator" },
   { value: "founder", label: "Founder" },
   { value: "other", label: "Other" },
 ] as const
@@ -32,7 +34,9 @@ export default function ContactPage() {
   const isBright = theme === "bright"
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
+    name: "",
     email: "",
     jobTitle: "",
     industry: "",
@@ -44,12 +48,25 @@ export default function ContactPage() {
     e.preventDefault()
     if (!formData.jobTitle) return
     setLoading(true)
+    setError(null)
 
-    // Simulate form submission
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-
-    setLoading(false)
-    setSubmitted(true)
+    try {
+      const res = await fetch("/api/request-access", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setError(typeof data.error === "string" ? data.error : "Something went wrong. Please try again.")
+        return
+      }
+      setSubmitted(true)
+    } catch {
+      setError("Network error. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   const isStudent = formData.jobTitle === "student"
@@ -95,12 +112,14 @@ export default function ContactPage() {
                     onClick={() => {
                       setSubmitted(false)
                       setFormData({
+                        name: "",
                         email: "",
                         jobTitle: "",
                         industry: "",
                         useCase: "",
                         schoolEmail: "",
                       })
+                      setError(null)
                     }}
                   >
                     Submit Another Request
@@ -108,6 +127,26 @@ export default function ContactPage() {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  {error && (
+                    <div className={cn("rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm", isBright ? "text-red-700" : "text-red-300")}>
+                      {error}
+                    </div>
+                  )}
+                  <div>
+                    <label className={cn("mb-2 block text-sm", isBright ? "text-black/60" : "text-white/60")}>Full name</label>
+                    <Input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className={cn(
+                        isBright
+                          ? "border-black/15 bg-white/80 text-black placeholder:text-black/40"
+                          : "border-white/20 bg-white/5 text-white placeholder:text-white/40"
+                      )}
+                      placeholder="Your full name"
+                      required
+                    />
+                  </div>
                   <div>
                     <label className={cn("mb-2 block text-sm", isBright ? "text-black/60" : "text-white/60")}>Email</label>
                     <Input
@@ -157,6 +196,22 @@ export default function ContactPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                  {isStudent && (
+                    <div>
+                      <label className={cn("mb-2 block text-sm", isBright ? "text-black/60" : "text-white/60")}>School email</label>
+                      <Input
+                        type="email"
+                        value={formData.schoolEmail}
+                        onChange={(e) => setFormData({ ...formData, schoolEmail: e.target.value })}
+                        className={cn(
+                          isBright
+                            ? "border-black/15 bg-white/80 text-black placeholder:text-black/40"
+                            : "border-white/20 bg-white/5 text-white placeholder:text-white/40"
+                        )}
+                        placeholder="you@university.edu"
+                      />
+                    </div>
+                  )}
                   <div>
                     <label className={cn("mb-2 block text-sm", isBright ? "text-black/60" : "text-white/60")}>Industry</label>
                     <Input
@@ -189,22 +244,6 @@ export default function ContactPage() {
                       required
                     />
                   </div>
-                  {isStudent && (
-                    <div>
-                      <label className={cn("mb-2 block text-sm", isBright ? "text-black/60" : "text-white/60")}>School email</label>
-                      <Input
-                        type="email"
-                        value={formData.schoolEmail}
-                        onChange={(e) => setFormData({ ...formData, schoolEmail: e.target.value })}
-                        className={cn(
-                          isBright
-                            ? "border-black/15 bg-white/80 text-black placeholder:text-black/40"
-                            : "border-white/20 bg-white/5 text-white placeholder:text-white/40"
-                        )}
-                        placeholder="you@university.edu"
-                      />
-                    </div>
-                  )}
                   <Button
                     type="submit"
                     className={cn("w-full", isBright ? "bg-black text-white hover:bg-black/90" : "bg-white text-black hover:bg-white/90")}
