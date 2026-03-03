@@ -4,9 +4,11 @@ import { useEffect, useRef } from "react"
 
 interface WaveformProps {
   variant?: "human" | "ai"
+  /** When true, stroke is black (for light mode). Default false = white stroke. */
+  darkStroke?: boolean
 }
 
-export function Waveform({ variant = "human" }: WaveformProps) {
+export function Waveform({ variant = "human", darkStroke = false }: WaveformProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationRef = useRef<number>()
 
@@ -61,7 +63,7 @@ export function Waveform({ variant = "human" }: WaveformProps) {
         }
 
         const alpha = 0.3 - layer * 0.08
-        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`
+        ctx.strokeStyle = darkStroke ? `rgba(0, 0, 0, ${alpha})` : `rgba(255, 255, 255, ${alpha})`
         ctx.lineWidth = 1.5
         ctx.stroke()
       }
@@ -69,10 +71,17 @@ export function Waveform({ variant = "human" }: WaveformProps) {
       // Draw center line with gradient
       ctx.beginPath()
       const gradient = ctx.createLinearGradient(0, 0, rect.width, 0)
-      gradient.addColorStop(0, "rgba(255, 255, 255, 0)")
-      gradient.addColorStop(0.2, "rgba(255, 255, 255, 0.6)")
-      gradient.addColorStop(0.8, "rgba(255, 255, 255, 0.6)")
-      gradient.addColorStop(1, "rgba(255, 255, 255, 0)")
+      if (darkStroke) {
+        gradient.addColorStop(0, "rgba(0, 0, 0, 0)")
+        gradient.addColorStop(0.2, "rgba(0, 0, 0, 0.6)")
+        gradient.addColorStop(0.8, "rgba(0, 0, 0, 0.6)")
+        gradient.addColorStop(1, "rgba(0, 0, 0, 0)")
+      } else {
+        gradient.addColorStop(0, "rgba(255, 255, 255, 0)")
+        gradient.addColorStop(0.2, "rgba(255, 255, 255, 0.6)")
+        gradient.addColorStop(0.8, "rgba(255, 255, 255, 0.6)")
+        gradient.addColorStop(1, "rgba(255, 255, 255, 0)")
+      }
 
       for (let x = 0; x < rect.width; x++) {
         const noise1 = Math.sin(x * 0.02 + time) * (rect.height / 5)
@@ -101,7 +110,7 @@ export function Waveform({ variant = "human" }: WaveformProps) {
         cancelAnimationFrame(animationRef.current)
       }
     }
-  }, [variant])
+  }, [variant, darkStroke])
 
   return (
     <canvas

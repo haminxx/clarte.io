@@ -38,7 +38,7 @@ export function DemoPreviewSection() {
       id="demo-preview-section"
       className={cn(
         "relative min-h-[150vh] w-full",
-        isBright ? "bg-gradient-to-b from-indigo-100/50 to-white" : "bg-background"
+        isBright ? "bg-gradient-to-b from-sky-100/50 via-blue-50/50 to-white" : "bg-background"
       )}
     >
       {/* Spacer so card appears "half cut" when first scrolled into view */}

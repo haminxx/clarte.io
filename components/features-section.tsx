@@ -5,6 +5,7 @@ import { Waveform } from "./waveform"
 import { Button } from "@/components/ui/button"
 import { Play, Square } from "lucide-react"
 import { AnimateOnScroll } from "./animate-on-scroll"
+import { useClarteTheme } from "@/lib/clarte-theme-context"
 
 type VoiceSample = "Marin" | "Victoria" | null
 
@@ -36,6 +37,8 @@ function getMarinVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | n
 }
 
 export function FeaturesSection() {
+  const { theme } = useClarteTheme()
+  const darkStroke = theme === "bright"
   const [playingSample, setPlayingSample] = useState<VoiceSample>(null)
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
 
@@ -143,7 +146,7 @@ export function FeaturesSection() {
                 <span className="text-sm text-muted-foreground">Marin</span>
               </div>
             </div>
-            <Waveform variant="ai" />
+            <Waveform variant="ai" darkStroke={darkStroke} />
             <div className="mt-4 flex items-center gap-4">
               <Button
                 size="icon"
@@ -179,7 +182,7 @@ export function FeaturesSection() {
                 <span className="text-sm text-muted-foreground">Victoria</span>
               </div>
             </div>
-            <Waveform variant="human" />
+            <Waveform variant="human" darkStroke={darkStroke} />
             <div className="mt-4 flex items-center gap-4">
               <Button
                 size="icon"

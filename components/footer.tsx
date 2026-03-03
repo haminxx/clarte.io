@@ -36,12 +36,12 @@ export function Footer() {
     <footer
       className={cn(
         "relative z-10 border-t backdrop-blur-sm transition-opacity duration-300",
-        isBright ? "border-black/10 bg-gradient-to-b from-white via-blue-50/50 to-indigo-100/50" : "border-white/10 bg-gradient-to-b from-[#0a0a14] via-[#0d0d1a] to-[#0a0a14]",
+        isBright ? "border-black/10 bg-gradient-to-b from-sky-50 via-blue-50/80 to-sky-100/60" : "border-white/10 bg-gradient-to-b from-[#0a0a14] via-[#0d0d1a] to-[#0a0a14]",
         showFooter ? "opacity-100" : "opacity-0 pointer-events-none"
       )}
     >
       {/* Soft gradient accent at top edge */}
-      <div className={cn("absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent to-transparent", isBright ? "via-blue-500/40" : "via-blue-500/30")} />
+      <div className={cn("absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent to-transparent", isBright ? "via-sky-400/40" : "via-blue-500/30")} />
       <div className="mx-auto max-w-7xl px-4 py-12">
         <AnimateOnScroll animation="fade-up">
         <div className="grid gap-8 md:grid-cols-4">

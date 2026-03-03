@@ -181,7 +181,20 @@ export function Header() {
             className={cn("rounded p-1 transition-colors hover:opacity-80", theme === "dark" ? "text-white" : "text-black")}
             aria-label={theme === "dark" ? "Switch to bright theme" : "Switch to dark theme"}
           >
-            {theme === "dark" ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            <span className="relative flex h-5 w-5 items-center justify-center">
+              <EyeOff
+                className={cn(
+                  "absolute h-5 w-5 transition-opacity duration-300",
+                  theme === "dark" ? "opacity-100" : "opacity-0"
+                )}
+              />
+              <Eye
+                className={cn(
+                  "absolute h-5 w-5 transition-opacity duration-300",
+                  theme === "bright" ? "opacity-100" : "opacity-0"
+                )}
+              />
+            </span>
           </button>
         </div>
 
@@ -206,7 +219,10 @@ export function Header() {
           </nav>
           <Link
             href="/contact#form"
-            className="hidden md:inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-black bg-gradient-to-r from-white to-white/90 hover:from-white/95 hover:to-white/80 transition-all shadow-sm"
+            className={cn(
+              "hidden md:inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-all",
+              theme === "bright" ? "bg-black text-white hover:bg-black/90" : "text-black bg-gradient-to-r from-white to-white/90 hover:from-white/95 hover:to-white/80 shadow-sm"
+            )}
           >
             Request Access
           </Link>
@@ -215,7 +231,7 @@ export function Header() {
           <Button
             variant="ghost"
             size="icon"
-            className="text-white lg:hidden"
+            className={cn("lg:hidden", theme === "dark" ? "text-white" : "text-black")}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -248,7 +264,7 @@ export function Header() {
                 href="/contact#form"
                 className={cn(
                   "rounded-md px-4 py-2.5 text-sm font-medium transition-all",
-                  theme === "dark" ? "text-black bg-gradient-to-r from-white to-white/90 hover:from-white/95 hover:to-white/80" : "text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-600/90 hover:to-indigo-600/90"
+                  theme === "dark" ? "text-black bg-gradient-to-r from-white to-white/90 hover:from-white/95 hover:to-white/80" : "bg-black text-white hover:bg-black/90"
                 )}
                 onClick={() => setMobileMenuOpen(false)}
               >
