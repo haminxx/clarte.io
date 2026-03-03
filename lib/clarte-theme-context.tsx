@@ -106,7 +106,9 @@ export function ClarteThemeProvider({ children }: { children: React.ReactNode })
           aria-hidden
           className="fixed inset-0 z-[9999] pointer-events-none"
           style={{
-            background: transitioningTo === "dark" ? overlayBgDark : overlayBgBright,
+            // Show the *current* theme while the circle expands, then switch theme on transition end.
+            // This avoids briefly mixing new-theme background with old-theme text.
+            background: theme === "dark" ? overlayBgDark : overlayBgBright,
             clipPath: overlayExpanded ? "circle(150% at 50% 50%)" : "circle(0% at 50% 50%)",
             transition: `clip-path ${TRANSITION_MS}ms ease-out`,
           }}
