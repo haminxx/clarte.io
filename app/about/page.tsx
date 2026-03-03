@@ -1,28 +1,35 @@
+"use client"
+
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { AnimateOnScroll } from "@/components/animate-on-scroll"
+import { PageThemeBg } from "@/components/page-theme-bg"
+import { useClarteTheme } from "@/lib/clarte-theme-context"
+import { cn } from "@/lib/utils"
 
 export default function AboutPage() {
+  const { theme } = useClarteTheme()
+  const isBright = theme === "bright"
   return (
-    <div className="min-h-screen bg-[#0a0a14]">
-      <div className="pointer-events-none fixed inset-0">
-        <div className="absolute left-1/2 top-1/3 h-[800px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-blue-600/15 via-indigo-500/10 to-transparent blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-transparent">
+      <PageThemeBg />
 
       <Header />
 
-      <main className="relative z-10 mx-auto max-w-4xl px-4 pt-32 pb-24">
+      <main className="relative z-10 mx-auto max-w-4xl px-4 pt-[clamp(7rem,22vh,14rem)] pb-24">
         <AnimateOnScroll animation="fade-up" animateOnMount delay={100}>
           <div className="mb-16">
-            <h1 className="text-4xl font-bold text-white md:text-5xl">About Clarte</h1>
-            <p className="mt-4 text-lg text-white/60">
+            <h1 className={cn("text-4xl font-bold md:text-5xl", isBright ? "text-black" : "text-white")}>
+              About Clarte
+            </h1>
+            <p className={cn("mt-4 text-lg", isBright ? "text-black/60" : "text-white/60")}>
               Your thoughts, refined.
             </p>
           </div>
         </AnimateOnScroll>
 
         <AnimateOnScroll animation="fade-blur" delay={100}>
-          <div className="space-y-8 text-white/80 leading-relaxed">
+          <div className={cn("space-y-8 leading-relaxed", isBright ? "text-black/80" : "text-white/80")}>
             <p>
               Clarte is a voice AI platform that helps you think clearly and act decisively.
               Through guided Socratic questioning, stress-testing, and deep-search validation,

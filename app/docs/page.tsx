@@ -1,9 +1,14 @@
+"use client"
+
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { BookOpen, Code, Zap, Settings, MessageSquare, Shield, ArrowRight } from "lucide-react"
 import { AnimateOnScroll } from "@/components/animate-on-scroll"
+import { PageThemeBg } from "@/components/page-theme-bg"
+import { useClarteTheme } from "@/lib/clarte-theme-context"
+import { cn } from "@/lib/utils"
 
 const sections = [
   {
@@ -59,23 +64,22 @@ const sections = [
 ]
 
 export default function DocsPage() {
+  const { theme } = useClarteTheme()
+  const isBright = theme === "bright"
   return (
-    <div className="min-h-screen bg-[#0a0a14]">
-      {/* Background gradient */}
-      <div className="pointer-events-none fixed inset-0">
-        <div className="absolute left-1/2 top-1/3 h-[800px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-blue-600/15 via-indigo-500/10 to-transparent blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-transparent">
+      <PageThemeBg />
 
       <Header />
 
-      <main className="relative z-10 mx-auto max-w-7xl px-4 py-24">
+      <main className="relative z-10 mx-auto max-w-7xl px-4 pt-[clamp(7rem,22vh,14rem)] pb-24">
         <AnimateOnScroll animation="fade-up" animateOnMount delay={100}>
           <div className="mb-12 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-500/10">
+            <div className={cn("mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl", isBright ? "bg-blue-500/10" : "bg-blue-500/10")}>
               <BookOpen className="h-8 w-8 text-blue-400" />
             </div>
-            <h1 className="text-4xl font-bold text-white md:text-5xl">Documentation</h1>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-white/60">
+            <h1 className={cn("text-4xl font-bold md:text-5xl", isBright ? "text-black" : "text-white")}>Documentation</h1>
+            <p className={cn("mx-auto mt-4 max-w-2xl text-lg", isBright ? "text-black/60" : "text-white/60")}>
               Everything you need to integrate Clarte voice AI into your applications
             </p>
           </div>

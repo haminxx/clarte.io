@@ -1,8 +1,13 @@
+"use client"
+
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Code, Copy, Terminal, Zap, Shield, Globe } from "lucide-react"
 import { AnimateOnScroll } from "@/components/animate-on-scroll"
+import { PageThemeBg } from "@/components/page-theme-bg"
+import { useClarteTheme } from "@/lib/clarte-theme-context"
+import { cn } from "@/lib/utils"
 
 const codeExample = `import Clarte from '@clarte/sdk';
 
@@ -57,20 +62,19 @@ const endpoints = [
 ]
 
 export default function APIReferencePage() {
+  const { theme } = useClarteTheme()
+  const isBright = theme === "bright"
   return (
-    <div className="min-h-screen bg-[#0a0a14]">
-      {/* Background gradient */}
-      <div className="pointer-events-none fixed inset-0">
-        <div className="absolute left-1/2 top-1/3 h-[800px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-blue-600/15 via-indigo-500/10 to-transparent blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-transparent">
+      <PageThemeBg />
 
       <Header />
 
-      <main className="relative z-10 mx-auto max-w-7xl px-4 pt-28 pb-24">
+      <main className="relative z-10 mx-auto max-w-7xl px-4 pt-[clamp(7rem,22vh,14rem)] pb-24">
         <AnimateOnScroll animation="fade-up" animateOnMount delay={100}>
           <div className="mb-12 text-center">
-            <h1 className="text-4xl font-bold text-white md:text-5xl">API Reference</h1>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-white/60">
+            <h1 className={cn("text-4xl font-bold md:text-5xl", isBright ? "text-black" : "text-white")}>API Reference</h1>
+            <p className={cn("mx-auto mt-4 max-w-2xl text-lg", isBright ? "text-black/60" : "text-white/60")}>
               Integrate Clarte voice capabilities into your applications with our simple REST API
             </p>
           </div>

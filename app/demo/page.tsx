@@ -8,12 +8,17 @@ import { VoiceCard } from "@/components/voice-card"
 import { ParticleOrb } from "@/components/particle-orb"
 import { AnimateOnScroll } from "@/components/animate-on-scroll"
 import { useClientSpeechRecognition, isClientSpeechRecognitionSupported } from "@/hooks/use-client-speech-recognition"
+import { PageThemeBg } from "@/components/page-theme-bg"
+import { useClarteTheme } from "@/lib/clarte-theme-context"
+import { cn } from "@/lib/utils"
 
 if (typeof window !== "undefined" && !process.env.NEXT_PUBLIC_LIVEKIT_URL) {
   console.warn("[Clarte] NEXT_PUBLIC_LIVEKIT_URL is undefined. Voice calls may not work.")
 }
 
 export default function DemoPage() {
+  const { theme } = useClarteTheme()
+  const isBright = theme === "bright"
   const [inCall, setInCall] = useState(false)
   const [connectionActive, setConnectionActive] = useState(false)
   const [selectedVoice, setSelectedVoice] = useState("marin")
@@ -65,19 +70,18 @@ export default function DemoPage() {
   }, [transcriptEntries, transcriptPartial])
 
   return (
-    <div className="min-h-screen bg-[#0a0a14]">
-      {/* Background gradient */}
-      <div className="pointer-events-none fixed inset-0">
-        <div className="absolute left-1/2 top-1/3 h-[800px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-blue-600/15 via-indigo-500/10 to-transparent blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-transparent">
+      <PageThemeBg />
 
       <Header />
 
-      <main className="relative z-10 mx-auto max-w-7xl px-4 pt-28 pb-24">
+      <main className="relative z-10 mx-auto max-w-7xl px-4 pt-[clamp(7rem,22vh,14rem)] pb-24">
         <AnimateOnScroll animation="fade-up" animateOnMount delay={100}>
           <div className="mb-8 text-center">
-            <h1 className="text-4xl font-bold text-white md:text-5xl">Try Clarte</h1>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-white/60">
+            <h1 className={cn("text-4xl font-bold md:text-5xl", isBright ? "text-black" : "text-white")}>
+              Try Clarte
+            </h1>
+            <p className={cn("mx-auto mt-4 max-w-2xl text-lg", isBright ? "text-black/60" : "text-white/60")}>
               Start a voice call with Clarte and see the live transcript in real time.
             </p>
           </div>

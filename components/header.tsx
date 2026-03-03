@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import type { User } from "firebase/auth"
 import { Button } from "@/components/ui/button"
-import { Menu, X, LogOut, User as UserIcon, Settings, Eye, EyeOff } from "lucide-react"
+import { Menu, X, LogOut, User as UserIcon, Settings } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +15,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
+import { EyelashEyeClosed, EyelashEyeOpen } from "@/components/icons/theme-eye"
 
 const navLinks = [
   { href: "/demo", label: "Demo" },
@@ -182,16 +183,16 @@ export function Header() {
             aria-label={theme === "dark" ? "Switch to bright theme" : "Switch to dark theme"}
           >
             <span className="relative flex h-5 w-5 items-center justify-center">
-              <EyeOff
+              <EyelashEyeClosed
                 className={cn(
-                  "absolute h-5 w-5 transition-opacity duration-300",
-                  theme === "dark" ? "opacity-100" : "opacity-0"
+                  "absolute transition-all duration-300 ease-out origin-center",
+                  theme === "dark" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-50"
                 )}
               />
-              <Eye
+              <EyelashEyeOpen
                 className={cn(
-                  "absolute h-5 w-5 transition-opacity duration-300",
-                  theme === "bright" ? "opacity-100" : "opacity-0"
+                  "absolute transition-all duration-300 ease-out origin-center",
+                  theme === "bright" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-50"
                 )}
               />
             </span>
@@ -201,7 +202,9 @@ export function Header() {
         <div className="flex items-center gap-3">
           <nav className="hidden items-center gap-3 lg:flex">
             {navLinks.map((link) => {
-              const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href))
+              const isActive =
+                link.href !== "/download" &&
+                (pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href)))
               return (
                 <Link
                   key={link.href}
@@ -234,17 +237,37 @@ export function Header() {
             className={cn("lg:hidden", theme === "dark" ? "text-white" : "text-black")}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
-            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            <span className="relative flex h-5 w-5 items-center justify-center">
+              <Menu
+                className={cn(
+                  "absolute h-5 w-5 transition-all duration-200 ease-out",
+                  mobileMenuOpen ? "opacity-0 rotate-90 scale-90" : "opacity-100 rotate-0 scale-100"
+                )}
+              />
+              <X
+                className={cn(
+                  "absolute h-5 w-5 transition-all duration-200 ease-out",
+                  mobileMenuOpen ? "opacity-100 rotate-0 scale-100" : "opacity-0 -rotate-90 scale-90"
+                )}
+              />
+            </span>
           </Button>
         </div>
       </div>
 
       {mobileMenuOpen && (
-        <div className={cn("border-t lg:hidden w-full backdrop-blur-md", theme === "dark" ? "border-white/10 bg-background/95" : "border-black/10 bg-white/95")}>
+        <div
+          className={cn(
+            "border-t lg:hidden w-full backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200",
+            theme === "dark" ? "border-white/10 bg-background/95" : "border-black/10 bg-white/95"
+          )}
+        >
           <div className="mx-auto max-w-[1400px] pl-6 pr-6 sm:pl-12 sm:pr-12 lg:pl-[120px] lg:pr-[120px] py-4 w-full">
             <nav className="flex flex-col gap-3">
               {navLinks.map((link) => {
-                const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href))
+                const isActive =
+                  link.href !== "/download" &&
+                  (pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href)))
                 return (
                   <Link
                     key={link.href}

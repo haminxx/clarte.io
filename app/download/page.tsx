@@ -1,9 +1,14 @@
+"use client"
+
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Monitor, Smartphone, Apple, LayoutGrid, ExternalLink, Chrome } from "lucide-react"
 import { AnimateOnScroll } from "@/components/animate-on-scroll"
+import { PageThemeBg } from "@/components/page-theme-bg"
+import { useClarteTheme } from "@/lib/clarte-theme-context"
+import { cn } from "@/lib/utils"
 
 const DESKTOP_VERSION = "0.1.0"
 const DESKTOP_EXE_URL = `https://github.com/haminxx/clarte.io/releases/download/v${DESKTOP_VERSION}/Clarte-${DESKTOP_VERSION}-x64-setup.exe`
@@ -11,24 +16,24 @@ const CHROME_WEB_STORE_URL = "https://chromewebstore.google.com/search?term=clar
 const APP_STORE_URL = "https://apps.apple.com/us/search?term=clarte"
 
 export default function DownloadPage() {
+  const { theme } = useClarteTheme()
+  const isBright = theme === "bright"
   return (
-    <div className="min-h-screen bg-[#0a0a14]">
-      <div className="pointer-events-none fixed inset-0">
-        <div className="absolute left-1/2 top-1/3 h-[800px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-blue-600/15 via-indigo-500/10 to-transparent blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-transparent">
+      <PageThemeBg />
 
       <Header />
 
-      <main className="relative z-10 mx-auto max-w-4xl px-4 pt-28 pb-24">
+      <main className="relative z-10 mx-auto max-w-4xl px-4 pt-[clamp(7rem,22vh,14rem)] pb-24">
         <AnimateOnScroll animation="fade-up" animateOnMount delay={100}>
           <div className="mb-16 text-center">
-            <h1 className="text-4xl font-bold text-white md:text-5xl lg:text-6xl">
+            <h1 className={cn("text-4xl font-bold md:text-5xl lg:text-6xl", isBright ? "text-black" : "text-white")}>
               Download{" "}
               <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
                 Clarte
               </span>
             </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-lg text-white/60">
+            <p className={cn("mx-auto mt-6 max-w-2xl text-lg", isBright ? "text-black/60" : "text-white/60")}>
               Get Clarte on your desktop or mobile device. Voice AI that runs at the speed of thought.
             </p>
           </div>
@@ -39,21 +44,24 @@ export default function DownloadPage() {
           {/* Desktop */}
           <a
             href={DESKTOP_EXE_URL}
-            className="group block rounded-2xl border border-white/10 bg-[#1a1a2e]/50 p-8 transition-all hover:border-blue-500/30 hover:bg-[#1a1a2e]/80"
+            className={cn(
+              "group block rounded-2xl border p-8 transition-all",
+              isBright ? "border-black/10 bg-white/70 hover:border-blue-500/30 hover:bg-white/85" : "border-white/10 bg-[#1a1a2e]/50 hover:border-blue-500/30 hover:bg-[#1a1a2e]/80"
+            )}
           >
-            <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-blue-500/10">
+            <div className={cn("mb-6 flex h-14 w-14 items-center justify-center rounded-xl", isBright ? "bg-blue-500/10" : "bg-blue-500/10")}>
               <Monitor className="h-7 w-7 text-blue-400" />
             </div>
-            <h2 className="mb-2 text-xl font-semibold text-white">Desktop Application</h2>
-            <p className="mb-6 text-sm text-white/60">
+            <h2 className={cn("mb-2 text-xl font-semibold", isBright ? "text-black" : "text-white")}>Desktop Application</h2>
+            <p className={cn("mb-6 text-sm", isBright ? "text-black/60" : "text-white/60")}>
               Full-featured desktop experience for Windows and macOS. Screen share, camera, and voice—all in one.
             </p>
             <div className="flex flex-wrap gap-3">
-              <span className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white/80">
+              <span className={cn("inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm", isBright ? "border-black/10 bg-black/5 text-black/80" : "border-white/10 bg-white/5 text-white/80")}>
                 <LayoutGrid className="h-4 w-4" />
                 Windows
               </span>
-              <span className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white/80">
+              <span className={cn("inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm", isBright ? "border-black/10 bg-black/5 text-black/80" : "border-white/10 bg-white/5 text-white/80")}>
                 <Apple className="h-4 w-4" />
                 macOS
               </span>

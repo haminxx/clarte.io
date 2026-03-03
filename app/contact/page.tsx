@@ -15,6 +15,9 @@ import {
 } from "@/components/ui/select"
 import { Loader2, CheckCircle } from "lucide-react"
 import { AnimateOnScroll } from "@/components/animate-on-scroll"
+import { PageThemeBg } from "@/components/page-theme-bg"
+import { useClarteTheme } from "@/lib/clarte-theme-context"
+import { cn } from "@/lib/utils"
 
 const JOB_TITLE_OPTIONS = [
   { value: "engineer", label: "Engineer" },
@@ -25,6 +28,8 @@ const JOB_TITLE_OPTIONS = [
 ] as const
 
 export default function ContactPage() {
+  const { theme } = useClarteTheme()
+  const isBright = theme === "bright"
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [formData, setFormData] = useState({
@@ -50,19 +55,18 @@ export default function ContactPage() {
   const isStudent = formData.jobTitle === "student"
 
   return (
-    <div className="min-h-screen bg-[#0a0a14]">
-      {/* Background gradient */}
-      <div className="pointer-events-none fixed inset-0">
-        <div className="absolute left-1/2 top-1/3 h-[800px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-blue-600/15 via-indigo-500/10 to-transparent blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-transparent">
+      <PageThemeBg />
 
       <Header />
 
-      <main className="relative z-10 mx-auto max-w-7xl px-4 pt-24 pb-24">
+      <main className="relative z-10 mx-auto max-w-7xl px-4 pt-[clamp(7rem,22vh,14rem)] pb-24">
         <AnimateOnScroll animation="fade-up">
           <div className="mb-12 text-center">
-            <h1 className="text-4xl font-bold text-white md:text-5xl">Request Access</h1>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-white/60">
+            <h1 className={cn("text-4xl font-bold md:text-5xl", isBright ? "text-black" : "text-white")}>
+              Request Access
+            </h1>
+            <p className={cn("mx-auto mt-4 max-w-2xl text-lg", isBright ? "text-black/60" : "text-white/60")}>
               Request early access to Clarte. We&apos;ll review your request and get back to you.
             </p>
           </div>
@@ -71,18 +75,23 @@ export default function ContactPage() {
         <AnimateOnScroll animation="fade-blur" delay={100}>
           <div className="mx-auto max-w-2xl" id="form">
             {/* Contact Form */}
-            <div className="rounded-2xl border border-white/10 bg-[#1a1a2e]/50 p-8">
+            <div
+              className={cn(
+                "rounded-2xl border p-8 backdrop-blur-md",
+                isBright ? "border-black/10 bg-white/70" : "border-white/10 bg-[#1a1a2e]/50"
+              )}
+            >
               {submitted ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/10">
                     <CheckCircle className="h-8 w-8 text-green-400" />
                   </div>
-                  <h2 className="text-2xl font-bold text-white">Request Received!</h2>
-                  <p className="mt-4 text-white/60">
+                  <h2 className={cn("text-2xl font-bold", isBright ? "text-black" : "text-white")}>Request Received!</h2>
+                  <p className={cn("mt-4", isBright ? "text-black/60" : "text-white/60")}>
                     Thank you for your interest. We&apos;ll review your request and get back to you soon.
                   </p>
                   <Button
-                    className="mt-6 bg-white text-black hover:bg-white/90"
+                    className={cn("mt-6", isBright ? "bg-black text-white hover:bg-black/90" : "bg-white text-black hover:bg-white/90")}
                     onClick={() => {
                       setSubmitted(false)
                       setFormData({
