@@ -11,7 +11,13 @@ interface Particle {
   originalZ: number
 }
 
-export function ParticleOrb() {
+type ParticleOrbVariant = "dark" | "bright"
+
+type ParticleOrbProps = {
+  variant?: ParticleOrbVariant
+}
+
+export function ParticleOrb({ variant = "dark" }: ParticleOrbProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationRef = useRef<number>()
   const particlesRef = useRef<Particle[]>([])
@@ -88,6 +94,8 @@ export function ParticleOrb() {
       const cosX = Math.cos(rotationRef.current.x + autoRotationX)
       const sinX = Math.sin(rotationRef.current.x + autoRotationX)
 
+      const isBright = variant === "bright"
+
       // Sort particles by z for proper depth rendering
       const sortedParticles = particlesRef.current.map((p) => {
         // Rotate around Y axis
@@ -109,7 +117,8 @@ export function ParticleOrb() {
 
         ctx.beginPath()
         ctx.arc(centerX + p.screenX, centerY + p.screenY, size, 0, Math.PI * 2)
-        ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.7})`
+        const [r, g, b] = isBright ? [147, 197, 253] : [255, 255, 255]
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha * 0.75})`
         ctx.fill()
       })
 
@@ -140,9 +149,15 @@ export function ParticleOrb() {
         centerX + mx1, centerY + my2, 0,
         centerX + mx1, centerY + my2, 20
       )
-      gradient.addColorStop(0, `rgba(255, 255, 255, ${movingAlpha})`)
-      gradient.addColorStop(0.3, `rgba(200, 255, 200, ${movingAlpha * 0.5})`)
-      gradient.addColorStop(1, "rgba(255, 255, 255, 0)")
+      if (isBright) {
+        gradient.addColorStop(0, `rgba(191, 219, 254, ${movingAlpha})`)
+        gradient.addColorStop(0.3, `rgba(125, 211, 252, ${movingAlpha * 0.55})`)
+        gradient.addColorStop(1, "rgba(191, 219, 254, 0)")
+      } else {
+        gradient.addColorStop(0, `rgba(255, 255, 255, ${movingAlpha})`)
+        gradient.addColorStop(0.3, `rgba(200, 255, 200, ${movingAlpha * 0.5})`)
+        gradient.addColorStop(1, "rgba(255, 255, 255, 0)")
+      }
 
       ctx.beginPath()
       ctx.arc(centerX + mx1, centerY + my2, 20, 0, Math.PI * 2)
@@ -152,7 +167,11 @@ export function ParticleOrb() {
       // Core of moving dot
       ctx.beginPath()
       ctx.arc(centerX + mx1, centerY + my2, 4, 0, Math.PI * 2)
-      ctx.fillStyle = `rgba(255, 255, 255, ${movingAlpha})`
+      if (isBright) {
+        ctx.fillStyle = `rgba(191, 219, 254, ${movingAlpha})`
+      } else {
+        ctx.fillStyle = `rgba(255, 255, 255, ${movingAlpha})`
+      }
       ctx.fill()
 
       animationRef.current = requestAnimationFrame(animate)

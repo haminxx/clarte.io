@@ -3,6 +3,7 @@
 import { Play } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollPicker, type ScrollPickerOption } from "@/components/ui/scroll-picker"
+import { useClarteTheme } from "@/lib/clarte-theme-context"
 
 /** Voice name (UI) -> OpenAI voice ID. Marin = female, Cedar = male (both high-quality Realtime voices). */
 export const VOICE_OPTIONS = [
@@ -42,15 +43,30 @@ export function VoiceCard({
   selectedLanguage = "en",
   onLanguageChange,
 }: VoiceCardProps) {
+  const { theme } = useClarteTheme()
+  const isBright = theme === "bright"
+
   return (
     <>
       <div className="mb-6 flex items-center justify-between">
         <p className="text-foreground/80">
           Welcome to Clarte — your Executive Assistant.
         </p>
-        <div className="flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5">
+        <div
+          className={
+            isBright
+              ? "flex items-center gap-2 rounded-full bg-black/5 px-3 py-1.5"
+              : "flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5"
+          }
+        >
           <div className={`h-2 w-2 rounded-full bg-emerald-400 ${isActive ? "animate-[clarte-pulse_1.5s_ease-in-out_infinite]" : ""}`} />
-          <span className="text-sm text-muted-foreground">{isActive ? "Active" : "Ready"}</span>
+          <span
+            className={
+              isBright ? "text-sm text-black/60" : "text-sm text-muted-foreground"
+            }
+          >
+            {isActive ? "Active" : "Ready"}
+          </span>
         </div>
       </div>
 

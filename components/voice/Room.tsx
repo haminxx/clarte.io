@@ -32,6 +32,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useClarteTheme } from "@/lib/clarte-theme-context"
 
 export type CallMode = "voice-only" | "voice-with-screen" | "voice-with-screen-camera" | "voice-with-camera"
 
@@ -518,6 +519,8 @@ export function Room({
   const withScreen = mode === "voice-with-screen" || mode === "voice-with-screen-camera"
   const withCamera = mode === "voice-with-screen-camera" || mode === "voice-with-camera"
   const useKrisp = true
+  const { theme } = useClarteTheme()
+  const isBright = theme === "bright"
 
   const addTranscript = useCallback(
     (role: string, content: string) => {
@@ -639,11 +642,21 @@ export function Room({
       <p className="text-foreground/80">
         Welcome to Clarte — your Executive Assistant.
       </p>
-      <div className="flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5">
+      <div
+        className={
+          isBright
+            ? "flex items-center gap-2 rounded-full bg-black/5 px-3 py-1.5"
+            : "flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5"
+        }
+      >
         <div
           className={`h-2 w-2 rounded-full bg-emerald-400 ${status === "active" ? "animate-[clarte-pulse_1.5s_ease-in-out_infinite]" : ""}`}
         />
-        <span className="text-sm text-muted-foreground">
+        <span
+          className={
+            isBright ? "text-sm text-black/60" : "text-sm text-muted-foreground"
+          }
+        >
           {status === "starting" ? "Connecting…" : status === "active" ? "Active" : "Ready"}
         </span>
       </div>

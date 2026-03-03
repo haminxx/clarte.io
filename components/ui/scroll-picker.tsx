@@ -4,6 +4,7 @@ import * as React from "react"
 import { ChevronDown } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
+import { useClarteTheme } from "@/lib/clarte-theme-context"
 
 const ROW_HEIGHT = 40
 const VISIBLE_ROWS = 3
@@ -36,6 +37,8 @@ export function ScrollPicker({
   const [open, setOpen] = React.useState(false)
   const scrollRef = React.useRef<HTMLDivElement>(null)
   const isScrollingRef = React.useRef(false)
+  const { theme } = useClarteTheme()
+  const isBright = theme === "bright"
 
   if (options.length === 0) return null
 
@@ -115,7 +118,10 @@ export function ScrollPicker({
           type="button"
           disabled={disabled}
           className={cn(
-            "flex items-center gap-1.5 rounded-full bg-muted/50 px-3 py-2 text-sm font-medium ring-1 ring-border/50 shadow-sm transition-colors hover:bg-muted/70 disabled:opacity-60 disabled:pointer-events-none",
+            "flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium ring-1 shadow-sm transition-colors disabled:opacity-60 disabled:pointer-events-none",
+            isBright
+              ? "bg-white/80 text-black ring-black/10 hover:bg-white/90"
+              : "bg-muted/50 text-foreground ring-border/50 hover:bg-muted/70",
             triggerClassName
           )}
         >
@@ -126,7 +132,7 @@ export function ScrollPicker({
       <PopoverContent align="start" className={cn("w-auto p-0", className)}>
         <div
           ref={scrollRef}
-          className="overflow-y-auto overscroll-contain scroll-smooth"
+          className="scroll-picker-scroll overflow-y-auto overscroll-contain scroll-smooth"
           style={{
             height: CONTAINER_HEIGHT,
             scrollSnapType: "y mandatory",

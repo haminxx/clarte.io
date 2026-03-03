@@ -90,6 +90,7 @@ export function VoiceRoomDirect({ onDisconnect, autoStart = false }: VoiceRoomDi
   const processorRef = useRef<ScriptProcessorNode | null>(null)
   const outputQueueRef = useRef<Int16Array[]>([])
   const outputContextRef = useRef<AudioContext | null>(null)
+  const useDeltasRef = useRef<boolean | null>(null)
 
   const disconnect = useCallback(() => {
     if (wsRef.current) {
@@ -178,11 +179,20 @@ export function VoiceRoomDirect({ onDisconnect, autoStart = false }: VoiceRoomDi
           return
         }
         if (data.type === "response.audio.delta" && data.delta) {
+          // Prefer streaming deltas when available
+          if (useDeltasRef.current === null) useDeltasRef.current = true
           const bytes = Uint8Array.from(atob(data.delta), (c) => c.charCodeAt(0))
           const int16 = new Int16Array(bytes.buffer)
           outputQueueRef.current.push(int16)
           playNextInQueue()
         } else if (data.type === "conversation.item.added" && data.item?.content) {
+          // If we've already seen deltas, ignore full output_audio blobs to avoid double-playing audio.
+          if (useDeltasRef.current === true) {
+            return
+          }
+          if (useDeltasRef.current === null) {
+            useDeltasRef.current = false
+          }
           const content = Array.isArray(data.item.content) ? data.item.content : [data.item.content]
           for (const part of content) {
             if (part.type === "output_audio" && part.audio) {

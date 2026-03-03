@@ -264,6 +264,14 @@
   animation: pop-in 0.6s ease-out both;
 }
 
+/* ScrollPicker – hide scrollbar but keep scroll behavior */
+.scroll-picker-scroll {
+  scrollbar-width: none; /* Firefox */
+}
+.scroll-picker-scroll::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
