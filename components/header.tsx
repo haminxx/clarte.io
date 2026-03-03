@@ -18,10 +18,10 @@ import { useClarteTheme } from "@/lib/clarte-theme-context"
 import { EyelashEyeClosed, EyelashEyeOpen } from "@/components/icons/theme-eye"
 
 const navLinks = [
-  { href: "/demo", label: "Demo" },
+  { href: "/about", label: "About" },
   { href: "/download", label: "Download" },
   { href: "/api-reference", label: "API" },
-  { href: "/about", label: "About" },
+  { href: "/demo", label: "Demo" },
 ]
 
 export function Header() {

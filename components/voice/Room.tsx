@@ -682,7 +682,7 @@ export function Room({
       value={selectedLanguage}
       onValueChange={(value) => onLanguageChange?.(value as SupportedLanguage)}
     >
-      <SelectTrigger className="min-w-[120px] rounded-full">
+      <SelectTrigger className="w-[120px] rounded-full">
         <SelectValue placeholder="Language" />
       </SelectTrigger>
       <SelectContent>
@@ -701,7 +701,7 @@ export function Room({
       value={selectedVoiceId}
       onValueChange={(value) => onVoiceChange?.(value)}
     >
-      <SelectTrigger className="min-w-[140px] rounded-full">
+      <SelectTrigger className="w-[140px] rounded-full">
         <SelectValue placeholder="Voice" />
       </SelectTrigger>
       <SelectContent>

@@ -83,7 +83,7 @@ export function VoiceCard({
               value={selectedLanguage}
               onValueChange={(value) => onLanguageChange?.(value as SupportedLanguage)}
             >
-              <SelectTrigger className="min-w-[110px] rounded-full justify-between">
+              <SelectTrigger className="w-[120px] rounded-full justify-between">
                 <SelectValue placeholder="Language" />
               </SelectTrigger>
               <SelectContent>
@@ -98,7 +98,7 @@ export function VoiceCard({
               value={selectedVoiceId}
               onValueChange={(value) => onVoiceChange?.(value)}
             >
-              <SelectTrigger className="min-w-[120px] rounded-full justify-between">
+              <SelectTrigger className="w-[140px] rounded-full justify-between">
                 <SelectValue placeholder="Voice" />
               </SelectTrigger>
               <SelectContent>

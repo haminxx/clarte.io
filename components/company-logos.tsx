@@ -1,19 +1,47 @@
 "use client"
 
+import Image from "next/image"
 import { AnimateOnScroll } from "./animate-on-scroll"
 
-export function CompanyLogos() {
-  const companies = [
-    "UC San Diego",
-    "OpenAI",
-    "LiveKit",
-    "Render",
-    "Cursor AI",
-    "Deepgram",
-    "Groq",
-    "Vercel",
-  ]
+const logos = [
+  {
+    name: "UC San Diego",
+    src: "/logos/uc-san-diego.png",
+    alt: "UC San Diego logo",
+  },
+  {
+    name: "OpenAI",
+    src: "/logos/openai.png",
+    alt: "OpenAI logo",
+  },
+  {
+    name: "LiveKit",
+    src: "/logos/livekit.png",
+    alt: "LiveKit logo",
+  },
+  {
+    name: "Render",
+    src: "/logos/render.png",
+    alt: "Render logo",
+  },
+  {
+    name: "Cursor AI",
+    src: "/logos/cursor-ai.png",
+    alt: "Cursor AI logo",
+  },
+  {
+    name: "Deepgram",
+    src: "/logos/deepgram.png",
+    alt: "Deepgram logo",
+  },
+  {
+    name: "Anthropic",
+    src: "/logos/anthropic.png",
+    alt: "Anthropic logo",
+  },
+]
 
+export function CompanyLogos() {
   return (
     <AnimateOnScroll animation="fade-blur">
       <div className="py-6 sm:py-8 w-full overflow-hidden">
@@ -23,14 +51,20 @@ export function CompanyLogos() {
         <div className="relative">
           <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-background to-transparent" />
           <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-background to-transparent" />
-          <div className="logo-marquee-track flex items-center gap-8 sm:gap-12 px-8 opacity-70 whitespace-nowrap">
-            {[...companies, ...companies].map((company, idx) => (
+          <div className="logo-marquee-track flex items-center gap-10 sm:gap-14 px-10 opacity-80 whitespace-nowrap">
+            {[...logos, ...logos].map((logo, idx) => (
               <div
-                key={`${company}-${idx}`}
-                className="inline-flex items-center gap-2 rounded-full border border-border/40 bg-card/80 px-4 py-2 text-xs sm:text-sm font-medium tracking-wide text-foreground/70 backdrop-blur-sm"
+                key={`${logo.name}-${idx}`}
+                className="inline-flex items-center justify-center px-6 py-3"
+                aria-label={logo.name}
               >
-                <span className="h-2 w-2 rounded-full bg-emerald-400/70" />
-                <span>{company}</span>
+                <Image
+                  src={logo.src}
+                  alt={logo.alt}
+                  width={180}
+                  height={56}
+                  className="h-10 sm:h-12 w-auto object-contain"
+                />
               </div>
             ))}
           </div>

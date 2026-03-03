@@ -41,94 +41,100 @@ export default function DownloadPage() {
 
         <div className="grid gap-8 md:grid-cols-3">
           <AnimateOnScroll animation="fade-up" delay={0}>
-          {/* Desktop */}
-          <a
-            href={DESKTOP_EXE_URL}
-            className={cn(
-              "group block rounded-2xl border p-8 transition-all",
-              isBright ? "border-black/10 bg-white/70 hover:border-blue-500/30 hover:bg-white/85" : "border-white/10 bg-[#1a1a2e]/50 hover:border-blue-500/30 hover:bg-[#1a1a2e]/80"
-            )}
-          >
-            <div className={cn("mb-6 flex h-14 w-14 items-center justify-center rounded-xl", isBright ? "bg-blue-500/10" : "bg-blue-500/10")}>
-              <Monitor className="h-7 w-7 text-blue-400" />
-            </div>
-            <h2 className={cn("mb-2 text-xl font-semibold", isBright ? "text-black" : "text-white")}>Desktop Application</h2>
-            <p className={cn("mb-6 text-sm", isBright ? "text-black/60" : "text-white/60")}>
-              Full-featured desktop experience for Windows and macOS. Screen share, camera, and voice—all in one.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <span className={cn("inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm", isBright ? "border-black/10 bg-black/5 text-black/80" : "border-white/10 bg-white/5 text-white/80")}>
-                <LayoutGrid className="h-4 w-4" />
-                Windows
-              </span>
-              <span className={cn("inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm", isBright ? "border-black/10 bg-black/5 text-black/80" : "border-white/10 bg-white/5 text-white/80")}>
-                <Apple className="h-4 w-4" />
-                macOS
-              </span>
-            </div>
-            <div className="mt-6 flex items-center gap-2 text-blue-400">
-              <span className="text-sm font-medium">Download .exe</span>
-              <ExternalLink className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </div>
-          </a>
+            {/* Desktop */}
+            <a
+              href={DESKTOP_EXE_URL}
+              className={cn(
+                "group flex h-full flex-col rounded-2xl border p-8 transition-all",
+                isBright ? "border-black/10 bg-white/70 hover:border-blue-500/30 hover:bg-white/85" : "border-white/10 bg-[#1a1a2e]/50 hover:border-blue-500/30 hover:bg-[#1a1a2e]/80"
+              )}
+            >
+              <div className={cn("mb-6 flex h-14 w-14 items-center justify-center rounded-xl", isBright ? "bg-blue-500/10" : "bg-blue-500/10")}>
+                <Monitor className="h-7 w-7 text-blue-400" />
+              </div>
+              <div className="flex-1">
+                <h2 className={cn("mb-2 text-xl font-semibold", isBright ? "text-black" : "text-white")}>Desktop Application</h2>
+                <p className={cn("mb-6 text-sm", isBright ? "text-black/60" : "text-white/60")}>
+                  Full-featured desktop experience for Windows and macOS. Screen share, camera, and voice—all in one.
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <span className={cn("inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm", isBright ? "border-black/10 bg-black/5 text-black/80" : "border-white/10 bg-white/5 text-white/80")}>
+                    <LayoutGrid className="h-4 w-4" />
+                    Windows
+                  </span>
+                  <span className={cn("inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm", isBright ? "border-black/10 bg-black/5 text-black/80" : "border-white/10 bg-white/5 text-white/80")}>
+                    <Apple className="h-4 w-4" />
+                    macOS
+                  </span>
+                </div>
+              </div>
+              <div className="mt-6 flex items-center gap-2 text-blue-400">
+                <span className="text-sm font-medium">Download .exe</span>
+                <ExternalLink className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </div>
+            </a>
           </AnimateOnScroll>
 
           <AnimateOnScroll animation="fade-up" delay={50}>
-          {/* iOS App */}
-          <a
-            href={APP_STORE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={cn(
-              "group block rounded-2xl border p-8 transition-all",
-              isBright ? "border-black/10 bg-white/70 hover:border-blue-500/30 hover:bg-white/85" : "border-white/10 bg-[#1a1a2e]/50 hover:border-blue-500/30 hover:bg-[#1a1a2e]/80"
-            )}
-          >
-            <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-blue-500/10">
-              <Smartphone className="h-7 w-7 text-blue-400" />
-            </div>
-            <h2 className={cn("mb-2 text-xl font-semibold", isBright ? "text-black" : "text-white")}>iOS App</h2>
-            <p className={cn("mb-6 text-sm", isBright ? "text-black/60" : "text-white/60")}>
-              Take Clarte with you. Voice AI on iPhone with Siri integration and background support.
-            </p>
-            <div className={cn("flex items-center gap-2 rounded-lg border px-4 py-2 w-fit", isBright ? "border-black/10 bg-black/5" : "border-white/10 bg-white/5")}>
-              <Apple className={cn("h-5 w-5", isBright ? "text-black/80" : "text-white/80")} />
-              <span className={cn("text-sm font-medium", isBright ? "text-black/80" : "text-white/80")}>App Store</span>
-            </div>
-            <div className="mt-6 flex items-center gap-2 text-blue-400">
-              <span className="text-sm font-medium">Download on the App Store</span>
-              <ExternalLink className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </div>
-          </a>
+            {/* iOS App */}
+            <a
+              href={APP_STORE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(
+                "group flex h-full flex-col rounded-2xl border p-8 transition-all",
+                isBright ? "border-black/10 bg-white/70 hover:border-blue-500/30 hover:bg-white/85" : "border-white/10 bg-[#1a1a2e]/50 hover:border-blue-500/30 hover:bg-[#1a1a2e]/80"
+              )}
+            >
+              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-blue-500/10">
+                <Smartphone className="h-7 w-7 text-blue-400" />
+              </div>
+              <div className="flex-1">
+                <h2 className={cn("mb-2 text-xl font-semibold", isBright ? "text-black" : "text-white")}>iOS App</h2>
+                <p className={cn("mb-6 text-sm", isBright ? "text-black/60" : "text-white/60")}>
+                  Take Clarte with you. Voice AI on iPhone with Siri integration and background support.
+                </p>
+                <div className={cn("flex items-center gap-2 rounded-lg border px-4 py-2 w-fit", isBright ? "border-black/10 bg-black/5" : "border-white/10 bg-white/5")}>
+                  <Apple className={cn("h-5 w-5", isBright ? "text-black/80" : "text-white/80")} />
+                  <span className={cn("text-sm font-medium", isBright ? "text-black/80" : "text-white/80")}>App Store</span>
+                </div>
+              </div>
+              <div className="mt-6 flex items-center gap-2 text-blue-400">
+                <span className="text-sm font-medium">Download on the App Store</span>
+                <ExternalLink className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </div>
+            </a>
           </AnimateOnScroll>
 
           <AnimateOnScroll animation="fade-up" delay={100}>
-          {/* Chrome Extension */}
-          <a
-            href={CHROME_WEB_STORE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={cn(
-              "group block rounded-2xl border p-8 transition-all",
-              isBright ? "border-black/10 bg-white/70 hover:border-blue-500/30 hover:bg-white/85" : "border-white/10 bg-[#1a1a2e]/50 hover:border-blue-500/30 hover:bg-[#1a1a2e]/80"
-            )}
-          >
-            <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-blue-500/10">
-              <Chrome className="h-7 w-7 text-blue-400" />
-            </div>
-            <h2 className={cn("mb-2 text-xl font-semibold", isBright ? "text-black" : "text-white")}>Chrome Extension</h2>
-            <p className={cn("mb-6 text-sm", isBright ? "text-black/60" : "text-white/60")}>
-              Access Clarte from any tab. Quick voice AI without leaving your browser.
-            </p>
-            <div className={cn("flex items-center gap-2 rounded-lg border px-4 py-2 w-fit", isBright ? "border-black/10 bg-black/5" : "border-white/10 bg-white/5")}>
-              <Chrome className={cn("h-5 w-5", isBright ? "text-black/80" : "text-white/80")} />
-              <span className={cn("text-sm font-medium", isBright ? "text-black/80" : "text-white/80")}>Chrome Web Store</span>
-            </div>
-            <div className="mt-6 flex items-center gap-2 text-blue-400">
-              <span className="text-sm font-medium">Add to Chrome</span>
-              <ExternalLink className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </div>
-          </a>
+            {/* Chrome Extension */}
+            <a
+              href={CHROME_WEB_STORE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(
+                "group flex h-full flex-col rounded-2xl border p-8 transition-all",
+                isBright ? "border-black/10 bg-white/70 hover:border-blue-500/30 hover:bg-white/85" : "border-white/10 bg-[#1a1a2e]/50 hover:border-blue-500/30 hover:bg-[#1a1a2e]/80"
+              )}
+            >
+              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-blue-500/10">
+                <Chrome className="h-7 w-7 text-blue-400" />
+              </div>
+              <div className="flex-1">
+                <h2 className={cn("mb-2 text-xl font-semibold", isBright ? "text-black" : "text-white")}>Chrome Extension</h2>
+                <p className={cn("mb-6 text-sm", isBright ? "text-black/60" : "text-white/60")}>
+                  Access Clarte from any tab. Quick voice AI without leaving your browser.
+                </p>
+                <div className={cn("flex items-center gap-2 rounded-lg border px-4 py-2 w-fit", isBright ? "border-black/10 bg-black/5" : "border-white/10 bg-white/5")}>
+                  <Chrome className={cn("h-5 w-5", isBright ? "text-black/80" : "text-white/80")} />
+                  <span className={cn("text-sm font-medium", isBright ? "text-black/80" : "text-white/80")}>Chrome Web Store</span>
+                </div>
+              </div>
+              <div className="mt-6 flex items-center gap-2 text-blue-400">
+                <span className="text-sm font-medium">Add to Chrome</span>
+                <ExternalLink className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </div>
+            </a>
           </AnimateOnScroll>
         </div>
 

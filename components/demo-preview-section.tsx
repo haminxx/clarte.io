@@ -49,8 +49,8 @@ export function DemoPreviewSection() {
     >
       <div
         className={cn(
-          "mx-auto w-full max-w-none px-0 pb-16",
-          "flex flex-col"
+          "w-full pb-16 flex flex-col transition-[max-width,padding] duration-500 ease-out",
+          expanded ? "mx-auto max-w-none px-0" : "mx-auto max-w-5xl px-6 sm:px-12 lg:px-[120px]"
         )}
       >
         <button
@@ -63,9 +63,8 @@ export function DemoPreviewSection() {
             sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
           }}
           className={cn(
-            "relative w-full overflow-hidden bg-black text-left",
-            expanded ? "h-[100vh] rounded-none" : "h-[33vh] rounded-2xl",
-            "transition-[height,border-radius] duration-500 ease-out"
+            "relative w-full overflow-hidden bg-black text-left transition-[height,border-radius] duration-500 ease-out",
+            expanded ? "h-screen rounded-none" : "h-[33vh] sm:h-[40vh] rounded-3xl"
           )}
           aria-label="Expand demo preview"
         >
