@@ -94,7 +94,7 @@ def _validate_elevenlabs_key(api_key: str) -> bool:
         return False
 
 
-VALID_LANGUAGES = {"en", "ko"}
+VALID_LANGUAGES = {"en", "ko", "es", "zh", "ja", "hi"}
 
 FOLLOW_UP_PHRASES_EN = [
     "What's on your mind lately?",

@@ -22,7 +22,7 @@ export default function DemoPage() {
   const [inCall, setInCall] = useState(false)
   const [connectionActive, setConnectionActive] = useState(false)
   const [selectedVoice, setSelectedVoice] = useState("marin")
-  const [selectedLanguage, setSelectedLanguage] = useState<"en" | "ko">("en")
+  const [selectedLanguage, setSelectedLanguage] = useState<"en" | "ko" | "es" | "zh" | "ja" | "hi">("en")
   const [transcriptEntries, setTranscriptEntries] = useState<{ role: string; content: string }[]>([])
   const [transcriptPartial, setTranscriptPartial] = useState<string>("")
   const transcriptContainerRef = useRef<HTMLDivElement>(null)

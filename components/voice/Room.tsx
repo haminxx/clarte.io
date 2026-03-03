@@ -11,10 +11,14 @@ import { PhoneOff, Loader2, Phone, Play, Monitor, Video } from "lucide-react"
 import {
   VOICE_OPTIONS,
   LANGUAGE_OPTIONS,
-  LANGUAGE_PICKER_OPTIONS,
-  VOICE_PICKER_OPTIONS,
 } from "@/components/voice-card"
-import { ScrollPicker } from "@/components/ui/scroll-picker"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   LiveKitRoom,
   RoomAudioRenderer,
@@ -35,6 +39,8 @@ import {
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 
 export type CallMode = "voice-only" | "voice-with-screen" | "voice-with-screen-camera" | "voice-with-camera"
+
+type SupportedLanguage = "en" | "ko" | "es" | "zh" | "ja" | "hi"
 
 /** Phase 2: Fail fast if LiveKit URL is not set (client env inlined at build). */
 const LIVEKIT_URL = process.env.NEXT_PUBLIC_LIVEKIT_URL ?? ""
@@ -423,13 +429,18 @@ async function fetchToken(
   tokenUrl: string,
   mode: CallMode,
   voice?: string,
-  language?: string,
+  language?: SupportedLanguage,
   user_name?: string | null
 ): Promise<{ token: string; room: string } | { error: string }> {
+  const normalizedLanguage: SupportedLanguage =
+    language && ["en", "ko", "es", "zh", "ja", "hi"].includes(language)
+      ? language
+      : "en"
+
   const body: Record<string, string> = {
     voice: voice ?? "marin",
     mode: toAgentMode(mode),
-    language: language === "ko" ? "ko" : "en",
+    language: normalizedLanguage,
   }
   const trimmed = user_name?.trim?.()
   if (trimmed && trimmed !== "undefined" && trimmed !== "null" && !trimmed.startsWith("user-") && trimmed.length >= 2) {
@@ -467,7 +478,7 @@ async function fetchToken(
 interface RoomProps {
   mode?: CallMode
   voice?: string
-  language?: "en" | "ko"
+  language?: SupportedLanguage
   autoStart?: boolean
   onDisconnect?: () => void
   /** Called when voice connection is active (mic acquired). Use to delay client SpeechRecognition. */
@@ -476,8 +487,8 @@ interface RoomProps {
   cardLayout?: boolean
   selectedVoiceId?: string
   onVoiceChange?: (voiceId: string) => void
-  selectedLanguage?: "en" | "ko"
-  onLanguageChange?: (lang: "en" | "ko") => void
+  selectedLanguage?: SupportedLanguage
+  onLanguageChange?: (lang: SupportedLanguage) => void
   /** For saving conversation to Firestore. If provided, transcript is sent on disconnect. */
   userId?: string | null
   /** User display name for personalized greeting. Passed to token request. */
@@ -665,24 +676,42 @@ export function Room({
 
   const pickerDisabled = status === "starting" || status === "active"
 
-  const languagePicker = (
-    <ScrollPicker
-      options={LANGUAGE_PICKER_OPTIONS}
-      value={selectedLanguage}
-      onChange={(id) => onLanguageChange?.(id as "en" | "ko")}
-      placeholder="Language"
+  const languageSelect = (
+    <Select
       disabled={pickerDisabled}
-    />
+      value={selectedLanguage}
+      onValueChange={(value) => onLanguageChange?.(value as SupportedLanguage)}
+    >
+      <SelectTrigger className="min-w-[120px] rounded-full">
+        <SelectValue placeholder="Language" />
+      </SelectTrigger>
+      <SelectContent>
+        {LANGUAGE_OPTIONS.map((opt) => (
+          <SelectItem key={opt.langId} value={opt.langId}>
+            {opt.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   )
 
-  const voicePicker = (
-    <ScrollPicker
-      options={VOICE_PICKER_OPTIONS}
-      value={selectedVoiceId}
-      onChange={(id) => onVoiceChange?.(id)}
-      placeholder="Voice"
+  const voiceSelect = (
+    <Select
       disabled={pickerDisabled}
-    />
+      value={selectedVoiceId}
+      onValueChange={(value) => onVoiceChange?.(value)}
+    >
+      <SelectTrigger className="min-w-[140px] rounded-full">
+        <SelectValue placeholder="Voice" />
+      </SelectTrigger>
+      <SelectContent>
+        {VOICE_OPTIONS.map((opt) => (
+          <SelectItem key={opt.voiceId} value={opt.voiceId}>
+            {opt.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   )
 
   if (status === "active" && token && roomName) {
@@ -692,7 +721,10 @@ export function Room({
           {cardHeader}
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-              <div className="flex items-center gap-3">{languagePicker}{voicePicker}</div>
+              <div className="flex items-center gap-3">
+                {languageSelect}
+                {voiceSelect}
+              </div>
               <LiveKitRoom
                 serverUrl={LIVEKIT_URL}
                 token={token}
@@ -767,7 +799,10 @@ export function Room({
               <p className="text-sm text-destructive text-center">{error}</p>
             )}
             <div className="flex flex-wrap items-center justify-between gap-3 w-full">
-              <div className="flex items-center gap-3">{languagePicker}{voicePicker}</div>
+              <div className="flex items-center gap-3">
+                {languageSelect}
+                {voiceSelect}
+              </div>
               <div className="flex items-center gap-2">
                 {autoStart && onDisconnect && status !== "starting" && (
                   <Button variant="outline" size="sm" onClick={onDisconnect} className="gap-2">

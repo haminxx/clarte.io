@@ -49,7 +49,7 @@ export function DemoPreviewSection() {
     >
       <div
         className={cn(
-          "mx-auto w-full max-w-[1400px] px-6 sm:px-12 lg:px-[120px] pb-16",
+          "mx-auto w-full max-w-none px-0 pb-16",
           "flex flex-col"
         )}
       >
@@ -57,6 +57,9 @@ export function DemoPreviewSection() {
           type="button"
           onClick={() => {
             setExpanded(true)
+            if (videoRef.current && mediaType === "video") {
+              videoRef.current.play().catch(() => {})
+            }
             sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
           }}
           className={cn(

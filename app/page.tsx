@@ -21,13 +21,13 @@ export default function Home() {
       <main className="overflow-x-hidden">
         <HeroSection />
 
+        <DemoPreviewSection />
+
         <CompanyLogos />
 
         <AIStrategySection />
 
         <FeaturesSection />
-
-        <DemoPreviewSection />
       </main>
 
       <Footer />

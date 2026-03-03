@@ -2,37 +2,43 @@
 
 import { Play } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { ScrollPicker, type ScrollPickerOption } from "@/components/ui/scroll-picker"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 
 /** Voice name (UI) -> OpenAI voice ID. Marin = female, Cedar = male (both high-quality Realtime voices). */
 export const VOICE_OPTIONS = [
   { name: "Marin", voiceId: "marin" },
   { name: "Cedar", voiceId: "cedar" },
+  { name: "Alloy", voiceId: "alloy" },
+  { name: "Ash", voiceId: "ash" },
+  { name: "Ballad", voiceId: "ballad" },
+  { name: "Verse", voiceId: "verse" },
 ] as const
 
 export const LANGUAGE_OPTIONS = [
   { name: "EN", langId: "en" as const },
   { name: "KO", langId: "ko" as const },
+  { name: "ES", langId: "es" as const },
+  { name: "Mandarin", langId: "zh" as const },
+  { name: "日本語", langId: "ja" as const },
+  { name: "हिन्दी", langId: "hi" as const },
 ] as const
 
-export const LANGUAGE_PICKER_OPTIONS: ScrollPickerOption[] = LANGUAGE_OPTIONS.map((o) => ({
-  id: o.langId,
-  label: o.name,
-}))
-
-export const VOICE_PICKER_OPTIONS: ScrollPickerOption[] = VOICE_OPTIONS.map((o) => ({
-  id: o.voiceId,
-  label: o.name,
-}))
+type SupportedLanguage = "en" | "ko" | "es" | "zh" | "ja" | "hi"
 
 interface VoiceCardProps {
   onStartCall?: () => void
   isActive?: boolean
   selectedVoiceId?: string
   onVoiceChange?: (voiceId: string) => void
-  selectedLanguage?: "en" | "ko"
-  onLanguageChange?: (lang: "en" | "ko") => void
+  selectedLanguage?: SupportedLanguage
+  onLanguageChange?: (lang: SupportedLanguage) => void
 }
 
 export function VoiceCard({
@@ -73,18 +79,36 @@ export function VoiceCard({
       <div className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
           <div className="flex items-center gap-3">
-            <ScrollPicker
-              options={LANGUAGE_PICKER_OPTIONS}
+            <Select
               value={selectedLanguage}
-              onChange={(id) => onLanguageChange?.(id as "en" | "ko")}
-              placeholder="Language"
-            />
-            <ScrollPicker
-              options={VOICE_PICKER_OPTIONS}
+              onValueChange={(value) => onLanguageChange?.(value as SupportedLanguage)}
+            >
+              <SelectTrigger className="min-w-[110px] rounded-full justify-between">
+                <SelectValue placeholder="Language" />
+              </SelectTrigger>
+              <SelectContent>
+                {LANGUAGE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.langId} value={opt.langId}>
+                    {opt.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
               value={selectedVoiceId}
-              onChange={(id) => onVoiceChange?.(id)}
-              placeholder="Voice"
-            />
+              onValueChange={(value) => onVoiceChange?.(value)}
+            >
+              <SelectTrigger className="min-w-[120px] rounded-full justify-between">
+                <SelectValue placeholder="Voice" />
+              </SelectTrigger>
+              <SelectContent>
+                {VOICE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.voiceId} value={opt.voiceId}>
+                    {opt.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <Button
             size="lg"

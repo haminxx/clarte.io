@@ -36,7 +36,7 @@ VALID_VOICES = frozenset({"alloy", "ash", "ballad", "coral", "echo", "marin", "s
 
 
 VALID_MODES = frozenset({"casual", "expert", "research"})
-VALID_LANGUAGES = frozenset({"en", "ko"})
+VALID_LANGUAGES = frozenset({"en", "ko", "es", "zh", "ja", "hi"})
 
 
 class TokenRequest(BaseModel):

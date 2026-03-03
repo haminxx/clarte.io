@@ -236,6 +236,19 @@
   }
 }
 
+@keyframes logo-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.logo-marquee-track {
+  animation: logo-marquee 28s linear infinite;
+}
+
 @keyframes hero-gradient-drift {
   0% {
     transform: translate3d(-16px, -12px, 0) scale(1);

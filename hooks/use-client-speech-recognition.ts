@@ -14,6 +14,8 @@ export function isClientSpeechRecognitionSupported(): boolean {
   return !!(window.SpeechRecognition || window.webkitSpeechRecognition)
 }
 
+type SupportedLanguage = "en" | "ko" | "es" | "zh" | "ja" | "hi"
+
 export function useClientSpeechRecognition({
   enabled,
   language,
@@ -21,7 +23,7 @@ export function useClientSpeechRecognition({
   onTranscriptAdd,
 }: {
   enabled: boolean
-  language: "en" | "ko"
+  language: SupportedLanguage
   onTranscriptPartial: (role: string, content: string) => void
   onTranscriptAdd: (role: string, content: string) => void
 }) {
@@ -38,7 +40,18 @@ export function useClientSpeechRecognition({
     const recognition = new SpeechRecognitionClass()
     recognition.continuous = true
     recognition.interimResults = true
-    recognition.lang = language === "ko" ? "ko-KR" : "en-US"
+    recognition.lang =
+      language === "ko"
+        ? "ko-KR"
+        : language === "es"
+          ? "es-ES"
+          : language === "zh"
+            ? "zh-CN"
+            : language === "ja"
+              ? "ja-JP"
+              : language === "hi"
+                ? "hi-IN"
+                : "en-US"
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       const { onTranscriptPartial, onTranscriptAdd } = callbacksRef.current
