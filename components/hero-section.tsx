@@ -32,40 +32,41 @@ export function HeroSection() {
       {/* Content: headline left, buttons + description right, aligned per reference image */}
       <div className="relative z-10 flex min-h-screen flex-col justify-center pt-[120px] pb-24">
         <div className="mx-auto w-full max-w-[1400px] pl-6 pr-6 sm:pl-12 sm:pr-12 lg:pl-[120px] lg:pr-[120px]">
-          <AnimateOnScroll animateOnMount delay={80} animation="fade-blur">
-            <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[1fr_1fr] lg:grid-rows-[auto_auto] lg:items-end lg:gap-x-[80px] lg:gap-y-4">
-              {/* Left: headline. Right: buttons above description, right-aligned */}
-              <div className="order-1">
-                <h1 className={cn("text-[56px] font-semibold leading-[1.1] tracking-tight", isBright ? "text-black" : "text-white")}>
-                  Find absolute{" "}
-                  <span className="group relative inline-block cursor-default rounded px-1.5 py-0.5 bg-transparent backdrop-blur-xl blur-[3px] transition-all duration-300 hover:blur-none">
-                    clarity
-                  </span>
-                  {" "}with a voice AI that questions, debates, and validates
-                </h1>
-              </div>
-              <div className="order-2 flex flex-col items-start lg:items-end lg:justify-end gap-4">
-                <div className="flex flex-wrap gap-3 sm:gap-4">
-                  <Link href="/download">
-                    <Button className={isBright ? "bg-black text-white hover:bg-black/90" : "bg-white text-black hover:bg-white/90"}>
-                      Download
-                    </Button>
-                  </Link>
-                  <Link href="/demo">
-                    <Button
-                      variant="outline"
-                      className={isBright ? "border-black/30 bg-transparent text-black hover:bg-black/10" : "border-white/20 bg-transparent text-white hover:bg-white/10"}
-                    >
-                      Demo
-                    </Button>
-                  </Link>
-                </div>
-                <p className={cn("text-lg leading-relaxed max-w-[400px] text-left lg:text-right", isBright ? "text-black/70" : "text-white/60")}>
+          <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[1fr_1fr] lg:grid-rows-[auto_auto] lg:items-end lg:gap-x-[80px] lg:gap-y-4">
+            {/* Left: headline - blur to clear a bit slower */}
+            <AnimateOnScroll animateOnMount delay={0} animation="fade-blur-slow" className="order-1">
+              <h1 className={cn("text-[56px] font-semibold leading-[1.1] tracking-tight", isBright ? "text-black" : "text-white")}>
+                Find absolute{" "}
+                <span className="group relative inline-block cursor-default rounded px-1.5 py-0.5 bg-transparent backdrop-blur-xl blur-[3px] transition-all duration-300 hover:blur-none">
+                  clarity
+                </span>
+                {" "}with a voice AI that questions, debates, and validates
+              </h1>
+            </AnimateOnScroll>
+            {/* Right: buttons then description - subtitle appears after headline, buttons last */}
+            <div className="order-2 flex flex-col items-start lg:items-end lg:justify-end gap-4">
+              <AnimateOnScroll animateOnMount delay={900} animation="fade-up" className="flex flex-wrap gap-3 sm:gap-4">
+                <Link href="/download">
+                  <Button className={isBright ? "bg-black text-white hover:bg-black/90" : "bg-white text-black hover:bg-white/90"}>
+                    Download
+                  </Button>
+                </Link>
+                <Link href="/demo">
+                  <Button
+                    variant="outline"
+                    className={isBright ? "border-black/30 bg-transparent text-black hover:bg-black/10" : "border-white/20 bg-transparent text-white hover:bg-white/10"}
+                  >
+                    Demo
+                  </Button>
+                </Link>
+              </AnimateOnScroll>
+              <AnimateOnScroll animateOnMount delay={500} animation="fade-blur" className="w-full max-w-[400px] lg:max-w-none lg:text-right">
+                <p className={cn("text-lg leading-relaxed text-left lg:text-right", isBright ? "text-black/70" : "text-white/60")}>
                   Learning is about how you think. Clarte helps you deep ideate, practice critical thinking, and actively challenging your assumptions.
                 </p>
-              </div>
+              </AnimateOnScroll>
             </div>
-          </AnimateOnScroll>
+          </div>
         </div>
       </div>
     </section>
