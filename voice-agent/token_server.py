@@ -32,7 +32,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-VALID_VOICES = frozenset({"alloy", "ash", "ballad", "coral", "echo", "marin", "sage", "shimmer", "verse", "cedar", "female", "male"})
+VALID_VOICES = frozenset(
+    {
+        # Legacy OpenAI Realtime voice IDs (kept for backward compatibility)
+        "alloy",
+        "ash",
+        "ballad",
+        "coral",
+        "echo",
+        "marin",
+        "sage",
+        "shimmer",
+        "verse",
+        "cedar",
+        # Simple personas for Deepgram mapping
+        "female",
+        "male",
+    }
+)
 
 
 VALID_MODES = frozenset({"casual", "expert", "research"})
@@ -74,7 +91,10 @@ def get_token(body: Optional[TokenRequest] = Body(None)):
     identity = body.identity if body else None
     room_name = body.room_name if body else None
     raw_voice = (body.voice if body else None) or "marin"
-    voice = raw_voice if raw_voice in VALID_VOICES else "marin"
+    # Allow either known persona/legacy IDs or full Deepgram model IDs (e.g. aura-2-thalia-en).
+    voice = raw_voice
+    if raw_voice not in VALID_VOICES and not str(raw_voice).startswith("aura-"):
+        voice = "marin"
     raw_mode = (body.mode if body else None) or "expert"
     mode = raw_mode if raw_mode in VALID_MODES else "expert"
     raw_language = (body.language if body else None) or "en"

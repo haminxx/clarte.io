@@ -21,7 +21,7 @@ export default function DemoPage() {
   const isBright = theme === "bright"
   const [inCall, setInCall] = useState(false)
   const [connectionActive, setConnectionActive] = useState(false)
-  const [selectedVoice, setSelectedVoice] = useState("marin")
+  const [selectedVoice, setSelectedVoice] = useState("aura-2-thalia-en")
   const [selectedLanguage, setSelectedLanguage] = useState<"en" | "ko" | "es" | "zh" | "ja" | "hi">("en")
   const [transcriptEntries, setTranscriptEntries] = useState<{ role: string; content: string }[]>([])
   const [transcriptPartial, setTranscriptPartial] = useState<string>("")

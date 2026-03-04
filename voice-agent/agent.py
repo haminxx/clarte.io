@@ -59,7 +59,10 @@ No premature advice. No filler ("That's a great question!"). 1–2 sentences max
 search_web: Step 3 only. check_schedule: availability. log_feedback: notes. request_screen_share / request_camera: when asked. switch_to_english / switch_to_korean: language switch. show_guidance: math (LaTeX), steps, screen positions (x,y 0–100).
 """
 
-# Persona keys used by the frontend to select Deepgram voices (mapped per-language below).
+# Persona keys used by the frontend to select Deepgram voices.
+# When the value is a full Deepgram model ID (e.g. "aura-2-thalia-en"), we
+# use it directly. When it is a simple persona ("female"/"male"), we resolve
+# via language + env overrides.
 VALID_VOICES = {"female", "male"}
 
 # Emotional tags from Alfred persona: [Curious], [Challenging], [Inspiring], [Objective]
@@ -144,10 +147,20 @@ def _load_voice_profile(profile_id: str) -> Optional[dict]:
 def _resolve_deepgram_model(language: Optional[str], persona: Optional[str]) -> str:
     """Resolve Deepgram Aura model from language + persona, with env overrides.
 
-    We default to Deepgram's recommended Aura-2 model and let callers override per
-    language/persona via env vars like DEEPGRAM_VOICE_EN_FEMALE. This avoids
-    hardcoding invalid model IDs that can cause silent failures.
+    Priority:
+    1) If persona already looks like a Deepgram model ID (e.g. "aura-2-*-en"),
+       use it directly.
+    2) Otherwise, map language + simple persona (\"female\"/\"male\") via
+       DEEPGRAM_VOICE_{LANG}_{PERSONA} env vars.
+    3) Fallback to DEFAULT_DEEPGRAM_MODEL.
     """
+    # 1) Direct model ID passthrough (used by demo voice dropdown).
+    if persona and isinstance(persona, str):
+        p = persona.strip()
+        if p.startswith("aura-"):
+            return p
+
+    # 2) Language + persona mapping via env vars.
     lang = (language or "en").lower()
     if lang not in VALID_LANGUAGES:
         lang = "en"
@@ -160,19 +173,26 @@ def _resolve_deepgram_model(language: Optional[str], persona: Optional[str]) -> 
     if override:
         return override
 
+    # 3) Safe default known-good model.
     return DEFAULT_DEEPGRAM_MODEL
 
 
 def _parse_metadata(job) -> dict:
-    """Parse job metadata; returns defaults if missing or invalid."""
+    """Parse job metadata; returns defaults if missing or invalid.
+
+    Metadata is injected by the token server via RoomAgentDispatch. Example:
+    {"voice": "aura-2-thalia-en", "mode": "casual", "language": "en", "user_name": "Alex"}
+    """
     out = {"voice": "female", "mode": "expert", "language": "en", "user_name": None, "voice_profile_id": None}
     try:
         meta = getattr(job, "metadata", None) if job else None
         if not meta:
             return out
         data = json.loads(meta) if isinstance(meta, str) else meta
-        if data.get("voice") in VALID_VOICES:
-            out["voice"] = data["voice"]
+        v = data.get("voice")
+        # Accept either simple personas, legacy OpenAI IDs, or full Deepgram model IDs.
+        if isinstance(v, str) and v.strip():
+            out["voice"] = v.strip()
         if data.get("mode") in ("casual", "expert", "research"):
             out["mode"] = data["mode"]
         if data.get("language") in VALID_LANGUAGES:

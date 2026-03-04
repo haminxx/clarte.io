@@ -99,7 +99,8 @@ export function DemoPreviewSection() {
     >
       <div
         className={cn(
-          "w-full pb-16 flex flex-col transition-[max-width,padding,height,border-radius] duration-500 ease-out",
+          // Slightly slower, smoother expand/collapse for container
+          "w-full pb-16 flex flex-col transition-[max-width,padding,height,border-radius] duration-800 ease-in-out",
           expanded ? "mx-auto max-w-none px-0" : "mx-auto max-w-7xl px-6 sm:px-12 lg:px-16"
         )}
       >
@@ -112,15 +113,16 @@ export function DemoPreviewSection() {
             }
             sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
           }}
-            className={cn(
-              "relative w-full overflow-hidden bg-black text-left transition-[height,border-radius,max-width] duration-500 ease-out",
-              expanded
-                ? "h-screen min-h-screen rounded-none"
-                : "h-[33vh] rounded-3xl shadow-2xl",
-              !expanded && "duration-700 ease-out transition-opacity transition-transform",
-              !mounted && !expanded && "opacity-0 translate-y-6",
-              mounted && !expanded && "opacity-100 translate-y-0"
-            )}
+          className={cn(
+            // Slower card expansion/collapse and entrance for a more relaxed feel
+            "relative w-full overflow-hidden bg-black text-left transition-[height,border-radius,max-width] duration-800 ease-in-out",
+            expanded
+              ? "h-screen min-h-screen rounded-none"
+              : "h-[33vh] rounded-3xl shadow-2xl",
+            !expanded && "duration-1000 ease-out transition-opacity transition-transform",
+            !mounted && !expanded && "opacity-0 translate-y-6",
+            mounted && !expanded && "opacity-100 translate-y-0"
+          )}
           style={expanded ? undefined : {}}
           aria-label="Expand demo preview"
         >

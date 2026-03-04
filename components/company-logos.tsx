@@ -2,42 +2,42 @@
 
 import { AnimateOnScroll } from "./animate-on-scroll"
 
-// Use official / reputable logo sources. UCSD uses its wordmark from Wikimedia;
-// the rest use Simple Icons CDN, which serves SVGs in brand colors.
+// Use official / reputable logo sources with transparent backgrounds where possible.
+// These URLs are chosen from brand/asset or well-known logo repositories.
 const logos = [
   {
     name: "UC San Diego",
-    src: "https://upload.wikimedia.org/wikipedia/commons/f/f6/UCSD_logo.png",
+    src: "https://upload.wikimedia.org/wikipedia/commons/0/0b/UC_San_Diego_logo.svg",
     alt: "UC San Diego logo",
   },
   {
     name: "OpenAI",
-    src: "https://cdn.simpleicons.org/openai",
+    src: "https://upload.wikimedia.org/wikipedia/commons/4/42/OpenAI_Logo_2025.svg",
     alt: "OpenAI logo",
   },
   {
     name: "LiveKit",
-    src: "https://cdn.simpleicons.org/livekit",
+    src: "https://logo.clearbit.com/livekit.io",
     alt: "LiveKit logo",
   },
   {
     name: "Render",
-    src: "https://cdn.simpleicons.org/render",
+    src: "https://seeklogo.com/images/R/render-logo-AF0E91E35F-seeklogo.com.png",
     alt: "Render logo",
   },
   {
     name: "Cursor",
-    src: "https://cdn.simpleicons.org/cursor",
+    src: "https://vectorseek.com/wp-content/uploads/2023/10/Cursor-AI-Logo-PNG-Vector.svg",
     alt: "Cursor logo",
   },
   {
     name: "Deepgram",
-    src: "https://cdn.simpleicons.org/deepgram",
+    src: "https://logo.svgcdn.com/simple-icons/deepgram-dark.png",
     alt: "Deepgram logo",
   },
   {
     name: "Anthropic",
-    src: "https://cdn.simpleicons.org/anthropic",
+    src: "https://logo.svgcdn.com/l/anthropic.png",
     alt: "Anthropic logo",
   },
 ]

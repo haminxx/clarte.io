@@ -11,10 +11,13 @@ import {
 } from "@/components/ui/select"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 
-/** Voice persona options used to select Deepgram Aura voices on the backend. */
+/** Deepgram Aura-2 voice options exposed on the demo page. */
 export const VOICE_OPTIONS = [
-  { name: "Female", voiceId: "female" },
-  { name: "Male", voiceId: "male" },
+  { name: "Thalia (EN)", voiceId: "aura-2-thalia-en" },
+  { name: "Andromeda (EN)", voiceId: "aura-2-andromeda-en" },
+  { name: "Helena (EN)", voiceId: "aura-2-helena-en" },
+  { name: "Apollo (EN)", voiceId: "aura-2-apollo-en" },
+  { name: "Arcas (EN)", voiceId: "aura-2-arcas-en" },
 ] as const
 
 export const LANGUAGE_OPTIONS = [
@@ -40,7 +43,7 @@ interface VoiceCardProps {
 export function VoiceCard({
   onStartCall,
   isActive,
-  selectedVoiceId = "female",
+  selectedVoiceId = "aura-2-thalia-en",
   onVoiceChange,
   selectedLanguage = "en",
   onLanguageChange,

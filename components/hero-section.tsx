@@ -62,8 +62,9 @@ export function HeroSection() {
               </AnimateOnScroll>
               <AnimateOnScroll animateOnMount delay={500} animation="fade-blur" className="w-full max-w-[400px] lg:max-w-none lg:text-right">
                 <div className={cn("text-lg leading-relaxed text-left lg:text-right space-y-1", isBright ? "text-black/70" : "text-white/60")}>
-                  <p>Learning is about how you think.</p>
-                  <p>Clarte helps you deep ideate, practice critical thinking, and actively challenging your assumptions.</p>
+                  <p>Learning is about how you think, not just what you know</p>
+                  <p>Clarte challenges you to think critically, pivot instantly,</p>
+                  <p>and build true cognitive flexibility in the moment</p>
                 </div>
               </AnimateOnScroll>
             </div>
