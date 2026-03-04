@@ -1,42 +1,43 @@
 "use client"
 
-import Image from "next/image"
 import { AnimateOnScroll } from "./animate-on-scroll"
 
+// Use official / reputable logo sources. UCSD uses its wordmark from Wikimedia;
+// the rest use Simple Icons CDN, which serves SVGs in brand colors.
 const logos = [
   {
     name: "UC San Diego",
-    src: "/logos/uc-san-diego.png",
+    src: "https://upload.wikimedia.org/wikipedia/commons/f/f6/UCSD_logo.png",
     alt: "UC San Diego logo",
   },
   {
     name: "OpenAI",
-    src: "/logos/openai.png",
+    src: "https://cdn.simpleicons.org/openai",
     alt: "OpenAI logo",
   },
   {
     name: "LiveKit",
-    src: "/logos/livekit.png",
+    src: "https://cdn.simpleicons.org/livekit",
     alt: "LiveKit logo",
   },
   {
     name: "Render",
-    src: "/logos/render.png",
+    src: "https://cdn.simpleicons.org/render",
     alt: "Render logo",
   },
   {
-    name: "Cursor AI",
-    src: "/logos/cursor-ai.png",
-    alt: "Cursor AI logo",
+    name: "Cursor",
+    src: "https://cdn.simpleicons.org/cursor",
+    alt: "Cursor logo",
   },
   {
     name: "Deepgram",
-    src: "/logos/deepgram.png",
+    src: "https://cdn.simpleicons.org/deepgram",
     alt: "Deepgram logo",
   },
   {
     name: "Anthropic",
-    src: "/logos/anthropic.png",
+    src: "https://cdn.simpleicons.org/anthropic",
     alt: "Anthropic logo",
   },
 ]
@@ -58,12 +59,11 @@ export function CompanyLogos() {
                 className="inline-flex items-center justify-center px-6 py-3"
                 aria-label={logo.name}
               >
-                <Image
+                <img
                   src={logo.src}
                   alt={logo.alt}
-                  width={180}
-                  height={56}
-                  className="h-10 sm:h-12 w-auto object-contain"
+                  className="h-8 sm:h-10 w-auto object-contain"
+                  loading="lazy"
                 />
               </div>
             ))}

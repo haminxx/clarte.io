@@ -94,17 +94,7 @@ FOLLOW_UP_PHRASES_KO = [
 ]
 
 
-# Default Deepgram Aura-2 models per language + persona.
-# These can be overridden via env vars like DEEPGRAM_VOICE_EN_FEMALE, etc.
-DEEPGRAM_VOICE_MAP = {
-    "en": {"female": "aura-2-andromeda-en", "male": "aura-2-hermes-en"},
-    "es": {"female": "aura-2-celeste-es", "male": "aura-2-nestor-es"},
-    # For languages without dedicated Aura-2 voices configured yet, we fall back to English.
-    "ko": {"female": "aura-2-andromeda-en", "male": "aura-2-hermes-en"},
-    "zh": {"female": "aura-2-andromeda-en", "male": "aura-2-hermes-en"},
-    "ja": {"female": "aura-2-andromeda-en", "male": "aura-2-hermes-en"},
-    "hi": {"female": "aura-2-andromeda-en", "male": "aura-2-hermes-en"},
-}
+DEFAULT_DEEPGRAM_MODEL = "aura-2-asteria-en"
 
 
 def _get_firebase_admin():
@@ -152,7 +142,12 @@ def _load_voice_profile(profile_id: str) -> Optional[dict]:
 
 
 def _resolve_deepgram_model(language: Optional[str], persona: Optional[str]) -> str:
-    """Resolve Deepgram Aura model from language + persona, with env overrides."""
+    """Resolve Deepgram Aura model from language + persona, with env overrides.
+
+    We default to Deepgram's recommended Aura-2 model and let callers override per
+    language/persona via env vars like DEEPGRAM_VOICE_EN_FEMALE. This avoids
+    hardcoding invalid model IDs that can cause silent failures.
+    """
     lang = (language or "en").lower()
     if lang not in VALID_LANGUAGES:
         lang = "en"
@@ -165,8 +160,7 @@ def _resolve_deepgram_model(language: Optional[str], persona: Optional[str]) -> 
     if override:
         return override
 
-    per_lang = DEEPGRAM_VOICE_MAP.get(lang) or DEEPGRAM_VOICE_MAP["en"]
-    return per_lang.get(persona_key, DEEPGRAM_VOICE_MAP["en"]["female"])
+    return DEFAULT_DEEPGRAM_MODEL
 
 
 def _parse_metadata(job) -> dict:
@@ -258,6 +252,9 @@ class ExecutiveAssistantAgent(Agent):
 
         audio_stream = await Agent.default.tts_node(self, stripped_text(), model_settings)
         if audio_stream is None:
+            logger.error(
+                "Deepgram TTS returned no audio stream. Check DEEPGRAM_API_KEY and model configuration."
+            )
             return None
 
         t_first_tts: Optional[float] = None

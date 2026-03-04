@@ -16,34 +16,77 @@ export function DemoPreviewSection() {
 
   const isBright = theme === "bright"
   const mediaType: DemoPreviewMediaType = DEMO_PREVIEW_TYPE === "video" ? "video" : "gif"
+  const [hasScrolled, setHasScrolled] = useState(false)
 
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 1100)
     return () => clearTimeout(t)
   }, [])
 
+  // Track whether the user has actually scrolled, so we don't auto-expand on initial load.
+  useEffect(() => {
+    const handleScrollOnce = () => {
+      if (window.scrollY > 10) {
+        setHasScrolled(true)
+        window.removeEventListener("scroll", handleScrollOnce)
+      }
+    }
+    window.addEventListener("scroll", handleScrollOnce, { passive: true })
+    return () => window.removeEventListener("scroll", handleScrollOnce)
+  }, [])
+
+  // Scroll-driven expand / collapse with hysteresis to avoid \"shaking\" at the threshold.
   useEffect(() => {
     const section = sectionRef.current
     if (!section) return
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setExpanded(true)
-          if (videoRef.current && mediaType === "video") {
-            videoRef.current.play().catch(() => {})
-          }
-        } else {
-          if (videoRef.current) videoRef.current.pause()
-          setExpanded(false)
-        }
-      },
-      { threshold: 0.35, rootMargin: "0px" }
-    )
+    let frameRequested = false
 
-    observer.observe(section)
-    return () => observer.disconnect()
-  }, [mediaType])
+    const handleScroll = () => {
+      if (!section) return
+      if (frameRequested) return
+      frameRequested = true
+      requestAnimationFrame(() => {
+        frameRequested = false
+        const rect = section.getBoundingClientRect()
+        const viewportHeight = window.innerHeight || 0
+        if (viewportHeight <= 0 || rect.height <= 0) return
+
+        const visibleTop = Math.max(0, rect.top)
+        const visibleBottom = Math.min(viewportHeight, rect.bottom)
+        const visibleHeight = Math.max(0, visibleBottom - visibleTop)
+        const ratio = visibleHeight / rect.height
+        const scrollY = window.scrollY || window.pageYOffset || 0
+
+        // Only auto-expand after the user has scrolled a bit, and when ~50%+ is visible.
+        const shouldExpand = hasScrolled && ratio >= 0.5
+        // Only auto-collapse when the user is effectively back at the top and the card is mostly compact.
+        const shouldCollapse = scrollY < 12 && ratio < 0.45
+
+        setExpanded((prev) => {
+          if (!prev && shouldExpand) {
+            if (videoRef.current && mediaType === "video") {
+              videoRef.current.play().catch(() => {})
+            }
+            return true
+          }
+          if (prev && shouldCollapse) {
+            if (videoRef.current) {
+              videoRef.current.pause()
+            }
+            return false
+          }
+          return prev
+        })
+      })
+    }
+
+    window.addEventListener("scroll", handleScroll, { passive: true })
+    // Run once on mount to ensure we don't start expanded.
+    handleScroll()
+
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [hasScrolled, mediaType])
 
   return (
     <section
