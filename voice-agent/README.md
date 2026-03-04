@@ -22,6 +22,8 @@ Executive Assistant voice agent with two paths:
 
 **Tier 2/3:** Add `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `NEXT_PUBLIC_LIVEKIT_URL`.
 
+**Voice profiles (optional):** For custom/cloned Deepgram voices (dashboard, desktop, iOS), the token server and agent use Firestore. Set `FIREBASE_SERVICE_ACCOUNT` (JSON string) in the token server (and agent) environment. Authenticated clients can create/list/update/delete records in the `voiceProfiles` collection and pass `voice_profile_id` when requesting a token; the agent will use the profile's `deepgram_model` when `status == "ready"`.
+
 Frontend vars are baked in at **build time** (Next.js). Backend vars are read at **runtime** by the Python process.
 
 ## OpenAI Realtime API – Cost & Pipeline

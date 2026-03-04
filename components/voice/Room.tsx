@@ -430,7 +430,8 @@ async function fetchToken(
   mode: CallMode,
   voice?: string,
   language?: SupportedLanguage,
-  user_name?: string | null
+  user_name?: string | null,
+  voiceProfileId?: string | null
 ): Promise<{ token: string; room: string } | { error: string }> {
   const normalizedLanguage: SupportedLanguage =
     language && ["en", "ko", "es", "zh", "ja", "hi"].includes(language)
@@ -445,6 +446,10 @@ async function fetchToken(
   const trimmed = user_name?.trim?.()
   if (trimmed && trimmed !== "undefined" && trimmed !== "null" && !trimmed.startsWith("user-") && trimmed.length >= 2) {
     body.user_name = trimmed
+  }
+  const vpId = voiceProfileId?.trim?.()
+  if (vpId && vpId.length >= 3) {
+    body.voice_profile_id = vpId
   }
   const res = await fetch(tokenUrl, {
     method: "POST",
@@ -500,6 +505,8 @@ interface RoomProps {
   onTranscriptAdd?: (role: string, content: string) => void
   /** Called when partial transcript is received (real-time word-by-word). */
   onTranscriptPartial?: (role: string, content: string) => void
+  /** Optional: Deepgram VoiceProfile ID for cloned/custom voices (dashboard/desktop/iOS, not demo). */
+  voiceProfileId?: string | null
 }
 
 export function Room({
@@ -520,6 +527,7 @@ export function Room({
   onConversationSaved,
   onTranscriptAdd,
   onTranscriptPartial,
+  voiceProfileId,
 }: RoomProps) {
   const [token, setToken] = useState<string | null>(null)
   const [roomName, setRoomName] = useState<string | null>(null)
@@ -624,7 +632,7 @@ export function Room({
       }
     }
     try {
-      const result = await fetchToken(tokenUrl, mode, voice, language, userDisplayName)
+      const result = await fetchToken(tokenUrl, mode, voice, language, userDisplayName, voiceProfileId ?? null)
       if ("error" in result) {
         setError(result.error)
         setStatus("error")
@@ -638,7 +646,7 @@ export function Room({
       setError(e instanceof Error ? e.message : "Failed to get token")
       setStatus("error")
     }
-  }, [mode, voice, language, userDisplayName, onConnectionActive])
+  }, [mode, voice, language, userDisplayName, voiceProfileId, onConnectionActive])
 
   const configured = Boolean(LIVEKIT_URL)
 

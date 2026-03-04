@@ -32,11 +32,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-VALID_VOICES = frozenset({"alloy", "ash", "ballad", "coral", "echo", "marin", "sage", "shimmer", "verse", "cedar"})
+VALID_VOICES = frozenset({"alloy", "ash", "ballad", "coral", "echo", "marin", "sage", "shimmer", "verse", "cedar", "female", "male"})
 
 
 VALID_MODES = frozenset({"casual", "expert", "research"})
 VALID_LANGUAGES = frozenset({"en", "ko", "es", "zh", "ja", "hi"})
+
+VALID_PERSONAS = frozenset({"female", "male"})
 
 
 class TokenRequest(BaseModel):
@@ -46,6 +48,7 @@ class TokenRequest(BaseModel):
     mode: Optional[str] = None
     language: Optional[str] = None
     user_name: Optional[str] = None
+    voice_profile_id: Optional[str] = None
 
 
 @app.get("/health")
@@ -85,6 +88,10 @@ def get_token(body: Optional[TokenRequest] = Body(None)):
             if not v.startswith("user-") and len(v) >= 2 and not re.match(r"^[a-z0-9]{8,36}$", v):
                 user_name = v
 
+    voice_profile_id = (body.voice_profile_id if body else None) or None
+    if voice_profile_id and (not isinstance(voice_profile_id, str) or len(voice_profile_id.strip()) < 3):
+        voice_profile_id = None
+
     try:
         from livekit.api import (
             AccessToken,
@@ -101,6 +108,8 @@ def get_token(body: Optional[TokenRequest] = Body(None)):
         meta = {"voice": voice, "mode": mode, "language": language}
         if user_name:
             meta["user_name"] = user_name
+        if voice_profile_id:
+            meta["voice_profile_id"] = voice_profile_id
         at.with_room_config(
             RoomConfiguration(
                 agents=[
@@ -123,6 +132,27 @@ class SaveConversationRequest(BaseModel):
     user_id: str
     transcript: list[dict[str, str]] = []
     room_name: Optional[str] = None
+
+
+class VoiceProfileBase(BaseModel):
+    name: str
+    deepgram_model: str
+    language: Optional[str] = None
+    persona: Optional[str] = None
+    description: Optional[str] = None
+
+
+class VoiceProfileCreate(VoiceProfileBase):
+    pass
+
+
+class VoiceProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    deepgram_model: Optional[str] = None
+    language: Optional[str] = None
+    persona: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[str] = None
 
 
 def _get_firebase_admin():
@@ -160,6 +190,195 @@ def _verify_firebase_token(token: str) -> Optional[str]:
     except Exception as e:
         logger.debug("Token verification failed: %s", e)
         return None
+
+
+def _get_firestore_client():
+    admin = _get_firebase_admin()
+    if not admin:
+        return None
+    try:
+        from firebase_admin import firestore
+        return firestore.client()
+    except Exception as e:
+        logger.debug("Firestore client not available: %s", e)
+        return None
+
+
+def _serialize_voice_profile(doc) -> dict:
+    data = doc.to_dict() or {}
+    data["id"] = doc.id
+    return data
+
+
+@app.get("/voice-profiles")
+def list_voice_profiles(authorization: Optional[str] = Header(None)):
+    token = (authorization or "").replace("Bearer ", "").strip()
+    if not token:
+        raise HTTPException(status_code=401, detail="Authorization required")
+    uid = _verify_firebase_token(token)
+    if not uid:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+    db = _get_firestore_client()
+    if not db:
+        raise HTTPException(status_code=503, detail="Firebase not configured for voice profiles")
+    try:
+        docs = db.collection("voiceProfiles").where("user_id", "==", uid).stream()
+        out = [_serialize_voice_profile(d) for d in docs]
+        out.sort(key=lambda x: (x.get("created_at") or ""), reverse=True)
+        return out
+    except Exception as e:
+        logger.exception("Failed to list voice profiles: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to list voice profiles")
+
+
+@app.post("/voice-profiles")
+def create_voice_profile(body: VoiceProfileCreate, authorization: Optional[str] = Header(None)):
+    token = (authorization or "").replace("Bearer ", "").strip()
+    if not token:
+        raise HTTPException(status_code=401, detail="Authorization required")
+    uid = _verify_firebase_token(token)
+    if not uid:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+    db = _get_firestore_client()
+    if not db:
+        raise HTTPException(status_code=503, detail="Firebase not configured for voice profiles")
+    name = body.name.strip()
+    deepgram_model = body.deepgram_model.strip()
+    if not name or not deepgram_model:
+        raise HTTPException(status_code=400, detail="name and deepgram_model are required")
+    language = (body.language or "").strip().lower() or None
+    if language and language not in VALID_LANGUAGES:
+        language = None
+    persona = (body.persona or "").strip().lower() or None
+    if persona and persona not in VALID_PERSONAS:
+        persona = None
+    description = (body.description or "").strip() or None
+    try:
+        from firebase_admin.firestore import SERVER_TIMESTAMP
+        doc_ref = db.collection("voiceProfiles").document()
+        doc_ref.set({
+            "user_id": uid,
+            "name": name,
+            "deepgram_model": deepgram_model,
+            "language": language,
+            "persona": persona,
+            "description": description,
+            "status": "ready",
+            "created_at": SERVER_TIMESTAMP,
+            "updated_at": SERVER_TIMESTAMP,
+        })
+        doc = doc_ref.get()
+        logger.info("Created voice profile %s for user %s", doc_ref.id, uid)
+        return _serialize_voice_profile(doc)
+    except Exception as e:
+        logger.exception("Failed to create voice profile: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to create voice profile")
+
+
+@app.get("/voice-profiles/{profile_id}")
+def get_voice_profile(profile_id: str, authorization: Optional[str] = Header(None)):
+    token = (authorization or "").replace("Bearer ", "").strip()
+    if not token:
+        raise HTTPException(status_code=401, detail="Authorization required")
+    uid = _verify_firebase_token(token)
+    if not uid:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+    db = _get_firestore_client()
+    if not db:
+        raise HTTPException(status_code=503, detail="Firebase not configured for voice profiles")
+    try:
+        doc_ref = db.collection("voiceProfiles").document(profile_id)
+        doc = doc_ref.get()
+        if not doc.exists:
+            raise HTTPException(status_code=404, detail="Voice profile not found")
+        data = doc.to_dict() or {}
+        if data.get("user_id") != uid:
+            raise HTTPException(status_code=403, detail="Unauthorized")
+        return _serialize_voice_profile(doc)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Failed to fetch voice profile %s: %s", profile_id, e)
+        raise HTTPException(status_code=500, detail="Failed to fetch voice profile")
+
+
+@app.patch("/voice-profiles/{profile_id}")
+def update_voice_profile(profile_id: str, body: VoiceProfileUpdate, authorization: Optional[str] = Header(None)):
+    token = (authorization or "").replace("Bearer ", "").strip()
+    if not token:
+        raise HTTPException(status_code=401, detail="Authorization required")
+    uid = _verify_firebase_token(token)
+    if not uid:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+    db = _get_firestore_client()
+    if not db:
+        raise HTTPException(status_code=503, detail="Firebase not configured for voice profiles")
+    try:
+        from firebase_admin.firestore import SERVER_TIMESTAMP
+        doc_ref = db.collection("voiceProfiles").document(profile_id)
+        doc = doc_ref.get()
+        if not doc.exists:
+            raise HTTPException(status_code=404, detail="Voice profile not found")
+        current = doc.to_dict() or {}
+        if current.get("user_id") != uid:
+            raise HTTPException(status_code=403, detail="Unauthorized")
+        updates = {"updated_at": SERVER_TIMESTAMP}
+        if body.name is not None:
+            updates["name"] = body.name.strip()
+        if body.deepgram_model is not None:
+            updates["deepgram_model"] = body.deepgram_model.strip()
+        if body.language is not None:
+            lang = body.language.strip().lower() or None
+            if lang and lang not in VALID_LANGUAGES:
+                lang = None
+            updates["language"] = lang
+        if body.persona is not None:
+            p = body.persona.strip().lower() or None
+            if p and p not in VALID_PERSONAS:
+                p = None
+            updates["persona"] = p
+        if body.description is not None:
+            updates["description"] = body.description.strip() or None
+        if body.status is not None:
+            updates["status"] = body.status.strip() or None
+        doc_ref.update(updates)
+        doc = doc_ref.get()
+        logger.info("Updated voice profile %s for user %s", profile_id, uid)
+        return _serialize_voice_profile(doc)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Failed to update voice profile %s: %s", profile_id, e)
+        raise HTTPException(status_code=500, detail="Failed to update voice profile")
+
+
+@app.delete("/voice-profiles/{profile_id}")
+def delete_voice_profile(profile_id: str, authorization: Optional[str] = Header(None)):
+    token = (authorization or "").replace("Bearer ", "").strip()
+    if not token:
+        raise HTTPException(status_code=401, detail="Authorization required")
+    uid = _verify_firebase_token(token)
+    if not uid:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+    db = _get_firestore_client()
+    if not db:
+        raise HTTPException(status_code=503, detail="Firebase not configured for voice profiles")
+    try:
+        doc_ref = db.collection("voiceProfiles").document(profile_id)
+        doc = doc_ref.get()
+        if not doc.exists:
+            raise HTTPException(status_code=404, detail="Voice profile not found")
+        data = doc.to_dict() or {}
+        if data.get("user_id") != uid:
+            raise HTTPException(status_code=403, detail="Unauthorized")
+        doc_ref.delete()
+        logger.info("Deleted voice profile %s for user %s", profile_id, uid)
+        return {"ok": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Failed to delete voice profile %s: %s", profile_id, e)
+        raise HTTPException(status_code=500, detail="Failed to delete voice profile")
 
 
 @app.post("/conversations/save")

@@ -1,7 +1,7 @@
 """
 Clarte – Executive Assistant voice agent.
 Single unified agent: proactive briefing, feedback, research. Tools: schedule, search, memory.
-Uses OpenAI Realtime for understanding + ElevenLabs TTS for realistic voice output.
+Uses OpenAI Realtime for understanding (STT + LLM) and Deepgram Aura for text-to-speech output.
 """
 import asyncio
 import json
@@ -10,7 +10,6 @@ import os
 import random
 import re
 import time
-import urllib.request
 from typing import AsyncIterable, Optional
 
 from dotenv import load_dotenv
@@ -18,17 +17,11 @@ from livekit import agents
 from livekit import rtc
 from livekit.agents import Agent, AgentServer, AgentSession, AutoSubscribe, ModelSettings, RunContext, UserInputTranscribedEvent, function_tool
 from livekit.agents.voice import room_io
-from livekit.plugins import openai, elevenlabs
+from livekit.plugins import openai, deepgram
 
 load_dotenv()
 
 logger = logging.getLogger(__name__)
-
-# ElevenLabs voice IDs: Marin (female) -> Rachel, Cedar (male) -> Adam
-ELEVENLABS_VOICE_IDS = {
-    "marin": "EXAVITQu4vr4xnSDxMaL",  # Rachel - female
-    "cedar": "pNInz6obpgDQGcFmaJgB",  # Adam - male
-}
 
 EXECUTIVE_ASSISTANT_PROMPT = """
 You are Clarte, an Alfred-style Voice AI: guide users to their own clarity using the Rubber Duck theory and Golden Circle (Why, How, What). Never give direct advice prematurely.
@@ -66,7 +59,8 @@ No premature advice. No filler ("That's a great question!"). 1–2 sentences max
 search_web: Step 3 only. check_schedule: availability. log_feedback: notes. request_screen_share / request_camera: when asked. switch_to_english / switch_to_korean: language switch. show_guidance: math (LaTeX), steps, screen positions (x,y 0–100).
 """
 
-VALID_VOICES = {"alloy", "ash", "ballad", "coral", "echo", "marin", "sage", "shimmer", "verse", "cedar"}
+# Persona keys used by the frontend to select Deepgram voices (mapped per-language below).
+VALID_VOICES = {"female", "male"}
 
 # Emotional tags from Alfred persona: [Curious], [Challenging], [Inspiring], [Objective]
 # Stripped before TTS so the user does not hear them spoken aloud.
@@ -76,22 +70,6 @@ _EMOTIONAL_TAG_RE = re.compile(r"^\[[^\]]+\]\s*")
 def _strip_emotional_tags(text: str) -> str:
     """Remove leading [Tag] prefix from agent responses before TTS synthesis."""
     return _EMOTIONAL_TAG_RE.sub("", text, count=1)
-
-
-def _validate_elevenlabs_key(api_key: str) -> bool:
-    """Validate ElevenLabs API key with a minimal request. Returns True if valid."""
-    if not api_key or not api_key.strip():
-        return False
-    try:
-        req = urllib.request.Request(
-            "https://api.elevenlabs.io/v1/user",
-            headers={"xi-api-key": api_key.strip(), "Content-Type": "application/json"},
-        )
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            return resp.status == 200
-    except Exception as e:
-        logger.debug("ElevenLabs key validation failed: %s", e)
-        return False
 
 
 VALID_LANGUAGES = {"en", "ko", "es", "zh", "ja", "hi"}
@@ -116,9 +94,84 @@ FOLLOW_UP_PHRASES_KO = [
 ]
 
 
+# Default Deepgram Aura-2 models per language + persona.
+# These can be overridden via env vars like DEEPGRAM_VOICE_EN_FEMALE, etc.
+DEEPGRAM_VOICE_MAP = {
+    "en": {"female": "aura-2-andromeda-en", "male": "aura-2-hermes-en"},
+    "es": {"female": "aura-2-celeste-es", "male": "aura-2-nestor-es"},
+    # For languages without dedicated Aura-2 voices configured yet, we fall back to English.
+    "ko": {"female": "aura-2-andromeda-en", "male": "aura-2-hermes-en"},
+    "zh": {"female": "aura-2-andromeda-en", "male": "aura-2-hermes-en"},
+    "ja": {"female": "aura-2-andromeda-en", "male": "aura-2-hermes-en"},
+    "hi": {"female": "aura-2-andromeda-en", "male": "aura-2-hermes-en"},
+}
+
+
+def _get_firebase_admin():
+    """Lazy-init Firebase Admin. Returns None if not configured."""
+    try:
+        import firebase_admin
+        from firebase_admin import credentials
+
+        try:
+            firebase_admin.get_app()
+        except ValueError:
+            cred_json = os.getenv("FIREBASE_SERVICE_ACCOUNT")
+            if cred_json:
+                cred = credentials.Certificate(json.loads(cred_json))
+                firebase_admin.initialize_app(cred)
+            else:
+                return None
+        return firebase_admin
+    except Exception as e:
+        logger.debug("Firebase Admin not available in agent: %s", e)
+        return None
+
+
+def _load_voice_profile(profile_id: str) -> Optional[dict]:
+    """Fetch a VoiceProfile from Firestore by ID. Returns dict with deepgram_model, etc., or None."""
+    if not profile_id or not isinstance(profile_id, str):
+        return None
+    admin = _get_firebase_admin()
+    if not admin:
+        return None
+    try:
+        from firebase_admin import firestore
+        db = firestore.client()
+        doc_ref = db.collection("voiceProfiles").document(profile_id)
+        doc = doc_ref.get()
+        if not doc.exists:
+            return None
+        data = doc.to_dict() or {}
+        if data.get("status") and str(data["status"]).lower() != "ready":
+            return None
+        return data
+    except Exception as e:
+        logger.debug("Failed to load voice profile %s: %s", profile_id, e)
+        return None
+
+
+def _resolve_deepgram_model(language: Optional[str], persona: Optional[str]) -> str:
+    """Resolve Deepgram Aura model from language + persona, with env overrides."""
+    lang = (language or "en").lower()
+    if lang not in VALID_LANGUAGES:
+        lang = "en"
+    persona_key = (persona or "female").lower()
+    if persona_key not in VALID_VOICES:
+        persona_key = "female"
+
+    env_key = f"DEEPGRAM_VOICE_{lang.upper()}_{persona_key.upper()}"
+    override = os.environ.get(env_key, "").strip()
+    if override:
+        return override
+
+    per_lang = DEEPGRAM_VOICE_MAP.get(lang) or DEEPGRAM_VOICE_MAP["en"]
+    return per_lang.get(persona_key, DEEPGRAM_VOICE_MAP["en"]["female"])
+
+
 def _parse_metadata(job) -> dict:
     """Parse job metadata; returns defaults if missing or invalid."""
-    out = {"voice": "marin", "mode": "expert", "language": "en", "user_name": None}
+    out = {"voice": "female", "mode": "expert", "language": "en", "user_name": None, "voice_profile_id": None}
     try:
         meta = getattr(job, "metadata", None) if job else None
         if not meta:
@@ -136,6 +189,11 @@ def _parse_metadata(job) -> dict:
             if val and val.lower() not in INVALID_NAMES:
                 if not val.startswith("user-") and len(val) >= 2 and not re.match(r"^[a-z0-9]{8,36}$", val):
                     out["user_name"] = val
+        vp_id = data.get("voice_profile_id")
+        if isinstance(vp_id, str):
+            v = vp_id.strip()
+            if 3 <= len(v) <= 200:
+                out["voice_profile_id"] = v
     except Exception:
         pass
     return out
@@ -293,13 +351,10 @@ class ExecutiveAssistantAgent(Agent):
         description="Switch to speaking in English. Call when the user asks you to speak in English.",
     )
     async def switch_to_english(self, context: RunContext) -> str:
-        """Switch TTS language to English."""
-        if self._session and hasattr(self._session, "tts") and self._session.tts is not None:
-            if hasattr(self._session.tts, "update_options"):
-                self._session.tts.update_options(language="en")
-                logger.info("Switched TTS to English")
-                return "Switched to English. I will now respond in English."
-        return "Language switch not available (using OpenAI voice). I will still respond in English."
+        """Inform the user that English responses are now preferred."""
+        # With Deepgram-only TTS, language is driven by the metadata passed from the client.
+        # This tool mainly exists so the LLM can acknowledge the switch.
+        return "Got it. I will respond in English from now on."
 
     @function_tool(
         description="Show visual guidance to the user: text explanation, math equation, or highlight circles/boxes on screen. Use when user needs step-by-step help, math explanation, or to be shown where to look or click. For math use LaTeX. For highlights use percentages (0-100) for x, y, radius, width, height.",
@@ -353,13 +408,8 @@ class ExecutiveAssistantAgent(Agent):
         description="Switch to speaking in Korean. Call when the user asks you to speak in Korean (e.g. '한국어로 말해줘').",
     )
     async def switch_to_korean(self, context: RunContext) -> str:
-        """Switch TTS language to Korean."""
-        if self._session and hasattr(self._session, "tts") and self._session.tts is not None:
-            if hasattr(self._session.tts, "update_options"):
-                self._session.tts.update_options(language="ko")
-                logger.info("Switched TTS to Korean")
-                return "한국어로 전환했습니다. 이제 한국어로 응답하겠습니다."
-        return "Language switch not available (using OpenAI voice). I will still respond in Korean."
+        """Inform the user that Korean responses are now preferred."""
+        return "한국어로 전환하겠습니다. 이제 한국어로 응답할게요."
 
 
 server = AgentServer()
@@ -371,6 +421,7 @@ async def entrypoint(ctx: agents.JobContext) -> None:
     logger.info("entrypoint started")
     meta = _parse_metadata(getattr(ctx, "job", None))
     voice, mode, language, user_name = meta["voice"], meta["mode"], meta["language"], meta.get("user_name")
+    voice_profile_id = meta.get("voice_profile_id")
 
     auto_sub = AutoSubscribe.SUBSCRIBE_ALL  # receive audio + screen/camera when user enables them
     await ctx.connect(auto_subscribe=auto_sub)
@@ -396,55 +447,31 @@ async def entrypoint(ctx: agents.JobContext) -> None:
         interrupt_response=True,
     )
 
-    # Use ElevenLabs TTS if ELEVEN_API_KEY is set and valid; otherwise fall back to OpenAI built-in voice.
-    # FORCE_OPENAI_VOICE=1 bypasses ElevenLabs for debugging.
-    # Pre-flight validation prevents runtime crashes from bad keys (first synthesis would fail otherwise).
-    force_openai = os.environ.get("FORCE_OPENAI_VOICE", "").strip() in ("1", "true", "yes")
-    eleven_api_key = os.environ.get("ELEVEN_API_KEY", "").strip()
-    use_elevenlabs = (
-        not force_openai
-        and bool(eleven_api_key)
-        and _validate_elevenlabs_key(eleven_api_key)
+    # Resolve Deepgram Aura model from VoiceProfile (if present) or language + persona.
+    deepgram_model: str
+    if voice_profile_id:
+        profile = _load_voice_profile(voice_profile_id)
+        if profile and isinstance(profile.get("deepgram_model"), str):
+            deepgram_model = profile["deepgram_model"]
+            prof_lang = profile.get("language")
+            if isinstance(prof_lang, str) and prof_lang in VALID_LANGUAGES:
+                language = prof_lang
+        else:
+            deepgram_model = _resolve_deepgram_model(language, voice)
+    else:
+        deepgram_model = _resolve_deepgram_model(language, voice)
+
+    session = AgentSession(
+        llm=openai.realtime.RealtimeModel(
+            model="gpt-realtime",
+            modalities=["text"],
+            turn_detection=turn_detection,
+        ),
+        tts=deepgram.TTS(
+            model=deepgram_model,
+        ),
     )
-    elevenlabs_voice_id = ELEVENLABS_VOICE_IDS.get(voice, ELEVENLABS_VOICE_IDS["cedar"])
-    session = None
-
-    if use_elevenlabs:
-        try:
-            session = AgentSession(
-                llm=openai.realtime.RealtimeModel(
-                    model="gpt-realtime",
-                    modalities=["text"],
-                    turn_detection=turn_detection,
-                ),
-                tts=elevenlabs.TTS(
-                    voice_id=elevenlabs_voice_id,
-                    model="eleven_turbo_v2" if (language or "en") == "en" else "eleven_flash_v2_5",
-                    streaming_latency=1,
-                    language=language or "en",
-                    enable_ssml_parsing=True,
-                    voice_settings=elevenlabs.VoiceSettings(
-                        stability=0.36,
-                        similarity_boost=0.75,
-                    ),
-                ),
-            )
-            logger.info("Using ElevenLabs TTS (voice_id=%s)", elevenlabs_voice_id)
-        except Exception as e:
-            logger.warning("ElevenLabs init failed, falling back to OpenAI: %s", e)
-            session = None
-    elif eleven_api_key and not force_openai:
-        logger.warning("ElevenLabs key validation failed, using OpenAI voice")
-
-    if session is None:
-        session = AgentSession(
-            llm=openai.realtime.RealtimeModel(
-                model="gpt-realtime",
-                voice=voice,
-                turn_detection=turn_detection,
-            ),
-        )
-        logger.info("Using OpenAI built-in voice (%s)", voice)
+    logger.info("Using Deepgram TTS (model=%s) with OpenAI Realtime LLM (language=%s, persona=%s)", deepgram_model, language, voice)
 
     @session.on("user_input_transcribed")
     def on_user_input_transcribed(event: UserInputTranscribedEvent) -> None:

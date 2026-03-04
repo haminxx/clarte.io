@@ -15,14 +15,18 @@ export type TokenResponse = TokenResult | TokenError
 
 export async function fetchClarteToken(
   baseUrl: string,
-  options: { voice?: string; mode?: "casual" | "expert" } = {}
+  options: { voice?: string; mode?: "casual" | "expert"; voiceProfileId?: string } = {}
 ): Promise<TokenResponse> {
-  const { voice = "marin", mode = "casual" } = options
+  const { voice = "marin", mode = "casual", voiceProfileId } = options
   const tokenUrl = baseUrl ? `${baseUrl.replace(/\/$/, "")}/token` : "/api/token"
   const res = await fetch(tokenUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ voice, mode }),
+    body: JSON.stringify(
+      voiceProfileId && voiceProfileId.trim() !== ""
+        ? { voice, mode, voice_profile_id: voiceProfileId.trim() }
+        : { voice, mode }
+    ),
   })
   const raw = await res.text()
   if (!res.ok) {
