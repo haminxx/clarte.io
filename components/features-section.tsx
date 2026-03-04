@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Play, Square } from "lucide-react"
 import { AnimateOnScroll } from "./animate-on-scroll"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
+import { cn } from "@/lib/utils"
 
 type VoiceSample = "Marin" | "Victoria" | null
 
@@ -14,7 +15,7 @@ function getVoices(): SpeechSynthesisVoice[] {
   return window.speechSynthesis.getVoices()
 }
 
-/** Marin = Clarte's female voice (ElevenLabs Rachel). Prefer Rachel or similar for preview. */
+/** Marin = Clarte's default voice (Deepgram Aura, e.g. Thalia). Prefer a clear English voice for preview. */
 function getMarinVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
   const en = voices.filter((v) => v.lang.startsWith("en"))
   const marin = en.find(
@@ -141,9 +142,9 @@ export function FeaturesSection() {
           <div className="rounded-2xl border border-border bg-background p-6">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-medium text-foreground">Clarte Agent</h3>
-              <div className="flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5">
+              <div className={cn("flex items-center gap-2 rounded-full px-3 py-1.5", theme === "bright" ? "bg-black/5" : "bg-secondary")}>
                 <div className="h-2 w-2 rounded-full bg-emerald-400" />
-                <span className="text-sm text-muted-foreground">Marin</span>
+                <span className={cn("text-sm", theme === "bright" ? "text-black/60" : "text-muted-foreground")}>Marin</span>
               </div>
             </div>
             <Waveform variant="ai" darkStroke={darkStroke} />
@@ -177,9 +178,9 @@ export function FeaturesSection() {
           <div className="rounded-2xl border border-border bg-background p-6">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-medium text-foreground">Human Voice</h3>
-              <div className="flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5">
+              <div className={cn("flex items-center gap-2 rounded-full px-3 py-1.5", theme === "bright" ? "bg-black/5" : "bg-secondary")}>
                 <div className="h-2 w-2 rounded-full bg-emerald-400" />
-                <span className="text-sm text-muted-foreground">Victoria</span>
+                <span className={cn("text-sm", theme === "bright" ? "text-black/60" : "text-muted-foreground")}>Victoria</span>
               </div>
             </div>
             <Waveform variant="human" darkStroke={darkStroke} />

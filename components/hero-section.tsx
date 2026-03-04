@@ -31,11 +31,11 @@ export function HeroSection() {
 
       {/* Content: headline left, buttons + description right, aligned per reference image */}
       <div className="relative z-10 flex min-h-screen flex-col justify-center pt-[120px] pb-24">
-        <div className="mx-auto w-full max-w-[1400px] pl-6 pr-6 sm:pl-12 sm:pr-12 lg:pl-[120px] lg:pr-[120px]">
-          <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[1fr_1fr] lg:grid-rows-[auto_auto] lg:items-end lg:gap-x-[80px] lg:gap-y-4">
+        <div className="mx-auto w-full max-w-[min(1400px,92vw)] pl-[clamp(1.5rem,4vw,7.5rem)] pr-[clamp(1.5rem,4vw,7.5rem)] sm:pl-[clamp(2rem,5vw,8rem)] sm:pr-[clamp(2rem,5vw,8rem)] lg:pl-[clamp(4rem,8vw,120px)] lg:pr-[clamp(4rem,8vw,120px)]">
+          <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[1fr_1fr] lg:grid-rows-[auto_auto] lg:items-end lg:gap-x-[clamp(2rem,5vw,80px)] lg:gap-y-4">
             {/* Left: headline - blur to clear a bit slower */}
             <AnimateOnScroll animateOnMount delay={0} animation="fade-blur-slow" className="order-1">
-              <h1 className={cn("text-[56px] font-semibold leading-[1.1] tracking-tight", isBright ? "text-black" : "text-white")}>
+              <h1 className={cn("font-semibold leading-[1.1] tracking-tight text-[clamp(2rem,4.5vw,3.5rem)] sm:text-[clamp(2.25rem,4.8vw,3.75rem)] md:text-[clamp(2.5rem,5vw,4rem)] xl:text-[clamp(3rem,3.8vw,56px)]", isBright ? "text-black" : "text-white")}>
                 Find absolute{" "}
                 <span className="group relative inline-block cursor-default rounded px-1.5 py-0.5 bg-transparent backdrop-blur-xl blur-[3px] transition-all duration-300 hover:blur-none">
                   clarity
@@ -47,21 +47,21 @@ export function HeroSection() {
             <div className="order-2 flex flex-col items-start lg:items-end lg:justify-end gap-4">
               <AnimateOnScroll animateOnMount delay={900} animation="fade-blur" className="flex flex-wrap gap-3 sm:gap-4">
                 <Link href="/download">
-                  <Button className={isBright ? "bg-black text-white hover:bg-black/90" : "bg-white text-black hover:bg-white/90"}>
+                  <Button className={cn("text-[clamp(0.875rem,1.2vw,1rem)] h-[clamp(2.25rem,4vh,2.75rem)] px-[clamp(1rem,2vw,1.5rem)]", isBright ? "bg-black text-white hover:bg-black/90" : "bg-white text-black hover:bg-white/90")}>
                     Download
                   </Button>
                 </Link>
                 <Link href="/demo">
                   <Button
                     variant="outline"
-                    className={isBright ? "border-black/30 bg-transparent text-black hover:bg-black/10" : "border-white/20 bg-transparent text-white hover:bg-white/10"}
+                    className={cn("text-[clamp(0.875rem,1.2vw,1rem)] h-[clamp(2.25rem,4vh,2.75rem)] px-[clamp(1rem,2vw,1.5rem)]", isBright ? "border-black/30 bg-transparent text-black hover:bg-black/10" : "border-white/20 bg-transparent text-white hover:bg-white/10")}
                   >
                     Demo
                   </Button>
                 </Link>
               </AnimateOnScroll>
-              <AnimateOnScroll animateOnMount delay={500} animation="fade-blur" className="w-full max-w-[400px] lg:max-w-none lg:text-right">
-                <div className={cn("text-sm sm:text-base md:text-lg leading-relaxed text-left lg:text-right space-y-1", isBright ? "text-black/70" : "text-white/60")}>
+              <AnimateOnScroll animateOnMount delay={500} animation="fade-blur" className="w-full max-w-[min(400px,45vw)] lg:max-w-none lg:text-right">
+                <div className={cn("leading-relaxed text-left lg:text-right space-y-1 text-[clamp(0.8125rem,1.1vw,1.125rem)] sm:text-[clamp(0.875rem,1.15vw,1rem)] md:text-[clamp(0.9375rem,1.2vw,1.125rem)]", isBright ? "text-black/70" : "text-white/60")}>
                   <p>Learning is about how you think, not just what you know</p>
                   <p>Clarte challenges you to think critically, pivot instantly,</p>
                   <p>and build true cognitive flexibility in the moment</p>

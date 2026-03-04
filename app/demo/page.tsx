@@ -75,13 +75,13 @@ export default function DemoPage() {
 
       <Header />
 
-      <main className="relative z-10 mx-auto max-w-7xl px-4 pt-[clamp(7rem,22vh,14rem)] pb-24">
+      <main className="relative z-10 mx-auto w-full max-w-[min(48rem,92vw)] xl:max-w-[min(56rem,88vw)] 2xl:max-w-[min(64rem,85vw)] px-4 pt-[clamp(7rem,22vh,14rem)] pb-24">
         <AnimateOnScroll animation="fade-up" animateOnMount delay={100}>
           <div className="mb-8 text-center">
-            <h1 className={cn("text-4xl font-bold md:text-5xl", isBright ? "text-black" : "text-white")}>
+            <h1 className={cn("font-bold text-[clamp(2rem,5vw,3.5rem)] md:text-[clamp(2.25rem,5.5vw,3.75rem)]", isBright ? "text-black" : "text-white")}>
               Try Clarte
             </h1>
-            <p className={cn("mx-auto mt-4 max-w-2xl text-lg", isBright ? "text-black/60" : "text-white/60")}>
+            <p className={cn("mx-auto mt-4 max-w-2xl text-[clamp(0.9375rem,1.5vw,1.125rem)]", isBright ? "text-black/60" : "text-white/60")}>
               Start a voice call with Clarte and see the live transcript in real time.
             </p>
           </div>
@@ -92,8 +92,8 @@ export default function DemoPage() {
             <div className="pointer-events-none absolute left-1/2 top-24 h-[900px] w-[900px] -translate-x-1/2 -translate-y-1/2 overflow-hidden sm:top-28 sm:h-[1100px] sm:w-[1100px]">
               <ParticleOrb variant={isBright ? "bright" : "dark"} />
             </div>
-            <div className="relative z-20 w-full max-w-lg flex flex-col gap-4">
-              <div className="w-full max-w-lg rounded-2xl border border-border bg-card/90 p-4 sm:p-6 shadow-2xl backdrop-blur-md mx-auto">
+            <div className="relative z-20 w-full max-w-[min(32rem,92vw)] xl:max-w-[min(36rem,88vw)] 2xl:max-w-[min(42rem,85vw)] flex flex-col gap-4">
+              <div className="w-full rounded-2xl border border-border bg-card/90 p-4 sm:p-5 md:p-6 shadow-2xl backdrop-blur-md mx-auto min-w-0">
                 {inCall ? (
                   <Room
                     mode="voice-only"
@@ -121,13 +121,13 @@ export default function DemoPage() {
                   />
                 )}
               </div>
-              <div className="w-full max-w-lg rounded-2xl border border-border bg-card/90 p-4 shadow-xl backdrop-blur-md mx-auto">
-                <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <div className="w-full rounded-2xl border border-border bg-card/90 p-4 sm:p-5 md:p-6 shadow-xl backdrop-blur-md mx-auto min-w-0">
+                <p className="mb-2 text-[clamp(0.6875rem,1vw,0.75rem)] font-medium uppercase tracking-wider text-muted-foreground">
                   Live transcript (Speech to text)
                 </p>
                 <div
                   ref={transcriptContainerRef}
-                  className="max-h-[3rem] overflow-hidden rounded-lg border border-border/50 bg-background/50 px-3 py-2 text-sm text-foreground flex flex-col justify-end"
+                  className="max-h-[clamp(3rem,8vh,5rem)] overflow-hidden rounded-lg border border-border/50 bg-background/50 px-3 py-2 text-[clamp(0.8125rem,1.1vw,0.875rem)] text-foreground flex flex-col justify-end"
                 >
                   {transcriptEntries.filter((e) => e.role === "user").length === 0 && !transcriptPartial ? (
                     <span className="text-muted-foreground">Your speech will appear here...</span>

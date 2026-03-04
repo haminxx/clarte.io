@@ -100,8 +100,8 @@ export function DemoPreviewSection() {
       <div
         className={cn(
           // Slightly slower, smoother expand/collapse for container
-          "w-full pb-16 flex flex-col transition-[max-width,padding,height,border-radius] duration-800 ease-in-out",
-          expanded ? "mx-auto max-w-none px-0" : "mx-auto max-w-7xl px-6 sm:px-12 lg:px-16"
+          "w-full pb-16 flex flex-col transition-[max-width,padding,height,border-radius] duration-[1000ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
+          expanded ? "mx-auto max-w-none px-0" : "mx-auto max-w-[min(80rem,92vw)] px-[clamp(1.5rem,4vw,4rem)] sm:px-[clamp(2rem,5vw,3rem)] lg:px-16"
         )}
       >
         <button
@@ -115,7 +115,7 @@ export function DemoPreviewSection() {
           }}
           className={cn(
             // Slower card expansion/collapse and entrance for a more relaxed feel
-            "relative w-full overflow-hidden bg-black text-left transition-[height,border-radius,max-width] duration-800 ease-in-out",
+        "relative w-full overflow-hidden bg-black text-left transition-[height,border-radius,max-width] duration-[1000ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
             expanded
               ? "h-screen min-h-screen rounded-none"
               : "h-[33vh] rounded-3xl shadow-2xl",
