@@ -14,13 +14,17 @@ Executive Assistant voice agent with two paths:
 | **LIVEKIT_URL** | Backend only (`voice-agent/.env` or Render env) | Agent + token server – same WebSocket URL as above |
 | **LIVEKIT_API_KEY**, **LIVEKIT_API_SECRET** | Backend only (never in frontend) | Token server + agent – to issue tokens and register with LiveKit |
 | **OPENAI_API_KEY**, **EXA_API_KEY** | Backend only (never in frontend) | Agent + relay – Realtime API and Exa search |
-| **ELEVEN_API_KEY** | Backend only (optional) | Agent – ElevenLabs TTS for more realistic voice. If set and valid, uses ElevenLabs instead of OpenAI built-in voice. Pre-flight validation prevents runtime crashes from bad keys. |
-| **FORCE_OPENAI_VOICE** | Backend only (optional) | Set to `1`, `true`, or `yes` to always use OpenAI built-in voice (bypass ElevenLabs) for debugging. |
-| **HUME_API_KEY**, **PLAYHT_***, **CARTESIA_*** | Backend only (optional) | Alternative TTS providers. See [TTS alternatives](#tts-alternatives-low-latency--emotion) for details. |
+| **DEEPGRAM_API_KEY** | Backend only (`voice-agent/.env` or **Render** env) | Agent – **required** for TTS (Deepgram Aura). If missing, the agent logs a warning and TTS fails (no audio). |
+
+**Where to set API keys:**
+
+- **Render (production):** Dashboard → your service → **Environment**. Add `DEEPGRAM_API_KEY`, `OPENAI_API_KEY`, `LIVEKIT_*`, `EXA_API_KEY` here. The agent runs on Render, so it reads these at runtime. Do **not** put backend secrets in the repo or frontend env.
+- **Local:** Copy `voice-agent/.env.example` to `voice-agent/.env` and set all keys. Run the agent with `python agent.py dev` or `python start_render.py`.
+- **GitHub:** Use GitHub only for **frontend** build-time vars if you deploy Next.js via Actions (e.g. `NEXT_PUBLIC_LIVEKIT_URL`, `NEXT_PUBLIC_VOICE_AGENT_URL`). The voice agent runs on Render (or your host), so backend keys go in **Render** (or your host’s env), not in GitHub Secrets for the agent.
 
 **Tier 1 only:** `OPENAI_API_KEY`, `EXA_API_KEY`, `NEXT_PUBLIC_VOICE_AGENT_URL`. No LiveKit needed.
 
-**Tier 2/3:** Add `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `NEXT_PUBLIC_LIVEKIT_URL`.
+**Tier 2/3:** Add `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `NEXT_PUBLIC_LIVEKIT_URL`, and **`DEEPGRAM_API_KEY`** (required for agent to speak).
 
 **Voice profiles (optional):** For custom/cloned Deepgram voices (dashboard, desktop, iOS), the token server and agent use Firestore. Set `FIREBASE_SERVICE_ACCOUNT` (JSON string) in the token server (and agent) environment. Authenticated clients can create/list/update/delete records in the `voiceProfiles` collection and pass `voice_profile_id` when requesting a token; the agent will use the profile's `deepgram_model` when `status == "ready"`.
 
@@ -60,9 +64,9 @@ Frontend: set `NEXT_PUBLIC_VOICE_AGENT_URL=http://localhost:8080` and `NEXT_PUBL
    - `LIVEKIT_URL` (e.g. `wss://clarte-nrk5tnrq.livekit.cloud`)
    - `LIVEKIT_API_KEY` (secret)
    - `LIVEKIT_API_SECRET` (secret)
-   - `OPENAI_API_KEY` (secret) — **Render only** (not needed in GitHub; agent runs on Render)
+   - `OPENAI_API_KEY` (secret)
+   - **`DEEPGRAM_API_KEY`** (secret) — **required** for the agent to speak. Get it from [Deepgram Console](https://console.deepgram.com/). Without it, the agent will join the room but produce no audio.
    - `EXA_API_KEY` (secret)
-   - `ELEVEN_API_KEY` (secret, optional) — ElevenLabs TTS for more realistic voice. Marin → Rachel, Cedar → Adam. Must have Text-to-Speech access. Pre-flight validation falls back to OpenAI if invalid.
 
 After deploy, copy the Render URL (e.g. `https://your-service.onrender.com`) and set:
 - **Frontend** `.env.local`: `NEXT_PUBLIC_VOICE_AGENT_URL=https://your-service.onrender.com` (no trailing slash)
@@ -76,39 +80,41 @@ After deploy, copy the Render URL (e.g. `https://your-service.onrender.com`) and
 
 If the button works but the agent never speaks or responds:
 
-1. **Render logs** – Render Dashboard → your service → Logs. Start a call and watch for:
+1. **DEEPGRAM_API_KEY** – The agent uses Deepgram Aura for TTS. If the key is missing or invalid, the agent will log `DEEPGRAM_API_KEY is not set` (or a Deepgram init error) and no audio will be produced. Set it in **Render** → your service → Environment (or in `voice-agent/.env` for local runs). Get a key at [Deepgram Console](https://console.deepgram.com/).
+
+2. **Render logs** – Render Dashboard → your service → Logs. Start a call and watch for:
    - `entrypoint started` → agent received the job from LiveKit
    - `participant_connected: <identity>` → agent sees the user in the room
    - `Token issued for room=...` → token server received the request
    - If you see `entrypoint started` but no `participant_connected` → agent runs but user never joins; check frontend token and `NEXT_PUBLIC_LIVEKIT_URL`
-   - If you see nothing → agent subprocess may not be starting; check Render env (`LIVEKIT_URL`, `OPENAI_API_KEY`, etc.)
-
-2. **ElevenLabs fallback** – The agent validates `ELEVEN_API_KEY` before use (GET /v1/user). If invalid, expired, or lacking permissions, it logs `ElevenLabs key validation failed, using OpenAI voice` and uses OpenAI built-in voice. The agent will still join and respond. If init fails at runtime, it logs `ElevenLabs init failed, falling back to OpenAI`. Set `FORCE_OPENAI_VOICE=1` to bypass ElevenLabs entirely for debugging.
+   - If you see nothing → agent subprocess may not be starting; check Render env (`LIVEKIT_URL`, `OPENAI_API_KEY`, `DEEPGRAM_API_KEY`, etc.)
 
 ### No audio from agent
 
-1. **Render logs** – Render Dashboard → your service → Logs. Start a call and watch for:
+1. **DEEPGRAM_API_KEY** – Must be set where the **agent** runs (Render → Environment, or `voice-agent/.env` locally). If missing, the agent logs a warning and Deepgram TTS returns no audio. Not in GitHub Secrets (those are for frontend build).
+
+2. **Render logs** – Render Dashboard → your service → Logs. Start a call and watch for:
    - `entrypoint started` → agent received the job
-   - `Starting session with OpenAI Realtime API` → Realtime API in use
+   - `Using Deepgram TTS (model=...)` → TTS configured
    - `participant_connected` → agent sees the user
    - `track_subscribed` → agent is receiving your audio
-   - Any `ERROR`, `Exception`, or `OpenAI` messages
+   - Any `ERROR`, `Exception`, or `Deepgram` messages
 
-2. **Browser DevTools** – F12 → Network: confirm WebSocket to LiveKit URL. Console: check for LiveKit or audio errors. Application → Permissions: ensure microphone is allowed.
+3. **Browser DevTools** – F12 → Network: confirm WebSocket to LiveKit URL. Console: check for LiveKit or audio errors. Application → Permissions: ensure microphone is allowed.
 
-3. **Render cold start** – Free tier sleeps after ~15 min. The frontend warms up via `/health` before the token request. If the first call fails, wait ~30 seconds and try again.
+4. **Render cold start** – Free tier sleeps after ~15 min. The frontend warms up via `/health` before the token request. If the first call fails, wait ~30 seconds and try again.
 
-4. **OpenAI credits** – Realtime API requires a paid account. Add credits at [platform.openai.com](https://platform.openai.com) → Billing.
+5. **OpenAI credits** – Realtime API requires a paid account. Add credits at [platform.openai.com](https://platform.openai.com) → Billing.
 
-5. **Mic not working** – Grant microphone permission when prompted. If "mic off" appears, refresh and allow access before starting the call.
+6. **Mic not working** – Grant microphone permission when prompted. If "mic off" appears, refresh and allow access before starting the call.
 
-6. **Out of memory** – Noise cancellation is disabled to reduce memory. If OOM persists, upgrade Render to a plan with more RAM (e.g. 2GB+).
+7. **Out of memory** – Noise cancellation is disabled to reduce memory. If OOM persists, upgrade Render to a plan with more RAM (e.g. 2GB+).
 
-### ElevenLabs-specific issues
+### Deepgram TTS
 
-- **Invalid key** – Ensure `ELEVEN_API_KEY` is set exactly (LiveKit plugin expects this name). The key must have Text-to-Speech access. Pre-flight validation calls ElevenLabs `/v1/user`; if it fails, the agent uses OpenAI voice.
-- **Voice ID** – Marin → Rachel, Cedar → Adam. Verify these IDs work for your ElevenLabs account.
-- **Force OpenAI** – Set `FORCE_OPENAI_VOICE=1` in Render env to always use OpenAI voice and rule out ElevenLabs as the cause.
+- **No audio** – Ensure `DEEPGRAM_API_KEY` is set in **Render** (Dashboard → your service → Environment) or in `voice-agent/.env` for local runs. The agent does not read GitHub Secrets for backend keys.
+- **Invalid key** – If the key is wrong or expired, the agent will log a Deepgram error on first TTS use. Get a key at [Deepgram Console](https://console.deepgram.com/).
+- **Voice models** – Demo uses Aura-2 models (e.g. `aura-2-thalia-en`). See [Deepgram TTS docs](https://developers.deepgram.com/docs/tts) for available models.
 
 ## TTS alternatives (low latency + emotion)
 

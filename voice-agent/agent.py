@@ -440,6 +440,12 @@ async def entrypoint(ctx: agents.JobContext) -> None:
     voice, mode, language, user_name = meta["voice"], meta["mode"], meta["language"], meta.get("user_name")
     voice_profile_id = meta.get("voice_profile_id")
 
+    if not (os.getenv("DEEPGRAM_API_KEY") or "").strip():
+        logger.warning(
+            "DEEPGRAM_API_KEY is not set. TTS will fail and the agent will be silent. "
+            "Set it in Render Dashboard → Environment, or in voice-agent/.env for local runs."
+        )
+
     auto_sub = AutoSubscribe.SUBSCRIBE_ALL  # receive audio + screen/camera when user enables them
     await ctx.connect(auto_subscribe=auto_sub)
     room = ctx.room
@@ -478,16 +484,20 @@ async def entrypoint(ctx: agents.JobContext) -> None:
     else:
         deepgram_model = _resolve_deepgram_model(language, voice)
 
-    session = AgentSession(
-        llm=openai.realtime.RealtimeModel(
-            model="gpt-realtime",
-            modalities=["text"],
-            turn_detection=turn_detection,
-        ),
-        tts=deepgram.TTS(
-            model=deepgram_model,
-        ),
-    )
+    try:
+        session = AgentSession(
+            llm=openai.realtime.RealtimeModel(
+                model="gpt-realtime",
+                modalities=["text"],
+                turn_detection=turn_detection,
+            ),
+            tts=deepgram.TTS(
+                model=deepgram_model,
+            ),
+        )
+    except Exception as e:
+        logger.exception("Failed to initialize Deepgram TTS: %s (check DEEPGRAM_API_KEY and model=%s)", e, deepgram_model)
+        raise
     logger.info("Using Deepgram TTS (model=%s) with OpenAI Realtime LLM (language=%s, persona=%s)", deepgram_model, language, voice)
 
     @session.on("user_input_transcribed")

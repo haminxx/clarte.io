@@ -10,22 +10,32 @@ import { RoomAgentDispatch, RoomConfiguration } from "@livekit/protocol"
 const apiKey = process.env.LIVEKIT_API_KEY
 const apiSecret = process.env.LIVEKIT_API_SECRET
 
-const VALID_VOICES = new Set(["alloy", "ash", "ballad", "coral", "echo", "marin", "sage", "shimmer", "verse", "cedar"])
+const VALID_VOICES_LEGACY = new Set(["alloy", "ash", "ballad", "coral", "echo", "marin", "sage", "shimmer", "verse", "cedar", "female", "male"])
 const VALID_MODES = new Set(["casual", "expert", "research"])
-const VALID_LANGUAGES = new Set(["en", "ko"])
+const VALID_LANGUAGES = new Set(["en", "ko", "es", "zh", "ja", "hi"])
+
+function normalizeVoice(raw: string | undefined): string {
+  const v = (raw ?? "marin").trim()
+  if (!v) return "marin"
+  if (VALID_VOICES_LEGACY.has(v) || v.startsWith("aura-")) return v
+  return "marin"
+}
 
 export async function POST(request: Request) {
   let voice = "marin"
   let mode = "expert"
   let language = "en"
   let user_name: string | undefined
+  let voice_profile_id: string | undefined
   try {
     const body = await request.json().catch(() => ({}))
-    if (body && typeof body.voice === "string" && VALID_VOICES.has(body.voice)) voice = body.voice
+    voice = normalizeVoice(body?.voice)
     if (body && typeof body.mode === "string" && VALID_MODES.has(body.mode)) mode = body.mode
     if (body && typeof body.language === "string" && VALID_LANGUAGES.has(body.language)) language = body.language
     const raw = body?.user_name?.trim?.()
     if (raw && raw !== "undefined" && raw !== "null" && !raw.startsWith("user-") && raw.length >= 2) user_name = raw
+    const vp = body?.voice_profile_id
+    if (typeof vp === "string" && vp.trim().length >= 3) voice_profile_id = vp.trim()
   } catch {
     // ignore
   }
@@ -54,6 +64,7 @@ export async function POST(request: Request) {
     at.addGrant({ roomJoin: true, room: roomName })
     const metadata: Record<string, string> = { voice, mode, language }
     if (user_name) metadata.user_name = user_name
+    if (voice_profile_id) metadata.voice_profile_id = voice_profile_id
     at.roomConfig = new RoomConfiguration({
       agents: [
         new RoomAgentDispatch({
