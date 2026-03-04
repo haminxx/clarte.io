@@ -11,14 +11,10 @@ import {
 } from "@/components/ui/select"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 
-/** Voice name (UI) -> OpenAI voice ID. Marin = female, Cedar = male (both high-quality Realtime voices). */
+/** Voice persona options used to select Deepgram Aura voices on the backend. */
 export const VOICE_OPTIONS = [
-  { name: "Marin", voiceId: "marin" },
-  { name: "Cedar", voiceId: "cedar" },
-  { name: "Alloy", voiceId: "alloy" },
-  { name: "Ash", voiceId: "ash" },
-  { name: "Ballad", voiceId: "ballad" },
-  { name: "Verse", voiceId: "verse" },
+  { name: "Female", voiceId: "female" },
+  { name: "Male", voiceId: "male" },
 ] as const
 
 export const LANGUAGE_OPTIONS = [
@@ -44,7 +40,7 @@ interface VoiceCardProps {
 export function VoiceCard({
   onStartCall,
   isActive,
-  selectedVoiceId = "marin",
+  selectedVoiceId = "female",
   onVoiceChange,
   selectedLanguage = "en",
   onLanguageChange,

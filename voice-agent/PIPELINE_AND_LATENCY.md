@@ -83,7 +83,7 @@ flowchart TB
 | **Render – Health** | 50–300 | Warmup before token |
 | **LiveKit** | 50–150 | WebRTC signaling, join room |
 | **OpenAI Realtime** | 300–800 | Speech understanding + text generation (first response) |
-| **ElevenLabs TTS** | 150–500 | `streaming_latency=1`; `eleven_turbo_v2` (EN) / `eleven_flash_v2_5` (KO) |
+| **Deepgram Aura TTS** | 100–250 | Aura-2 streaming; single-hop TTS for all responses |
 | **Exa (search_web)** | 500–2000 | When tool called in Step 3 |
 | **Network (Browser ↔ Render)** | 50–200 | Depends on region |
 | **Network (Render ↔ LiveKit)** | 20–100 | Same cloud |
@@ -105,7 +105,7 @@ flowchart TB
 ### Current pipeline (from README)
 
 - **Target:** ~1 s for first response  
-- **Observed:** ~1–3 s (OpenAI Realtime + ElevenLabs TTS)
+- **Observed:** ~1–3 s (OpenAI Realtime + Deepgram Aura TTS)
 
 ---
 

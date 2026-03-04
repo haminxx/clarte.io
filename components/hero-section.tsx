@@ -45,7 +45,7 @@ export function HeroSection() {
             </AnimateOnScroll>
             {/* Right: buttons then description - subtitle appears after headline, buttons last */}
             <div className="order-2 flex flex-col items-start lg:items-end lg:justify-end gap-4">
-              <AnimateOnScroll animateOnMount delay={900} animation="fade-up" className="flex flex-wrap gap-3 sm:gap-4">
+              <AnimateOnScroll animateOnMount delay={900} animation="fade-blur" className="flex flex-wrap gap-3 sm:gap-4">
                 <Link href="/download">
                   <Button className={isBright ? "bg-black text-white hover:bg-black/90" : "bg-white text-black hover:bg-white/90"}>
                     Download
@@ -61,9 +61,10 @@ export function HeroSection() {
                 </Link>
               </AnimateOnScroll>
               <AnimateOnScroll animateOnMount delay={500} animation="fade-blur" className="w-full max-w-[400px] lg:max-w-none lg:text-right">
-                <p className={cn("text-lg leading-relaxed text-left lg:text-right", isBright ? "text-black/70" : "text-white/60")}>
-                  Learning is about how you think. Clarte helps you deep ideate, practice critical thinking, and actively challenging your assumptions.
-                </p>
+                <div className={cn("text-lg leading-relaxed text-left lg:text-right space-y-1", isBright ? "text-black/70" : "text-white/60")}>
+                  <p>Learning is about how you think.</p>
+                  <p>Clarte helps you deep ideate, practice critical thinking, and actively challenging your assumptions.</p>
+                </div>
               </AnimateOnScroll>
             </div>
           </div>

@@ -1,5 +1,5 @@
-# Clarte voice agent: LiveKit + OpenAI Realtime + Exa + ElevenLabs TTS + token server
-livekit-agents[openai,elevenlabs]~=1.4
+# Clarte voice agent: LiveKit + OpenAI Realtime + Exa + Deepgram TTS + token server
+livekit-agents[openai,deepgram]~=1.4
 livekit-api
 exa-py
 python-dotenv
