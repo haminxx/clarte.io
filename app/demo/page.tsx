@@ -89,7 +89,7 @@ export default function DemoPage() {
 
         <AnimateOnScroll animation="fade-up" delay={200}>
           <div className="relative mt-6 flex min-h-[60vh] w-full flex-col items-center justify-start">
-            <div className="pointer-events-none absolute left-1/2 top-24 h-[900px] w-[900px] -translate-x-1/2 -translate-y-1/2 overflow-hidden sm:top-28 sm:h-[1100px] sm:w-[1100px]">
+            <div className="pointer-events-none absolute left-1/2 top-24 h-[50vmin] w-[50vmin] -translate-x-1/2 -translate-y-1/2 overflow-hidden sm:top-28">
               <ParticleOrb variant={isBright ? "bright" : "dark"} />
             </div>
             <div className="relative z-20 w-full max-w-[min(32rem,92vw)] xl:max-w-[min(36rem,88vw)] 2xl:max-w-[min(42rem,85vw)] flex flex-col gap-4">

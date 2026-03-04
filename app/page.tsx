@@ -12,29 +12,25 @@ import { CompanyLogos } from "@/components/company-logos"
 import { AIStrategySection } from "@/components/ai-strategy-section"
 import { FeaturesSection } from "@/components/features-section"
 import { DemoPreviewSection } from "@/components/demo-preview-section"
-import { LandingLeftLogos } from "@/components/landing-left-logos"
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
-      <LandingLeftLogos />
-      <div className="pl-16">
-        <Header />
+      <Header />
 
-        <main className="overflow-x-hidden">
-          <HeroSection />
+      <main className="overflow-x-hidden">
+        <HeroSection />
 
-          <DemoPreviewSection />
+        <DemoPreviewSection />
 
-          <CompanyLogos />
+        <CompanyLogos />
 
-          <AIStrategySection />
+        <AIStrategySection />
 
-          <FeaturesSection />
-        </main>
+        <FeaturesSection />
+      </main>
 
-        <Footer />
-      </div>
+      <Footer />
     </div>
   )
 }

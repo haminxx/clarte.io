@@ -31,7 +31,7 @@ export function HeroSection() {
 
       {/* Content: headline left, buttons + description right, aligned per reference image */}
       <div className="relative z-10 flex min-h-screen flex-col justify-center pt-[120px] pb-24">
-        <div className="mx-auto w-full max-w-[min(1400px,92vw)] pl-[clamp(1.5rem,4vw,7.5rem)] pr-[clamp(1.5rem,4vw,7.5rem)] sm:pl-[clamp(2rem,5vw,8rem)] sm:pr-[clamp(2rem,5vw,8rem)] lg:pl-[clamp(4rem,8vw,120px)] lg:pr-[clamp(4rem,8vw,120px)]">
+        <div className="mx-auto w-full max-w-[min(1400px,96vw)] 2xl:max-w-[min(1600px,94vw)] pl-[clamp(1.5rem,4vw,7.5rem)] pr-[clamp(1.5rem,4vw,7.5rem)] sm:pl-[clamp(2rem,5vw,8rem)] sm:pr-[clamp(2rem,5vw,8rem)] lg:pl-[clamp(4rem,8vw,120px)] lg:pr-[clamp(4rem,8vw,120px)] 2xl:pl-[min(8vw,160px)] 2xl:pr-[min(8vw,160px)]">
           <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[1fr_1fr] lg:grid-rows-[auto_auto] lg:items-end lg:gap-x-[clamp(2rem,5vw,80px)] lg:gap-y-4">
             {/* Left: headline - blur to clear a bit slower */}
             <AnimateOnScroll animateOnMount delay={0} animation="fade-blur-slow" className="order-1">

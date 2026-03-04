@@ -116,6 +116,15 @@
   --border: oklch(0.88 0.02 260);
 }
 
+/* Dark theme: slightly less black for better readability */
+[data-clarte-theme="dark"] {
+  --background: oklch(0.14 0.02 260);
+  --card: oklch(0.17 0.02 260);
+  --secondary: oklch(0.22 0.03 260);
+  --muted: oklch(0.22 0.02 260);
+  --border: oklch(0.28 0.03 260);
+}
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);

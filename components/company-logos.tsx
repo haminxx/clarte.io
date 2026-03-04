@@ -1,48 +1,25 @@
 "use client"
 
 import { AnimateOnScroll } from "./animate-on-scroll"
+import { useClarteTheme } from "@/lib/clarte-theme-context"
+import { cn } from "@/lib/utils"
 
-// Use official / reputable logo sources with transparent backgrounds where possible.
-// These URLs are chosen from brand/asset or well-known logo repositories.
+// Local logo assets (same set as former left vertical bar)
 const logos = [
-  {
-    name: "UC San Diego",
-    src: "https://upload.wikimedia.org/wikipedia/commons/0/0b/UC_San_Diego_logo.svg",
-    alt: "UC San Diego logo",
-  },
-  {
-    name: "OpenAI",
-    src: "https://upload.wikimedia.org/wikipedia/commons/4/42/OpenAI_Logo_2025.svg",
-    alt: "OpenAI logo",
-  },
-  {
-    name: "LiveKit",
-    src: "https://logo.clearbit.com/livekit.io",
-    alt: "LiveKit logo",
-  },
-  {
-    name: "Render",
-    src: "https://seeklogo.com/images/R/render-logo-AF0E91E35F-seeklogo.com.png",
-    alt: "Render logo",
-  },
-  {
-    name: "Cursor",
-    src: "https://vectorseek.com/wp-content/uploads/2023/10/Cursor-AI-Logo-PNG-Vector.svg",
-    alt: "Cursor logo",
-  },
-  {
-    name: "Deepgram",
-    src: "https://logo.svgcdn.com/simple-icons/deepgram-dark.png",
-    alt: "Deepgram logo",
-  },
-  {
-    name: "Anthropic",
-    src: "https://logo.svgcdn.com/l/anthropic.png",
-    alt: "Anthropic logo",
-  },
+  { name: "UC San Diego", src: "/images/logos/ucsd.png", alt: "UC San Diego" },
+  { name: "OpenAI", src: "/images/logos/openai.png", alt: "OpenAI" },
+  { name: "LiveKit", src: "/images/logos/livekit.png", alt: "LiveKit" },
+  { name: "Render", src: "/images/logos/render.png", alt: "Render" },
+  { name: "Cursor", src: "/images/logos/cursor.png", alt: "Cursor" },
+  { name: "Deepgram", src: "/images/logos/deepgram.png", alt: "Deepgram" },
+  { name: "Firebase", src: "/images/logos/firebase.png", alt: "Firebase" },
+  { name: "Exa", src: "/images/logos/exa.png", alt: "Exa" },
 ]
 
 export function CompanyLogos() {
+  const { theme } = useClarteTheme()
+  const isBright = theme === "bright"
+
   return (
     <AnimateOnScroll animation="fade-blur">
       <div className="py-6 sm:py-8 w-full overflow-hidden">
@@ -62,7 +39,7 @@ export function CompanyLogos() {
                 <img
                   src={logo.src}
                   alt={logo.alt}
-                  className="h-8 sm:h-10 w-auto object-contain"
+                  className={cn("h-8 sm:h-10 w-auto object-contain", isBright && "invert")}
                   loading="lazy"
                 />
               </div>
