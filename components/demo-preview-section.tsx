@@ -94,7 +94,7 @@ export function DemoPreviewSection() {
       ref={sectionRef}
       className={cn(
         "relative w-full -mt-[15vh]",
-        isBright ? "bg-gradient-to-b from-sky-100/50 via-blue-50/50 to-white" : "bg-background"
+        isBright ? "bg-gradient-to-b from-sky-50 via-blue-50/90 to-sky-100/80" : "bg-background"
       )}
     >
       <div
