@@ -5,7 +5,6 @@ import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Code, Copy, Terminal, Zap, Shield, Globe } from "lucide-react"
 import { AnimateOnScroll } from "@/components/animate-on-scroll"
-import { ScrollExpandBox } from "@/components/scroll-expand-box"
 import { PageThemeBg } from "@/components/page-theme-bg"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 import { cn } from "@/lib/utils"
@@ -80,18 +79,6 @@ export default function APIReferencePage() {
             </p>
           </div>
         </AnimateOnScroll>
-
-        <ScrollExpandBox className="mb-16 -mx-4 sm:mx-0">
-          <div className={cn("flex h-full flex-col justify-center p-6 sm:p-8 md:p-10", isBright ? "text-black" : "text-white")}>
-            <div className="flex items-center gap-2 mb-4">
-              <Zap className="h-6 w-6 text-yellow-400" />
-              <h2 className={cn("text-xl font-semibold", isBright ? "text-black" : "text-white")}>Low Latency</h2>
-            </div>
-            <p className={cn("text-sm max-w-xl", isBright ? "text-black/70" : "text-white/70")}>
-              Sub-100ms response times for real-time voice conversations. Integrate with our REST API and start building in minutes.
-            </p>
-          </div>
-        </ScrollExpandBox>
 
         <AnimateOnScroll animation="fade-up" delay={100}>
         {/* Features */}

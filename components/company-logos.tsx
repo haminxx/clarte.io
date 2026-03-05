@@ -21,19 +21,19 @@ export function CompanyLogos() {
 
   return (
     <AnimateOnScroll animation="fade-blur">
-      <div className="py-6 sm:py-8 w-full overflow-hidden">
+      <div className="pt-4 sm:pt-5 pb-6 sm:pb-7 w-full overflow-hidden">
         <p className="mb-4 sm:mb-6 text-center text-xs sm:text-sm text-muted-foreground px-4">
           Powered by platforms
         </p>
         <div
           className={cn(
-            "relative rounded-2xl py-4 sm:py-5 min-h-[7rem] sm:min-h-[8rem]",
+            "relative rounded-2xl py-3 sm:py-4 min-h-[4.5rem] sm:min-h-[5.5rem]",
             theme === "bright" ? "bg-black/10" : "bg-white/10"
           )}
         >
           <div className={cn("pointer-events-none absolute inset-y-0 left-0 w-16 rounded-l-2xl z-10", theme === "bright" ? "bg-gradient-to-r from-black/10 to-transparent" : "bg-gradient-to-r from-white/10 to-transparent")} />
           <div className={cn("pointer-events-none absolute inset-y-0 right-0 w-16 rounded-r-2xl z-10", theme === "bright" ? "bg-gradient-to-l from-black/10 to-transparent" : "bg-gradient-to-l from-white/10 to-transparent")} />
-          <div className="logo-marquee-track flex items-center gap-10 sm:gap-14 px-10 whitespace-nowrap">
+          <div className="logo-marquee-track flex items-center gap-6 sm:gap-8 px-6 whitespace-nowrap">
             {[...logos, ...logos].map((logo, idx) => (
               <div
                 key={`${logo.name}-${idx}`}
@@ -43,7 +43,11 @@ export function CompanyLogos() {
                 <img
                   src={logo.src}
                   alt={logo.alt}
-                  className={logo.large ? "h-20 sm:h-28 md:h-32 w-auto object-contain max-h-[10rem]" : "h-12 sm:h-16 w-auto object-contain max-h-[4rem]"}
+                  className={
+                    logo.large
+                      ? "h-10 sm:h-12 md:h-14 w-auto object-contain max-h-[3.5rem]"
+                      : "h-8 sm:h-10 w-auto object-contain max-h-[2.75rem]"
+                  }
                   loading="lazy"
                 />
               </div>

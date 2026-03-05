@@ -3,7 +3,6 @@
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { AnimateOnScroll } from "@/components/animate-on-scroll"
-import { ScrollExpandBox } from "@/components/scroll-expand-box"
 import { PageThemeBg } from "@/components/page-theme-bg"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 import { cn } from "@/lib/utils"
@@ -28,18 +27,6 @@ export default function AboutPage() {
             </p>
           </div>
         </AnimateOnScroll>
-
-        <ScrollExpandBox className="mb-16 -mx-4 sm:mx-0">
-          <div className={cn("flex h-full flex-col justify-center p-6 sm:p-8 md:p-10", isBright ? "text-black" : "text-white")}>
-            <h2 className={cn("text-xl font-semibold mb-3", isBright ? "text-black" : "text-white")}>
-              Discover the Core
-            </h2>
-            <p className={cn("text-sm leading-relaxed max-w-xl", isBright ? "text-black/70" : "text-white/70")}>
-              Through guided Socratic questioning and proven mental models, Clarte helps you cut through the noise
-              to articulate the true root of your idea—then stress-test it and validate with facts.
-            </p>
-          </div>
-        </ScrollExpandBox>
 
         {/* Three-step thinking cards */}
         <AnimateOnScroll animation="fade-blur" delay={80}>

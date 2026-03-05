@@ -1,93 +1,126 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import Link from "next/link"
-import { motion, useScroll, useTransform, useMotionValueEvent } from "framer-motion"
-import { ChevronDown } from "lucide-react"
 import { DEMO_PREVIEW_SRC, DEMO_PREVIEW_TYPE, type DemoPreviewMediaType } from "@/lib/demo-preview-config"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 import { cn } from "@/lib/utils"
 
-const PREVIEW_SCROLL_HEIGHT_VH = 380
-const VIDEO_PLAY_THRESHOLD = 0.38
-const ARROW_HIDE_THRESHOLD = 0.22
-
 export function DemoPreviewSection() {
   const { theme } = useClarteTheme()
   const [mediaError, setMediaError] = useState(false)
+  const [expanded, setExpanded] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const sectionRef = useRef<HTMLElement>(null)
 
   const isBright = theme === "bright"
   const mediaType: DemoPreviewMediaType = DEMO_PREVIEW_TYPE === "video" ? "video" : "gif"
+  const [hasScrolled, setHasScrolled] = useState(false)
 
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start start", "end end"],
-  })
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 1100)
+    return () => clearTimeout(t)
+  }, [])
 
-  // Video play when scrolled into "play zone"
-  useMotionValueEvent(scrollYProgress, "change", (v) => {
-    const video = videoRef.current
-    if (mediaType !== "video" || !video) return
-    if (v >= VIDEO_PLAY_THRESHOLD) {
-      video.play().catch(() => {})
-    } else {
-      video.pause()
+  // Track whether the user has actually scrolled, so we don't auto-expand on initial load.
+  useEffect(() => {
+    const handleScrollOnce = () => {
+      if (window.scrollY > 10) {
+        setHasScrolled(true)
+        window.removeEventListener("scroll", handleScrollOnce)
+      }
     }
-  })
+    window.addEventListener("scroll", handleScrollOnce, { passive: true })
+    return () => window.removeEventListener("scroll", handleScrollOnce)
+  }, [])
 
-  // Interpolate width/height from initial centered box to full viewport; border-radius to 0.
-  const width = useTransform(scrollYProgress, [0, 0.2, 0.6], ["92vw", "96vw", "100vw"])
-  const height = useTransform(scrollYProgress, [0, 0.2, 0.6], ["33vh", "60vh", "100vh"])
-  const borderRadius = useTransform(scrollYProgress, [0, 0.2, 0.5], [24, 12, 0])
-
-  const [showDownArrow, setShowDownArrow] = useState(true)
-  useMotionValueEvent(scrollYProgress, "change", (v) => {
-    setShowDownArrow(v < ARROW_HIDE_THRESHOLD)
-  })
-
-  const scrollToPlayZone = () => {
-    if (!sectionRef.current) return
+  // Scroll-driven expand / collapse with hysteresis to avoid "shaking" at the threshold.
+  useEffect(() => {
     const section = sectionRef.current
-    const sectionTop = section.offsetTop
-    const windowHeight = typeof window !== "undefined" ? window.innerHeight : 800
-    // Scroll to ~38% of section height so video starts
-    const targetScroll = sectionTop + section.offsetHeight * VIDEO_PLAY_THRESHOLD - windowHeight * 0.4
-    window.scrollTo({ top: Math.max(0, targetScroll), behavior: "smooth" })
-  }
+    if (!section) return
+
+    let frameRequested = false
+
+    const handleScroll = () => {
+      if (!section) return
+      if (frameRequested) return
+      frameRequested = true
+      requestAnimationFrame(() => {
+        frameRequested = false
+        const rect = section.getBoundingClientRect()
+        const viewportHeight = window.innerHeight || 0
+        if (viewportHeight <= 0 || rect.height <= 0) return
+
+        const visibleTop = Math.max(0, rect.top)
+        const visibleBottom = Math.min(viewportHeight, rect.bottom)
+        const visibleHeight = Math.max(0, visibleBottom - visibleTop)
+        const ratio = visibleHeight / rect.height
+        const scrollY = window.scrollY || window.pageYOffset || 0
+
+        // Only auto-expand after the user has scrolled a bit, and when ~50%+ is visible.
+        const shouldExpand = hasScrolled && ratio >= 0.5
+        // Only auto-collapse when the user is effectively back at the top and the card is mostly compact.
+        const shouldCollapse = scrollY < 12 && ratio < 0.45
+
+        setExpanded((prev) => {
+          if (!prev && shouldExpand) {
+            if (videoRef.current && mediaType === "video") {
+              videoRef.current.play().catch(() => {})
+            }
+            return true
+          }
+          if (prev && shouldCollapse) {
+            if (videoRef.current) {
+              videoRef.current.pause()
+            }
+            return false
+          }
+          return prev
+        })
+      })
+    }
+
+    window.addEventListener("scroll", handleScroll, { passive: true })
+    // Run once on mount to ensure we don't start expanded.
+    handleScroll()
+
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [hasScrolled, mediaType])
 
   return (
     <section
       id="demo-preview-section"
       ref={sectionRef}
-      style={{ minHeight: `${PREVIEW_SCROLL_HEIGHT_VH}vh` }}
       className={cn(
-        "relative w-full -mt-[28vh] snap-start snap-always",
+        "relative w-full -mt-[15vh]",
         isBright ? "bg-gradient-to-b from-sky-50 via-blue-50/90 to-sky-100/80" : "bg-background"
       )}
     >
-      <div className="sticky top-0 flex h-screen w-full items-center justify-center overflow-hidden">
-        {showDownArrow && (
-          <button
-            type="button"
-            onClick={scrollToPlayZone}
-            className="absolute left-1/2 bottom-8 z-20 -translate-x-1/2 rounded-full p-2 text-white/80 transition hover:bg-white/20 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/40"
-            aria-label="Scroll to preview"
-          >
-            <ChevronDown className="h-8 w-8 drop-shadow-md" />
-          </button>
+      <div
+        className={cn(
+          "w-full pb-10 flex flex-col transition-[max-width,padding,height,border-radius] duration-500 ease-out",
+          expanded ? "mx-auto max-w-none px-0" : "mx-auto max-w-7xl px-6 sm:px-12 lg:px-16"
         )}
-        <motion.div
-          className="relative w-full overflow-hidden bg-black text-left shadow-2xl"
-          style={{
-            width,
-            height,
-            borderRadius,
-            maxWidth: "100vw",
-            maxHeight: "100vh",
+      >
+        <button
+          type="button"
+          onClick={() => {
+            setExpanded(true)
+            if (videoRef.current && mediaType === "video") {
+              videoRef.current.play().catch(() => {})
+            }
+            sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
           }}
-          aria-label="Demo preview"
+          className={cn(
+            "relative w-full overflow-hidden bg-black text-left transition-[height,border-radius,max-width] duration-500 ease-out",
+            expanded ? "h-screen min-h-screen rounded-none" : "h-[33vh] rounded-3xl shadow-2xl",
+            !expanded && "duration-700 ease-out transition-opacity transition-transform",
+            !mounted && !expanded && "opacity-0 translate-y-6",
+            mounted && !expanded && "opacity-100 translate-y-0"
+          )}
+          style={expanded ? undefined : {}}
+          aria-label="Expand demo preview"
         >
           <div className="relative z-10 flex h-full flex-col justify-between p-6 sm:p-8 lg:p-12">
             <div>
@@ -143,7 +176,7 @@ export function DemoPreviewSection() {
               )}
             />
           </div>
-        </motion.div>
+        </button>
       </div>
     </section>
   )
