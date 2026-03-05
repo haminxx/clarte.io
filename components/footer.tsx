@@ -70,8 +70,8 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/about" className={footerLinkClass}>
-                  <span className="relative inline-block after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-white after:to-white/80 after:transition-transform after:duration-300 after:ease-out group-hover:after:scale-x-100">About</span>
+                <Link href="/demo" className={footerLinkClass}>
+                  <span className="relative inline-block after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-white after:to-white/80 after:transition-transform after:duration-300 after:ease-out group-hover:after:scale-x-100">Demo</span>
                 </Link>
               </li>
             </ul>
