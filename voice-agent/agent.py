@@ -237,38 +237,54 @@ class ExecutiveAssistantAgent(Agent):
 
         async def stripped_text() -> AsyncIterable[str]:
             nonlocal buffer, tag_stripped, t_first_llm, sent_thinking
-            async for chunk in text:
-                if t_first_llm is None:
-                    if self._silence_timer and not self._silence_timer.done():
-                        self._silence_timer.cancel()
-                    t_first_llm = time.perf_counter()
-                    logger.info("[latency] First LLM text chunk received")
-                    if not sent_thinking:
-                        sent_thinking = True
-                        try:
-                            await self._room.local_participant.publish_data(
-                                json.dumps({"type": "agent_thinking"}),
-                                reliable=True,
-                            )
-                        except Exception as e:
-                            logger.debug("agent_thinking publish failed: %s", e)
-                if tag_stripped:
-                    yield chunk
-                    continue
-                buffer += chunk
-                if "]" in buffer:
-                    stripped = _strip_emotional_tags(buffer)
-                    tag_stripped = True
-                    if stripped:
-                        yield stripped
-                    buffer = ""
-                elif not buffer.startswith("["):
-                    tag_stripped = True
-                    if buffer:
-                        yield buffer
-                    buffer = ""
-            if buffer:
-                yield buffer
+            collected: list[str] = []
+            try:
+                async for chunk in text:
+                    if t_first_llm is None:
+                        if self._silence_timer and not self._silence_timer.done():
+                            self._silence_timer.cancel()
+                        t_first_llm = time.perf_counter()
+                        logger.info("[latency] First LLM text chunk received")
+                        if not sent_thinking:
+                            sent_thinking = True
+                            try:
+                                await self._room.local_participant.publish_data(
+                                    json.dumps({"type": "agent_thinking"}),
+                                    reliable=True,
+                                )
+                            except Exception as e:
+                                logger.debug("agent_thinking publish failed: %s", e)
+                    if tag_stripped:
+                        collected.append(chunk)
+                        yield chunk
+                        continue
+                    buffer += chunk
+                    if "]" in buffer:
+                        stripped = _strip_emotional_tags(buffer)
+                        tag_stripped = True
+                        if stripped:
+                            collected.append(stripped)
+                            yield stripped
+                        buffer = ""
+                    elif not buffer.startswith("["):
+                        tag_stripped = True
+                        if buffer:
+                            collected.append(buffer)
+                            yield buffer
+                        buffer = ""
+                if buffer:
+                    collected.append(buffer)
+                    yield buffer
+            finally:
+                full_text = "".join(collected).strip()
+                if full_text:
+                    try:
+                        await self._room.local_participant.publish_data(
+                            json.dumps({"type": "transcript_add", "role": "assistant", "content": full_text}),
+                            reliable=True,
+                        )
+                    except Exception as e:
+                        logger.debug("transcript_add assistant publish failed: %s", e)
 
         audio_stream = await Agent.default.tts_node(self, stripped_text(), model_settings)
         if audio_stream is None:

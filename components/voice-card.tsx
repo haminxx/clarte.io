@@ -13,18 +13,18 @@ import { useClarteTheme } from "@/lib/clarte-theme-context"
 
 /** Deepgram Aura-2 voice options exposed on the demo page. */
 export const VOICE_OPTIONS = [
-  { name: "Thalia (EN)", voiceId: "aura-2-thalia-en" },
-  { name: "Andromeda (EN)", voiceId: "aura-2-andromeda-en" },
-  { name: "Helena (EN)", voiceId: "aura-2-helena-en" },
-  { name: "Apollo (EN)", voiceId: "aura-2-apollo-en" },
-  { name: "Arcas (EN)", voiceId: "aura-2-arcas-en" },
+  { name: "Thalia", voiceId: "aura-2-thalia-en" },
+  { name: "Andromeda", voiceId: "aura-2-andromeda-en" },
+  { name: "Helena", voiceId: "aura-2-helena-en" },
+  { name: "Apollo", voiceId: "aura-2-apollo-en" },
+  { name: "Arcas", voiceId: "aura-2-arcas-en" },
 ] as const
 
 export const LANGUAGE_OPTIONS = [
-  { name: "EN", langId: "en" as const },
-  { name: "KO", langId: "ko" as const },
-  { name: "ES", langId: "es" as const },
-  { name: "Mandarin", langId: "zh" as const },
+  { name: "English", langId: "en" as const },
+  { name: "한국어", langId: "ko" as const },
+  { name: "Español", langId: "es" as const },
+  { name: "Chinese (Mandarin)", langId: "zh" as const },
   { name: "日本語", langId: "ja" as const },
   { name: "हिन्दी", langId: "hi" as const },
 ] as const

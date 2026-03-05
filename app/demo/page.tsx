@@ -40,11 +40,7 @@ export default function DemoPage() {
   }
 
   const handleTranscriptAdd = useCallback((role: string, content: string) => {
-    if (role === "user") {
-      setTranscriptEntries([{ role, content }])
-    } else {
-      setTranscriptEntries((prev) => [...prev, { role, content }])
-    }
+    setTranscriptEntries((prev) => [...prev, { role, content }])
     setTranscriptPartial("")
   }, [])
 
@@ -82,7 +78,7 @@ export default function DemoPage() {
               Try Clarte
             </h1>
             <p className={cn("mx-auto mt-4 max-w-2xl text-[clamp(0.9375rem,1.5vw,1.125rem)]", isBright ? "text-black/60" : "text-white/60")}>
-              Start a voice call with Clarte and see the live transcript in real time.
+              Start a voice call
             </p>
           </div>
         </AnimateOnScroll>
@@ -127,29 +123,27 @@ export default function DemoPage() {
                 </p>
                 <div
                   ref={transcriptContainerRef}
-                  className="max-h-[clamp(3rem,8vh,5rem)] overflow-hidden rounded-lg border border-border/50 bg-background/50 px-3 py-2 text-[clamp(0.8125rem,1.1vw,0.875rem)] text-foreground flex flex-col justify-end"
+                  className="max-h-[clamp(8rem,20vh,14rem)] overflow-y-auto overflow-x-hidden rounded-lg border border-border/50 bg-background/50 px-3 py-2 text-[clamp(0.8125rem,1.1vw,0.875rem)] text-foreground flex flex-col gap-1.5 justify-end"
                 >
-                  {transcriptEntries.filter((e) => e.role === "user").length === 0 && !transcriptPartial ? (
-                    <span className="text-muted-foreground">Your speech will appear here...</span>
+                  {transcriptEntries.length === 0 && !transcriptPartial ? (
+                    <span className="text-muted-foreground">Your speech and Clarte&apos;s replies will appear here...</span>
                   ) : (
-                    <div className="line-clamp-2 leading-tight">
+                    <div className="space-y-1.5">
+                      {transcriptEntries.map((entry, i) => (
+                        <div key={i} className={cn("leading-tight", entry.role === "user" ? "text-foreground/90" : "text-blue-600 dark:text-blue-400")}>
+                          <span className="font-medium">{entry.role === "user" ? "You: " : "Clarte: "}</span>
+                          {entry.content}
+                        </div>
+                      ))}
                       {transcriptPartial ? (
-                        <div className="truncate">
-                          <span className="text-foreground/90">
+                        <div className="leading-tight text-foreground/90">
+                          <span className="font-medium">You: </span>
+                          <span>
                             {transcriptPartial}
                             <span className="animate-pulse">|</span>
                           </span>
                         </div>
-                      ) : (
-                        transcriptEntries
-                          .filter((e) => e.role === "user")
-                          .slice(-1)
-                          .map((entry, i) => (
-                            <div key={i} className="truncate">
-                              {entry.content}
-                            </div>
-                          ))
-                      )}
+                      ) : null}
                     </div>
                   )}
                   <div ref={transcriptEndRef} />
