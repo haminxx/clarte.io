@@ -7,6 +7,7 @@ if (typeof window !== "undefined" && !process.env.NEXT_PUBLIC_LIVEKIT_URL) {
 }
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
+import { PageThemeBg } from "@/components/page-theme-bg"
 import { HeroSection } from "@/components/hero-section"
 import { CompanyLogos } from "@/components/company-logos"
 import { AIStrategySection } from "@/components/ai-strategy-section"
@@ -15,7 +16,8 @@ import { DemoPreviewSection } from "@/components/demo-preview-section"
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
+    <div className="min-h-screen bg-transparent overflow-x-hidden">
+      <PageThemeBg />
       <Header />
 
       <main className="overflow-x-hidden snap-y snap-mandatory">

@@ -199,7 +199,7 @@ export function ParticleOrb({ variant = "dark" }: ParticleOrbProps) {
         cancelAnimationFrame(animationRef.current)
       }
     }
-  }, [])
+  }, [variant])
 
   return (
     <canvas
