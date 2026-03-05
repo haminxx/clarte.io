@@ -151,7 +151,12 @@ export function FeaturesSection() {
             <div className="mt-4 flex items-center gap-4">
               <Button
                 size="icon"
-                className="h-10 w-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+                className={cn(
+                  "h-10 w-10 rounded-full ring-2",
+                  theme === "bright"
+                    ? "bg-neutral-900 text-white hover:bg-neutral-800 ring-neutral-700"
+                    : "bg-primary text-primary-foreground hover:bg-primary/90"
+                )}
                 onClick={() => playSample("Marin")}
                 aria-label={playingSample === "Marin" ? "Stop sample" : "Play Marin sample"}
               >
@@ -187,7 +192,12 @@ export function FeaturesSection() {
             <div className="mt-4 flex items-center gap-4">
               <Button
                 size="icon"
-                className="h-10 w-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+                className={cn(
+                  "h-10 w-10 rounded-full ring-2",
+                  theme === "bright"
+                    ? "bg-neutral-900 text-white hover:bg-neutral-800 ring-neutral-700"
+                    : "bg-primary text-primary-foreground hover:bg-primary/90"
+                )}
                 onClick={() => playSample("Victoria")}
                 aria-label={playingSample === "Victoria" ? "Stop sample" : "Play Victoria sample"}
               >

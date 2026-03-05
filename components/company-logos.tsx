@@ -18,7 +18,6 @@ const logos = [
 
 export function CompanyLogos() {
   const { theme } = useClarteTheme()
-  const isBright = theme === "bright"
 
   return (
     <AnimateOnScroll animation="fade-blur">
@@ -26,10 +25,15 @@ export function CompanyLogos() {
         <p className="mb-4 sm:mb-6 text-center text-xs sm:text-sm text-muted-foreground px-4">
           Trusted by builders at
         </p>
-        <div className="relative">
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-background to-transparent" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-background to-transparent" />
-          <div className="logo-marquee-track flex items-center gap-10 sm:gap-14 px-10 opacity-80 whitespace-nowrap">
+        <div
+          className={cn(
+            "relative rounded-2xl py-4 sm:py-5",
+            theme === "bright" ? "bg-black/10" : "bg-white/10"
+          )}
+        >
+          <div className={cn("pointer-events-none absolute inset-y-0 left-0 w-16 rounded-l-2xl z-10", theme === "bright" ? "bg-gradient-to-r from-black/10 to-transparent" : "bg-gradient-to-r from-white/10 to-transparent")} />
+          <div className={cn("pointer-events-none absolute inset-y-0 right-0 w-16 rounded-r-2xl z-10", theme === "bright" ? "bg-gradient-to-l from-black/10 to-transparent" : "bg-gradient-to-l from-white/10 to-transparent")} />
+          <div className="logo-marquee-track flex items-center gap-10 sm:gap-14 px-10 whitespace-nowrap">
             {[...logos, ...logos].map((logo, idx) => (
               <div
                 key={`${logo.name}-${idx}`}
@@ -39,7 +43,7 @@ export function CompanyLogos() {
                 <img
                   src={logo.src}
                   alt={logo.alt}
-                  className={cn("h-8 sm:h-10 w-auto object-contain", isBright && "invert")}
+                  className="h-16 sm:h-20 w-auto object-contain max-h-[5rem]"
                   loading="lazy"
                 />
               </div>

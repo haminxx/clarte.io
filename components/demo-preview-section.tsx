@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useRef, useState } from "react"
 import Link from "next/link"
+import { motion, useScroll, useTransform } from "framer-motion"
 import { DEMO_PREVIEW_SRC, DEMO_PREVIEW_TYPE, type DemoPreviewMediaType } from "@/lib/demo-preview-config"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 import { cn } from "@/lib/utils"
@@ -9,122 +10,43 @@ import { cn } from "@/lib/utils"
 export function DemoPreviewSection() {
   const { theme } = useClarteTheme()
   const [mediaError, setMediaError] = useState(false)
-  const [expanded, setExpanded] = useState(false)
-  const [mounted, setMounted] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const sectionRef = useRef<HTMLElement>(null)
 
   const isBright = theme === "bright"
   const mediaType: DemoPreviewMediaType = DEMO_PREVIEW_TYPE === "video" ? "video" : "gif"
-  const [hasScrolled, setHasScrolled] = useState(false)
 
-  useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 1100)
-    return () => clearTimeout(t)
-  }, [])
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end end"],
+  })
 
-  // Track whether the user has actually scrolled, so we don't auto-expand on initial load.
-  useEffect(() => {
-    const handleScrollOnce = () => {
-      if (window.scrollY > 10) {
-        setHasScrolled(true)
-        window.removeEventListener("scroll", handleScrollOnce)
-      }
-    }
-    window.addEventListener("scroll", handleScrollOnce, { passive: true })
-    return () => window.removeEventListener("scroll", handleScrollOnce)
-  }, [])
-
-  // Scroll-driven expand / collapse with hysteresis to avoid \"shaking\" at the threshold.
-  useEffect(() => {
-    const section = sectionRef.current
-    if (!section) return
-
-    let frameRequested = false
-
-    const handleScroll = () => {
-      if (!section) return
-      if (frameRequested) return
-      frameRequested = true
-      requestAnimationFrame(() => {
-        frameRequested = false
-        const rect = section.getBoundingClientRect()
-        const viewportHeight = window.innerHeight || 0
-        if (viewportHeight <= 0 || rect.height <= 0) return
-
-        const visibleTop = Math.max(0, rect.top)
-        const visibleBottom = Math.min(viewportHeight, rect.bottom)
-        const visibleHeight = Math.max(0, visibleBottom - visibleTop)
-        const ratio = visibleHeight / rect.height
-        const scrollY = window.scrollY || window.pageYOffset || 0
-
-        // Only auto-expand after the user has scrolled a bit, and when ~50%+ is visible.
-        const shouldExpand = hasScrolled && ratio >= 0.5
-        // Only auto-collapse when the user is effectively back at the top and the card is mostly compact.
-        const shouldCollapse = scrollY < 12 && ratio < 0.45
-
-        setExpanded((prev) => {
-          if (!prev && shouldExpand) {
-            if (videoRef.current && mediaType === "video") {
-              videoRef.current.play().catch(() => {})
-            }
-            return true
-          }
-          if (prev && shouldCollapse) {
-            if (videoRef.current) {
-              videoRef.current.pause()
-            }
-            return false
-          }
-          return prev
-        })
-      })
-    }
-
-    window.addEventListener("scroll", handleScroll, { passive: true })
-    // Run once on mount to ensure we don't start expanded.
-    handleScroll()
-
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [hasScrolled, mediaType])
+  // Interpolate width/height from initial centered box to full viewport; border-radius to 0.
+  const width = useTransform(scrollYProgress, [0, 0.2, 0.6], ["92vw", "96vw", "100vw"])
+  const height = useTransform(scrollYProgress, [0, 0.2, 0.6], ["33vh", "60vh", "100vh"])
+  const borderRadius = useTransform(scrollYProgress, [0, 0.2, 0.5], [24, 12, 0])
 
   return (
     <section
       id="demo-preview-section"
       ref={sectionRef}
+      style={{ minHeight: "250vh" }}
       className={cn(
         "relative w-full -mt-[15vh]",
         isBright ? "bg-gradient-to-b from-sky-50 via-blue-50/90 to-sky-100/80" : "bg-background"
       )}
     >
-      <div
-        className={cn(
-          // Slightly slower, smoother expand/collapse for container
-          "w-full pb-16 flex flex-col transition-[max-width,padding,height,border-radius] duration-[1000ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
-          expanded ? "mx-auto max-w-none px-0" : "mx-auto max-w-[min(80rem,92vw)] px-[clamp(1.5rem,4vw,4rem)] sm:px-[clamp(2rem,5vw,3rem)] lg:px-16"
-        )}
-      >
-        <button
-          type="button"
-          onClick={() => {
-            setExpanded(true)
-            if (videoRef.current && mediaType === "video") {
-              videoRef.current.play().catch(() => {})
-            }
-            sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+      <div className="sticky top-0 flex h-screen w-full items-center justify-center overflow-hidden">
+        <motion.div
+          className="relative w-full overflow-hidden bg-black text-left shadow-2xl"
+          style={{
+            width,
+            height,
+            borderRadius,
+            maxWidth: "100vw",
+            maxHeight: "100vh",
           }}
-          className={cn(
-            // Slower card expansion/collapse and entrance for a more relaxed feel
-        "relative w-full overflow-hidden bg-black text-left transition-[height,border-radius,max-width] duration-[1000ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
-            expanded
-              ? "h-screen min-h-screen rounded-none"
-              : "h-[33vh] rounded-3xl shadow-2xl",
-            !expanded && "duration-1000 ease-out transition-opacity transition-transform",
-            !mounted && !expanded && "opacity-0 translate-y-6",
-            mounted && !expanded && "opacity-100 translate-y-0"
-          )}
-          style={expanded ? undefined : {}}
-          aria-label="Expand demo preview"
+          aria-label="Demo preview"
         >
           <div className="relative z-10 flex h-full flex-col justify-between p-6 sm:p-8 lg:p-12">
             <div>
@@ -180,7 +102,7 @@ export function DemoPreviewSection() {
               )}
             />
           </div>
-        </button>
+        </motion.div>
       </div>
     </section>
   )
