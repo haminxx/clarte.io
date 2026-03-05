@@ -53,8 +53,9 @@ export default function ProfilePage() {
 
   if (!auth) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0a0a14]">
-        <div className="text-center text-white/60">
+      <div className="flex min-h-screen items-center justify-center bg-transparent">
+        <PageThemeBg />
+        <div className="relative z-10 text-center text-white/60">
           <p>Firebase is not configured.</p>
           <Link href="/" className="mt-4 inline-block text-white underline">
             Back to home
