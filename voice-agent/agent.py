@@ -456,8 +456,11 @@ async def entrypoint(ctx: agents.JobContext) -> None:
     voice, mode, language, user_name = meta["voice"], meta["mode"], meta["language"], meta.get("user_name")
     voice_profile_id = meta.get("voice_profile_id")
 
+    if not (os.getenv("OPENAI_API_KEY") or "").strip():
+        logger.error("OPENAI_API_KEY is not set. LLM will fail.")
+
     if not (os.getenv("DEEPGRAM_API_KEY") or "").strip():
-        logger.warning(
+        logger.error(
             "DEEPGRAM_API_KEY is not set. TTS will fail and the agent will be silent. "
             "Set it in Render Dashboard → Environment, or in voice-agent/.env for local runs."
         )
@@ -503,7 +506,7 @@ async def entrypoint(ctx: agents.JobContext) -> None:
     try:
         session = AgentSession(
             llm=openai.realtime.RealtimeModel(
-                model="gpt-realtime",
+                model="gpt-4o-realtime-preview",
                 modalities=["text"],
                 turn_detection=turn_detection,
             ),

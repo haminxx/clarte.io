@@ -30,7 +30,7 @@ export function CompanyLogos() {
             "relative rounded-2xl py-2 sm:py-3 min-h-[3.5rem] sm:min-h-[4.25rem] backdrop-blur-md border",
             theme === "bright" 
               ? "bg-black/5 border-black/5" 
-              : "bg-white/20 border-white/10"
+              : "bg-white/10 border-white/10"
           )}
         >
           <div className={cn("pointer-events-none absolute inset-y-0 left-0 w-16 rounded-l-2xl z-10", theme === "bright" ? "bg-gradient-to-r from-black/10 to-transparent" : "bg-gradient-to-r from-white/20 to-transparent")} />
