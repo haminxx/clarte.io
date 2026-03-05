@@ -39,7 +39,7 @@ flowchart TB
         Realtime[Realtime API]
     end
 
-    subgraph ElevenLabs [ElevenLabs]
+    subgraph Deepgram [Deepgram]
         TTS[TTS]
     end
 
@@ -67,10 +67,10 @@ flowchart TB
 
 | Path | When | Flow |
 |------|------|------|
-| **Path A: LiveKit** | `LIVEKIT_URL` set and `NEXT_PUBLIC_USE_DIRECT_RELAY` not set | Browser → Firebase (app) → Token from Render → LiveKit → Render Agent (OpenAI + ElevenLabs) |
+| **Path A: LiveKit** | `LIVEKIT_URL` set and `NEXT_PUBLIC_USE_DIRECT_RELAY` not set | Browser → Firebase (app) → Token from Render → LiveKit → Render Agent (OpenAI + Deepgram TTS) |
 | **Path B: Relay (VoiceRoomDirect)** | `LIVEKIT_URL` unset or `NEXT_PUBLIC_USE_DIRECT_RELAY=true` | Browser → Firebase (app) → WebSocket to Render `/realtime` → OpenAI Realtime |
 
-**Pipeline choice (VoiceAgentCard):** Uses VoiceRoomDirect (lighter bundle) when LiveKit is not configured or when `NEXT_PUBLIC_USE_DIRECT_RELAY=true`. Otherwise uses Room (LiveKit) for full features (screen share, camera, ElevenLabs TTS, conversation save).
+**Pipeline choice (VoiceAgentCard):** Uses VoiceRoomDirect (lighter bundle) when LiveKit is not configured or when `NEXT_PUBLIC_USE_DIRECT_RELAY=true`. Otherwise uses Room (LiveKit) for full features (screen share, camera, Deepgram TTS, conversation save).
 
 ---
 
@@ -88,7 +88,7 @@ flowchart TB
 | **Network (Browser ↔ Render)** | 50–200 | Depends on region |
 | **Network (Render ↔ LiveKit)** | 20–100 | Same cloud |
 | **Network (Render ↔ OpenAI)** | 50–150 | API |
-| **Network (Render ↔ ElevenLabs)** | 50–150 | API |
+| **Network (Render ↔ Deepgram)** | 50–150 | API |
 | **Turn detection** | 200–600 | When user stops speaking |
 
 ---
@@ -98,7 +98,7 @@ flowchart TB
 | Scenario | Typical (ms) | Range (ms) |
 |----------|---------------|------------|
 | **First response (voice-only)** | 1000–2000 | 800–3000 |
-| **First response (with ElevenLabs)** | 1500–2500 | 1200–3500 |
+| **First response (with Deepgram TTS)** | 1000–2000 | 800–3000 |
 | **Tool call (search_web)** | +2000 | +1500–3000 |
 | **Cold start (Render)** | +5000–30000 | Mitigated by keep-warm cron (see below) |
 
@@ -116,14 +116,14 @@ User speaks → [Turn detection 200–600ms] → User stops
      ↓
 [OpenAI Realtime 300–800ms] → Text generated
      ↓
-[ElevenLabs TTS 200–600ms] → Audio synthesized
+[Deepgram Aura TTS 100–250ms] → Audio synthesized
      ↓
 [Network 50–200ms] → Audio to user
      ↓
 User hears response
 ```
 
-**Total: ~750–2200 ms** (typical)
+**Total: ~650–1850 ms** (typical)
 
 ---
 
@@ -144,7 +144,7 @@ Render services sleep after ~15 min idle, adding 5–30 s to the first request. 
 Timing logs are added in `agent.py` (tts_node) to measure:
 
 - **First LLM text chunk:** Logged when the first text chunk arrives from OpenAI Realtime (indicates user speech → LLM processing complete).
-- **First TTS frame:** Logged when the first audio frame is ready from ElevenLabs. The log includes `LLM->TTS` duration in ms.
+- **First TTS frame:** Logged when the first audio frame is ready from Deepgram. The log includes `LLM->TTS` duration in ms.
 
 Enable debug logging to see these: `LOG_LEVEL=DEBUG` or set logger to INFO. Example output:
 
@@ -153,7 +153,7 @@ Enable debug logging to see these: `LOG_LEVEL=DEBUG` or set logger to INFO. Exam
 [latency] First TTS frame ready (LLM->TTS: 245 ms)
 ```
 
-Use these to pinpoint whether the bottleneck is OpenAI Realtime, ElevenLabs, or network.
+Use these to pinpoint whether the bottleneck is OpenAI Realtime, Deepgram TTS, or network.
 
 ---
 
@@ -161,8 +161,7 @@ Use these to pinpoint whether the bottleneck is OpenAI Realtime, ElevenLabs, or 
 
 | Change | Status |
 |--------|--------|
-| `streaming_latency=1` | Applied (1 adds small buffer to reduce choppy playback; try 2 if lag persists) |
-| `eleven_turbo_v2` (English) / `eleven_flash_v2_5` (Korean) | Applied |
+| **Deepgram Aura-2 TTS** | Applied; low-latency streaming (100–250 ms) |
 | Prompt trimmed ~30% | Applied |
 | Keep-warm workflow | `.github/workflows/render-keep-warm.yml`; set `VOICE_AGENT_URL` secret |
 | **High-pass filter (100 Hz)** | Applied in VoiceRoomDirect (WebSocket path). Attenuates low-frequency ambient noise (rumble, HVAC, traffic). LiveKit path uses Krisp for noise filtering. |
@@ -177,15 +176,15 @@ Use these to pinpoint whether the bottleneck is OpenAI Realtime, ElevenLabs, or 
 | **Hume Octave** | ~100–200 ms TTFA | Add `livekit-agents[hume]`, `HUME_API_KEY`; different voice quality |
 | **PlayHT 2.0 Turbo** | 200–400 ms TTFA | `livekit-agents[playai]`; requires `PLAYHT_API_KEY` |
 | **Cartesia Sonic-3** | Low-latency streaming | `livekit-agents[cartesia]`; 60+ emotions |
-| Use OpenAI built-in voice | Large | `FORCE_OPENAI_VOICE=1`; trades quality for speed |
+| Use OpenAI built-in voice | Large | `FORCE_OPENAI_VOICE=1` (if re-added); trades quality for speed |
 | Render region near LiveKit | Small–moderate | Set region in Render dashboard |
-| `streaming_latency=2` | Smoother playback | If audio still lags/freezes, try 2 for more buffer; region alignment helps |
+| Deepgram streaming | Applied | Aura-2; 100–250 ms typical |
 
 ---
 
 ## Alternative Stacks (LLM & TTS)
 
-The current pipeline (OpenAI Realtime + ElevenLabs) balances quality and latency. If you want to reduce cost or latency, consider these alternatives.
+The current pipeline (OpenAI Realtime + Deepgram Aura TTS) balances quality and low latency. If you want to reduce cost or try other TTS, consider these alternatives.
 
 ### LLM Options
 
@@ -199,15 +198,15 @@ The current pipeline (OpenAI Realtime + ElevenLabs) balances quality and latency
 
 | Option | Latency | Notes |
 |--------|---------|-------|
-| **ElevenLabs** (current) | 150–500 ms | High quality; `eleven_turbo_v2` / `eleven_flash_v2_5` |
+| **Deepgram Aura** (current) | 100–250 ms | Low latency; Aura-2 streaming; multiple voices/languages |
+| **ElevenLabs** | 150–500 ms | High quality; `eleven_turbo_v2` / `eleven_flash_v2_5` |
 | **Groq Orpheus** | ~100 chars/sec | Fast; `livekit-agents[groq]` integration |
 | **PlayAI Dialog (Groq)** | ~200 ms TTFA | 15x realtime; good for voice agents |
-| **OpenAI built-in** | Fastest | `FORCE_OPENAI_VOICE=1`; lower quality |
+| **OpenAI built-in** | Fastest | Lower quality; no separate TTS key |
 | **Hugging Face TTS** | Variable | Self-host or Inference API; cost control |
-| **Deepgram Aura** | Low latency | Primarily STT; Aura TTS also available |
 
 ### Recommendations
 
-- **Lower cost:** `FORCE_OPENAI_VOICE=1` to skip ElevenLabs; or Groq Orpheus/PlayAI if adopting Groq for LLM.
-- **Lower latency:** Groq Orpheus + Groq LLM requires custom agent (STT → Groq LLM → Groq TTS) — more engineering, potentially faster.
+- **Lower cost:** OpenAI built-in voice (if re-added); or Groq Orpheus/PlayAI if adopting Groq for LLM.
+- **Lower latency:** Current stack (Deepgram Aura) is already low latency; Groq stack can be faster with more engineering.
 - **Hugging Face TTS:** Best for cost control if self-hosting; quality and latency depend on model and hardware.

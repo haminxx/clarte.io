@@ -53,13 +53,13 @@ npm run tauri build
 
 ---
 
-## ElevenLabs Setup
+## Deepgram Setup (TTS)
 
 ### 1. Get your API key
-- Go to [ElevenLabs](https://elevenlabs.io/) > Settings > API Keys
-- Create/copy your API key
+- Go to [Deepgram Console](https://console.deepgram.com/) → API Keys
+- Create or copy your API key
 
-### 2. Where to set `ELEVEN_API_KEY`
+### 2. Where to set `DEEPGRAM_API_KEY`
 
 | Location | Purpose |
 |----------|---------|
@@ -70,9 +70,9 @@ npm run tauri build
 ### 3. Render
 1. Open your Render service: https://dashboard.render.com
 2. Select your Clarte Web Service
-3. Environment > Add variable: `ELEVEN_API_KEY` = your key
+3. Environment → Add variable: `DEEPGRAM_API_KEY` = your key
 4. Save; Render will redeploy
 
 ### 4. Firebase / GitHub
-- ElevenLabs is backend-only; no Firebase or GitHub secrets needed for it
-- Ensure `ELEVEN_API_KEY` is set on Render
+- Deepgram is backend-only; no Firebase or GitHub secrets needed for it
+- Ensure `DEEPGRAM_API_KEY` is set on Render

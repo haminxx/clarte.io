@@ -46,7 +46,7 @@ Frontend vars are baked in at **build time** (Next.js). Backend vars are read at
 
 1. Copy `.env.example` to `.env` and set:
    - `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`
-   - `OPENAI_API_KEY`, `EXA_API_KEY`
+   - `OPENAI_API_KEY`, `DEEPGRAM_API_KEY`, `EXA_API_KEY`
 2. Install: `pip install -r requirements.txt` (or `uv sync` if using uv)
 3. **Option A – Agent only:** `python agent.py dev`
 4. **Option B – Token server + agent (like Render):** `python start_render.py` (token server on port 8080, agent in subprocess)
@@ -118,42 +118,40 @@ If the button works but the agent never speaks or responds:
 
 ## TTS alternatives (low latency + emotion)
 
-The agent uses ElevenLabs by default. For more expressive speech (tone, pitch, pacing) or lower latency, consider these LiveKit-compatible alternatives:
+The agent uses **Deepgram Aura** for TTS (low latency, multiple voices/languages). To try other providers, add the plugin to `requirements.txt`, set the provider's API key(s), and branch in `agent.py` to instantiate the chosen TTS.
 
-| Provider | LiveKit plugin | Latency | Emotion control | Notes |
-|----------|----------------|---------|-----------------|-------|
-| **Hume Octave** | `livekit-agents[hume]` | ~100ms (Octave 2) | `description` – natural-language acting instructions (tone, pacing, mood) | Best fit for ultra-low latency + strong emotion. Set `HUME_API_KEY`. |
-| **PlayHT (PlayAI)** | `livekit-agents[playai]` | ~200–400ms TTFA | Emotion control in API | PlayHT 2.0 Turbo. Requires `PLAYHT_API_KEY` and `PLAYHT_USER_ID`. |
-| **Cartesia Sonic-3** | `livekit-agents[cartesia]` | Low-latency streaming | 60+ emotions (neutral, excited, sad, sarcastic, etc.) | Explicit `emotion` parameter; natural laughter and pacing. |
-| **ElevenLabs** (current) | `livekit-agents[elevenlabs]` | `streaming_latency=2` | `stability`, `similarity_boost`, `style` | Default. Tuned for expressiveness via `VoiceSettings`. |
+| Provider | LiveKit plugin | Latency | Notes |
+|----------|----------------|---------|-------|
+| **Deepgram Aura** (current) | `livekit-agents[deepgram]` | 100–250 ms | Aura-2 streaming; set `DEEPGRAM_API_KEY`. |
+| **Hume Octave** | `livekit-agents[hume]` | ~100 ms (Octave 2) | Natural-language acting instructions. Set `HUME_API_KEY`. |
+| **PlayHT (PlayAI)** | `livekit-agents[playai]` | ~200–400 ms TTFA | Requires `PLAYHT_API_KEY` and `PLAYHT_USER_ID`. |
+| **Cartesia Sonic-3** | `livekit-agents[cartesia]` | Low-latency streaming | 60+ emotions. |
+| **ElevenLabs** | `livekit-agents[elevenlabs]` | 150–500 ms | High quality; set `ELEVEN_API_KEY`. |
 
-To switch providers, add the plugin to `requirements.txt`, set the provider's API key(s), and branch in `agent.py` to instantiate the chosen TTS (e.g. `TTS_PROVIDER=elevenlabs|hume`).
+## Language support (English / Korean / more)
 
-## Language support (English / Korean)
+The agent responds in the same language as the user. Supported languages: **English (en)**, **Korean (ko)**, **Spanish (es)**, **Chinese (zh)**, **Japanese (ja)**, **Hindi (hi)**.
 
-The agent responds in the same language as the user. Supported languages: **English (en)** and **Korean (ko)**.
-
-- **Frontend toggle** – Use the EN | KO toggle next to the voice selector before connecting. The selected language is passed in the token metadata.
-- **Mid-call switch** – The user can say "speak Korean" or "한국어로 말해줘" and the agent will call `switch_to_korean` to update TTS. Similarly, "speak English" triggers `switch_to_english`.
-- **ElevenLabs** – When using ElevenLabs TTS, the `language` parameter is set from metadata (en/ko) for correct pronunciation. `eleven_flash_v2_5` supports Korean.
+- **Frontend toggle** – Use the language selector next to the voice selector before connecting. The selected language is passed in the token metadata.
+- **Mid-call switch** – The user can say "speak Korean" or "한국어로 말해줘" and the agent will call `switch_to_korean`. Similarly, "speak English" triggers `switch_to_english`.
+- **Deepgram** – Language is set from metadata for correct pronunciation. Aura-2 models support multiple languages; choose the matching voice (e.g. `aura-2-thalia-en` for English).
 
 ## Latency tuning (target: under 1 second)
 
-**Current latency:** ~1–3 seconds (OpenAI Realtime + ElevenLabs TTS pipeline).
+**Current latency:** ~1–3 seconds (OpenAI Realtime + Deepgram Aura TTS pipeline).
 
 **Target:** Under 1 second for first response.
 
 ### Latency sources
 
 1. **OpenAI Realtime:** Speech understanding + text generation.
-2. **ElevenLabs TTS:** Text → audio synthesis + streaming.
+2. **Deepgram Aura TTS:** Text → audio synthesis + streaming (100–250 ms typical).
 3. **Network:** Render ↔ LiveKit ↔ client.
 4. **Turn detection:** When the model decides the user has finished speaking.
 
 ### Applied
 
-- **streaming_latency=0** – Minimal ElevenLabs buffering.
-- **eleven_turbo_v2** – For English; `eleven_flash_v2_5` for Korean (multilingual support).
+- **Deepgram Aura-2** – Low-latency streaming TTS.
 - **Prompt trimmed ~30%** – Fewer input tokens.
 - **Keep-warm** – `.github/workflows/render-keep-warm.yml` pings `/health` every 10 min. Set `VOICE_AGENT_URL` secret.
 - **Instrumentation** – Timing logs in `agent.py` tts_node. See `PIPELINE_AND_LATENCY.md`.
@@ -162,16 +160,12 @@ The agent responds in the same language as the user. Supported languages: **Engl
 
 | Option | Description | Expected impact |
 |--------|-------------|-----------------|
-| **Lower streaming_latency to 0** | Further reduce ElevenLabs buffering. | May affect quality. |
-| **Use eleven_turbo_v2** | Switch from `eleven_flash_v2_5` to `eleven_turbo_v2` if available; optimized for low latency. | Moderate. |
-| **Switch back to OpenAI built-in voice** | Disable ElevenLabs when latency is critical; OpenAI Realtime is typically ~300–800 ms. | Large; trades voice quality for speed. |
 | **Shorter prompt** | Reduce `EXECUTIVE_ASSISTANT_PROMPT` size to cut input tokens. | Small. |
 | **Render region** | Run Render in a region close to LiveKit (e.g. same cloud/region). | Small–moderate. |
-| **Hybrid: OpenAI for quick replies, ElevenLabs for long** | Use OpenAI voice for short replies (< 2 sentences) and ElevenLabs for longer ones. | Complex; requires pipeline logic. |
+| **Alternative TTS** | Hume, PlayHT, or Cartesia for different latency/quality trade-offs. | Varies. |
 
 ### Recommended order
 
-1. **Quick win:** Lower `streaming_latency` to 0 or 1 for ElevenLabs.
-2. **A/B test:** Compare OpenAI-only vs ElevenLabs; measure latency vs quality.
-3. **Model:** Try `eleven_turbo_v2` if the LiveKit plugin supports it.
-4. **Infrastructure:** Check Render region vs LiveKit region.
+1. **Infrastructure:** Check Render region vs LiveKit region.
+2. **Measure:** Use the latency logs in `agent.py` to see LLM→TTS timing.
+3. **Prompt:** Trim prompt if input tokens are high.

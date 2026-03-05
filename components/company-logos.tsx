@@ -21,23 +21,23 @@ export function CompanyLogos() {
 
   return (
     <AnimateOnScroll animation="fade-blur">
-      <div className="pt-4 sm:pt-5 pb-6 sm:pb-7 w-full overflow-hidden">
-        <p className="mb-4 sm:mb-6 text-center text-xs sm:text-sm text-muted-foreground px-4">
+      <div className="pt-2 sm:pt-3 pb-3 sm:pb-4 w-full overflow-hidden">
+        <p className="mb-3 sm:mb-4 text-center text-[0.7rem] sm:text-xs text-muted-foreground px-4">
           Powered by platforms
         </p>
         <div
           className={cn(
-            "relative rounded-2xl py-3 sm:py-4 min-h-[4.5rem] sm:min-h-[5.5rem]",
+            "relative rounded-2xl py-2 sm:py-3 min-h-[3.5rem] sm:min-h-[4.25rem]",
             theme === "bright" ? "bg-black/10" : "bg-white/10"
           )}
         >
           <div className={cn("pointer-events-none absolute inset-y-0 left-0 w-16 rounded-l-2xl z-10", theme === "bright" ? "bg-gradient-to-r from-black/10 to-transparent" : "bg-gradient-to-r from-white/10 to-transparent")} />
           <div className={cn("pointer-events-none absolute inset-y-0 right-0 w-16 rounded-r-2xl z-10", theme === "bright" ? "bg-gradient-to-l from-black/10 to-transparent" : "bg-gradient-to-l from-white/10 to-transparent")} />
-          <div className="logo-marquee-track flex items-center gap-6 sm:gap-8 px-6 whitespace-nowrap">
+          <div className="logo-marquee-track flex items-center gap-4 sm:gap-6 px-4 whitespace-nowrap">
             {[...logos, ...logos].map((logo, idx) => (
               <div
                 key={`${logo.name}-${idx}`}
-                className="inline-flex items-center justify-center px-6 py-3 flex-shrink-0"
+                className="inline-flex items-center justify-center px-4 py-2 flex-shrink-0"
                 aria-label={logo.name}
               >
                 <img
@@ -45,8 +45,8 @@ export function CompanyLogos() {
                   alt={logo.alt}
                   className={
                     logo.large
-                      ? "h-10 sm:h-12 md:h-14 w-auto object-contain max-h-[3.5rem]"
-                      : "h-8 sm:h-10 w-auto object-contain max-h-[2.75rem]"
+                      ? "h-8 sm:h-9 md:h-10 w-auto object-contain max-h-[2.75rem]"
+                      : "h-6 sm:h-7 w-auto object-contain max-h-[2.25rem]"
                   }
                   loading="lazy"
                 />

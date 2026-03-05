@@ -117,8 +117,20 @@ export function ParticleOrb({ variant = "dark" }: ParticleOrbProps) {
 
         ctx.beginPath()
         ctx.arc(centerX + p.screenX, centerY + p.screenY, size, 0, Math.PI * 2)
-        // Bright: stronger blue–purple for visibility on light backgrounds
-        const [r, g, b] = isBright ? [59, 130, 246] : [255, 255, 255]
+        // Bright: blue–purple mix for visibility on light backgrounds
+        let r: number, g: number, b: number
+        if (isBright) {
+          const blue = [59, 130, 246]
+          const purple = [147, 51, 234]
+          // Blend more toward purple for particles closer to the viewer
+          const t = Math.min(1, Math.max(0, 1 - scale))
+          r = blue[0] * (1 - t) + purple[0] * t
+          g = blue[1] * (1 - t) + purple[1] * t
+          b = blue[2] * (1 - t) + purple[2] * t
+        } else {
+          // Dark: clean white dots
+          ;[r, g, b] = [255, 255, 255]
+        }
         ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha * (isBright ? 0.95 : 0.75)})`
         ctx.fill()
       })
