@@ -13,6 +13,7 @@ import {
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { getAuthErrorMessage } from "@/lib/firebase-auth-errors"
+import { PageThemeBg } from "@/components/page-theme-bg"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Mail, Github, Loader2 } from "lucide-react"
@@ -84,11 +85,8 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="pointer-events-none fixed inset-0">
-        <div className="absolute left-1/2 top-1/2 h-[700px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-blue-600/25 via-indigo-600/15 to-transparent blur-3xl" />
-        <div className="absolute left-1/4 bottom-1/4 h-[400px] w-[400px] rounded-full bg-indigo-500/10 blur-3xl" />
-      </div>
+    <div className="flex min-h-screen items-center justify-center bg-transparent px-4">
+      <PageThemeBg />
 
       <div className="relative z-10 w-full max-w-md">
         <div className="rounded-2xl border border-border bg-card/90 p-8 shadow-2xl backdrop-blur-md">

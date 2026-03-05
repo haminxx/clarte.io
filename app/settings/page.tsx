@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Menu } from "lucide-react"
+import { PageThemeBg } from "@/components/page-theme-bg"
 
 export default function SettingsPage() {
   const [user, setUser] = useState<User | null>(null)
@@ -65,10 +66,8 @@ export default function SettingsPage() {
 
   if (authLoading || !user) {
     return (
-      <div className="flex min-h-screen flex-col bg-[#0a0a14]">
-        <div className="pointer-events-none fixed inset-0">
-          <div className="absolute left-1/2 top-1/3 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-blue-600/10 via-indigo-500/5 to-transparent blur-3xl" />
-        </div>
+      <div className="flex min-h-screen flex-col bg-transparent">
+        <PageThemeBg />
         <DashboardSidebar />
         <div className="relative z-10 ml-16 flex min-h-screen flex-col lg:ml-16">
           <header className="sticky top-0 z-20 border-b border-white/10 bg-[#0a0a14]/80 backdrop-blur-md">
@@ -87,10 +86,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#0a0a14]">
-      <div className="pointer-events-none fixed inset-0">
-        <div className="absolute left-1/2 top-1/3 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-blue-600/10 via-indigo-500/5 to-transparent blur-3xl" />
-      </div>
+    <div className="flex min-h-screen flex-col bg-transparent">
+      <PageThemeBg />
 
       <DashboardSidebar />
 

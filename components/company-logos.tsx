@@ -27,8 +27,10 @@ export function CompanyLogos() {
         </p>
         <div
           className={cn(
-            "relative rounded-2xl py-2 sm:py-3 min-h-[3.5rem] sm:min-h-[4.25rem]",
-            theme === "bright" ? "bg-black/10" : "bg-white/10"
+            "relative rounded-2xl py-2 sm:py-3 min-h-[3.5rem] sm:min-h-[4.25rem] backdrop-blur-md border",
+            theme === "bright" 
+              ? "bg-black/5 border-black/5" 
+              : "bg-white/5 border-white/5"
           )}
         >
           <div className={cn("pointer-events-none absolute inset-y-0 left-0 w-16 rounded-l-2xl z-10", theme === "bright" ? "bg-gradient-to-r from-black/10 to-transparent" : "bg-gradient-to-r from-white/10 to-transparent")} />

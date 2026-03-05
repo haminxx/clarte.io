@@ -120,13 +120,13 @@ export function ParticleOrb({ variant = "dark" }: ParticleOrbProps) {
         // Bright: blue–purple mix for visibility on light backgrounds
         let r: number, g: number, b: number
         if (isBright) {
-          const blue = [59, 130, 246]
-          const purple = [147, 51, 234]
-          // Blend more toward purple for particles closer to the viewer
-          const t = Math.min(1, Math.max(0, 1 - scale))
-          r = blue[0] * (1 - t) + purple[0] * t
-          g = blue[1] * (1 - t) + purple[1] * t
-          b = blue[2] * (1 - t) + purple[2] * t
+          // Alternate between blue and purple for distinct dots based on position
+          const isPurple = (Math.floor(p.originalX * p.originalY) % 2 === 0)
+          if (isPurple) {
+            ;[r, g, b] = [147, 51, 234] // Purple
+          } else {
+            ;[r, g, b] = [59, 130, 246] // Blue
+          }
         } else {
           // Dark: clean white dots
           ;[r, g, b] = [255, 255, 255]
