@@ -30,11 +30,11 @@ export function CompanyLogos() {
             "relative rounded-2xl py-2 sm:py-3 min-h-[3.5rem] sm:min-h-[4.25rem] backdrop-blur-md border",
             theme === "bright" 
               ? "bg-black/5 border-black/5" 
-              : "bg-white/5 border-white/5"
+              : "bg-white/20 border-white/10"
           )}
         >
-          <div className={cn("pointer-events-none absolute inset-y-0 left-0 w-16 rounded-l-2xl z-10", theme === "bright" ? "bg-gradient-to-r from-black/10 to-transparent" : "bg-gradient-to-r from-white/10 to-transparent")} />
-          <div className={cn("pointer-events-none absolute inset-y-0 right-0 w-16 rounded-r-2xl z-10", theme === "bright" ? "bg-gradient-to-l from-black/10 to-transparent" : "bg-gradient-to-l from-white/10 to-transparent")} />
+          <div className={cn("pointer-events-none absolute inset-y-0 left-0 w-16 rounded-l-2xl z-10", theme === "bright" ? "bg-gradient-to-r from-black/10 to-transparent" : "bg-gradient-to-r from-white/20 to-transparent")} />
+          <div className={cn("pointer-events-none absolute inset-y-0 right-0 w-16 rounded-r-2xl z-10", theme === "bright" ? "bg-gradient-to-l from-black/10 to-transparent" : "bg-gradient-to-l from-white/20 to-transparent")} />
           <div className="logo-marquee-track flex items-center gap-4 sm:gap-6 px-4 whitespace-nowrap">
             {[...logos, ...logos].map((logo, idx) => (
               <div
