@@ -305,7 +305,7 @@
   html {
     @apply overflow-x-hidden;
     scrollbar-gutter: stable both-edges;
-    background: var(--background);
+    background: #0A0A14; /* matches Dark Mode Ambient Radial Glow base */
   }
   body {
     @apply bg-background text-foreground overflow-x-hidden;
