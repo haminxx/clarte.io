@@ -173,7 +173,7 @@ export function Header() {
     >
       <div className="mx-auto flex h-20 w-full max-w-[min(1400px,96vw)] 2xl:max-w-[min(1600px,94vw)] items-center justify-between pl-[clamp(1.5rem,4vw,7.5rem)] pr-[clamp(1.5rem,4vw,7.5rem)] sm:pl-[clamp(2rem,5vw,8rem)] sm:pr-[clamp(2rem,5vw,8rem)] lg:pl-[clamp(4rem,8vw,120px)] lg:pr-[clamp(4rem,8vw,120px)] 2xl:pl-[min(8vw,160px)] 2xl:pr-[min(8vw,160px)]">
         <div className="flex items-center gap-2">
-          <Link href="/" className={cn("text-2xl font-semibold", theme === "dark" ? "text-white" : "text-black")}>
+          <Link href="/" className={cn("text-2xl font-bold", theme === "dark" ? "text-white" : "text-black")}>
             Clarte
           </Link>
           <button

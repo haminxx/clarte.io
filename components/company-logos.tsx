@@ -4,16 +4,16 @@ import { AnimateOnScroll } from "./animate-on-scroll"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 import { cn } from "@/lib/utils"
 
-// Local logo assets (same set as former left vertical bar)
+// Local logo assets; large = Firebase, UCSD, LiveKit, Render, Cursor (4-5x bigger)
 const logos = [
-  { name: "UC San Diego", src: "/images/logos/ucsd.png", alt: "UC San Diego" },
-  { name: "OpenAI", src: "/images/logos/openai.png", alt: "OpenAI" },
-  { name: "LiveKit", src: "/images/logos/livekit.png", alt: "LiveKit" },
-  { name: "Render", src: "/images/logos/render.png", alt: "Render" },
-  { name: "Cursor", src: "/images/logos/cursor.png", alt: "Cursor" },
-  { name: "Deepgram", src: "/images/logos/deepgram.png", alt: "Deepgram" },
-  { name: "Firebase", src: "/images/logos/firebase.png", alt: "Firebase" },
-  { name: "Exa", src: "/images/logos/exa.png", alt: "Exa" },
+  { name: "UC San Diego", src: "/images/logos/ucsd.png", alt: "UC San Diego", large: true },
+  { name: "OpenAI", src: "/images/logos/openai.png", alt: "OpenAI", large: false },
+  { name: "LiveKit", src: "/images/logos/livekit.png", alt: "LiveKit", large: true },
+  { name: "Render", src: "/images/logos/render.png", alt: "Render", large: true },
+  { name: "Cursor", src: "/images/logos/cursor.png", alt: "Cursor", large: true },
+  { name: "Deepgram", src: "/images/logos/deepgram.png", alt: "Deepgram", large: false },
+  { name: "Firebase", src: "/images/logos/firebase.png", alt: "Firebase", large: true },
+  { name: "Exa", src: "/images/logos/exa.png", alt: "Exa", large: false },
 ]
 
 export function CompanyLogos() {
@@ -23,11 +23,11 @@ export function CompanyLogos() {
     <AnimateOnScroll animation="fade-blur">
       <div className="py-6 sm:py-8 w-full overflow-hidden">
         <p className="mb-4 sm:mb-6 text-center text-xs sm:text-sm text-muted-foreground px-4">
-          Trusted by builders at
+          Powered by platforms
         </p>
         <div
           className={cn(
-            "relative rounded-2xl py-4 sm:py-5",
+            "relative rounded-2xl py-4 sm:py-5 min-h-[7rem] sm:min-h-[8rem]",
             theme === "bright" ? "bg-black/10" : "bg-white/10"
           )}
         >
@@ -37,13 +37,13 @@ export function CompanyLogos() {
             {[...logos, ...logos].map((logo, idx) => (
               <div
                 key={`${logo.name}-${idx}`}
-                className="inline-flex items-center justify-center px-6 py-3"
+                className="inline-flex items-center justify-center px-6 py-3 flex-shrink-0"
                 aria-label={logo.name}
               >
                 <img
                   src={logo.src}
                   alt={logo.alt}
-                  className="h-16 sm:h-20 w-auto object-contain max-h-[5rem]"
+                  className={logo.large ? "h-20 sm:h-28 md:h-32 w-auto object-contain max-h-[10rem]" : "h-12 sm:h-16 w-auto object-contain max-h-[4rem]"}
                   loading="lazy"
                 />
               </div>

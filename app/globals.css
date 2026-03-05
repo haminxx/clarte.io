@@ -305,6 +305,7 @@
   html {
     @apply overflow-x-hidden;
     scrollbar-gutter: stable both-edges;
+    background: var(--background);
   }
   body {
     @apply bg-background text-foreground overflow-x-hidden;

@@ -18,12 +18,14 @@ export default function Home() {
     <div className="min-h-screen bg-background overflow-x-hidden">
       <Header />
 
-      <main className="overflow-x-hidden">
+      <main className="overflow-x-hidden snap-y snap-mandatory">
         <HeroSection />
 
         <DemoPreviewSection />
 
-        <CompanyLogos />
+        <div className="snap-start">
+          <CompanyLogos />
+        </div>
 
         <AIStrategySection />
 

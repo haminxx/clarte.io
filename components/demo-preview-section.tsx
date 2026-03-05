@@ -2,10 +2,15 @@
 
 import { useRef, useState } from "react"
 import Link from "next/link"
-import { motion, useScroll, useTransform } from "framer-motion"
+import { motion, useScroll, useTransform, useMotionValueEvent } from "framer-motion"
+import { ChevronDown } from "lucide-react"
 import { DEMO_PREVIEW_SRC, DEMO_PREVIEW_TYPE, type DemoPreviewMediaType } from "@/lib/demo-preview-config"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 import { cn } from "@/lib/utils"
+
+const PREVIEW_SCROLL_HEIGHT_VH = 380
+const VIDEO_PLAY_THRESHOLD = 0.38
+const ARROW_HIDE_THRESHOLD = 0.22
 
 export function DemoPreviewSection() {
   const { theme } = useClarteTheme()
@@ -21,22 +26,58 @@ export function DemoPreviewSection() {
     offset: ["start start", "end end"],
   })
 
+  // Video play when scrolled into "play zone"
+  useMotionValueEvent(scrollYProgress, "change", (v) => {
+    const video = videoRef.current
+    if (mediaType !== "video" || !video) return
+    if (v >= VIDEO_PLAY_THRESHOLD) {
+      video.play().catch(() => {})
+    } else {
+      video.pause()
+    }
+  })
+
   // Interpolate width/height from initial centered box to full viewport; border-radius to 0.
   const width = useTransform(scrollYProgress, [0, 0.2, 0.6], ["92vw", "96vw", "100vw"])
   const height = useTransform(scrollYProgress, [0, 0.2, 0.6], ["33vh", "60vh", "100vh"])
   const borderRadius = useTransform(scrollYProgress, [0, 0.2, 0.5], [24, 12, 0])
 
+  const [showDownArrow, setShowDownArrow] = useState(true)
+  useMotionValueEvent(scrollYProgress, "change", (v) => {
+    setShowDownArrow(v < ARROW_HIDE_THRESHOLD)
+  })
+
+  const scrollToPlayZone = () => {
+    if (!sectionRef.current) return
+    const section = sectionRef.current
+    const sectionTop = section.offsetTop
+    const windowHeight = typeof window !== "undefined" ? window.innerHeight : 800
+    // Scroll to ~38% of section height so video starts
+    const targetScroll = sectionTop + section.offsetHeight * VIDEO_PLAY_THRESHOLD - windowHeight * 0.4
+    window.scrollTo({ top: Math.max(0, targetScroll), behavior: "smooth" })
+  }
+
   return (
     <section
       id="demo-preview-section"
       ref={sectionRef}
-      style={{ minHeight: "250vh" }}
+      style={{ minHeight: `${PREVIEW_SCROLL_HEIGHT_VH}vh` }}
       className={cn(
-        "relative w-full -mt-[15vh]",
+        "relative w-full -mt-[28vh] snap-start snap-always",
         isBright ? "bg-gradient-to-b from-sky-50 via-blue-50/90 to-sky-100/80" : "bg-background"
       )}
     >
       <div className="sticky top-0 flex h-screen w-full items-center justify-center overflow-hidden">
+        {showDownArrow && (
+          <button
+            type="button"
+            onClick={scrollToPlayZone}
+            className="absolute left-1/2 bottom-8 z-20 -translate-x-1/2 rounded-full p-2 text-white/80 transition hover:bg-white/20 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/40"
+            aria-label="Scroll to preview"
+          >
+            <ChevronDown className="h-8 w-8 drop-shadow-md" />
+          </button>
+        )}
         <motion.div
           className="relative w-full overflow-hidden bg-black text-left shadow-2xl"
           style={{
