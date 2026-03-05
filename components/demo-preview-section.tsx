@@ -93,13 +93,18 @@ export function DemoPreviewSection() {
       id="demo-preview-section"
       ref={sectionRef}
       className={cn(
-        "relative w-full -mt-[15vh]",
-        isBright ? "bg-gradient-to-b from-sky-50 via-blue-50/90 to-sky-100/80" : "bg-background"
+        "relative w-full -mt-[15vh] overflow-hidden",
+        isBright ? "bg-white" : "bg-black"
       )}
     >
+      {isBright ? (
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-sky-50/80 via-blue-50/60 to-sky-100/70" />
+      ) : (
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-blue-950/50 via-indigo-950/40 to-purple-950/50" />
+      )}
       <div
         className={cn(
-          "w-full pb-10 flex flex-col transition-[max-width,padding,height,border-radius] duration-500 ease-out",
+          "relative z-10 w-full pb-10 flex flex-col transition-[max-width,padding,height,border-radius] duration-500 ease-out",
           expanded ? "mx-auto max-w-none px-0" : "mx-auto max-w-7xl px-6 sm:px-12 lg:px-16"
         )}
       >
