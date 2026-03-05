@@ -43,8 +43,8 @@ export function ParticleOrb({ variant = "dark" }: ParticleOrbProps) {
     resizeCanvas()
     window.addEventListener("resize", resizeCanvas)
 
-    // Create particles on sphere surface
-    const numParticles = 2000
+    // Create particles on sphere surface (reduced for performance)
+    const numParticles = 1200
     const radius = 180
     particlesRef.current = []
 
@@ -117,19 +117,12 @@ export function ParticleOrb({ variant = "dark" }: ParticleOrbProps) {
 
         ctx.beginPath()
         ctx.arc(centerX + p.screenX, centerY + p.screenY, size, 0, Math.PI * 2)
-        // Bright: blue–purple mix for visibility on light backgrounds
+        // Dark mode: white dots. Light mode: dark blue dots
         let r: number, g: number, b: number
         if (isBright) {
-          // Alternate between blue and purple for distinct dots based on position
-          const isPurple = (Math.floor(p.originalX * p.originalY) % 2 === 0)
-          if (isPurple) {
-            ;[r, g, b] = [147, 51, 234] // Purple
-          } else {
-            ;[r, g, b] = [59, 130, 246] // Blue
-          }
+          ;[r, g, b] = [30, 58, 138] // Dark blue (blue-900)
         } else {
-          // Dark: clean white dots
-          ;[r, g, b] = [255, 255, 255]
+          ;[r, g, b] = [255, 255, 255] // White
         }
         ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha * (isBright ? 0.95 : 0.75)})`
         ctx.fill()
@@ -163,9 +156,9 @@ export function ParticleOrb({ variant = "dark" }: ParticleOrbProps) {
         centerX + mx1, centerY + my2, 20
       )
       if (isBright) {
-        gradient.addColorStop(0, `rgba(59, 130, 246, ${movingAlpha})`)
-        gradient.addColorStop(0.3, `rgba(147, 51, 234, ${movingAlpha * 0.6})`)
-        gradient.addColorStop(1, "rgba(59, 130, 246, 0)")
+        gradient.addColorStop(0, `rgba(30, 58, 138, ${movingAlpha})`)
+        gradient.addColorStop(0.5, `rgba(30, 58, 138, ${movingAlpha * 0.5})`)
+        gradient.addColorStop(1, "rgba(30, 58, 138, 0)")
       } else {
         gradient.addColorStop(0, `rgba(255, 255, 255, ${movingAlpha})`)
         gradient.addColorStop(0.3, `rgba(200, 255, 200, ${movingAlpha * 0.5})`)
@@ -181,7 +174,7 @@ export function ParticleOrb({ variant = "dark" }: ParticleOrbProps) {
       ctx.beginPath()
       ctx.arc(centerX + mx1, centerY + my2, 4, 0, Math.PI * 2)
       if (isBright) {
-        ctx.fillStyle = `rgba(59, 130, 246, ${movingAlpha})`
+        ctx.fillStyle = `rgba(30, 58, 138, ${movingAlpha})`
       } else {
         ctx.fillStyle = `rgba(255, 255, 255, ${movingAlpha})`
       }
@@ -199,13 +192,13 @@ export function ParticleOrb({ variant = "dark" }: ParticleOrbProps) {
         cancelAnimationFrame(animationRef.current)
       }
     }
-  }, [])
+  }, [variant])
 
   return (
     <canvas
       ref={canvasRef}
       className="absolute inset-0 w-full h-full"
-      style={{ background: "transparent" }}
+      style={{ background: "transparent", transform: "translateZ(0)" }}
     />
   )
 }

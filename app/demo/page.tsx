@@ -1,10 +1,19 @@
 "use client"
 
 import { useState, useCallback, useRef, useEffect } from "react"
+import dynamic from "next/dynamic"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { Room } from "@/components/voice/Room"
 import { VoiceCard } from "@/components/voice-card"
+
+const Room = dynamic(() => import("@/components/voice/Room").then((m) => ({ default: m.Room })), {
+  ssr: false,
+  loading: () => (
+    <div className="flex min-h-[200px] items-center justify-center rounded-2xl border border-border bg-card/90">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
+    </div>
+  ),
+})
 import { ParticleOrb } from "@/components/particle-orb"
 import { AnimateOnScroll } from "@/components/animate-on-scroll"
 import { useClientSpeechRecognition, isClientSpeechRecognitionSupported } from "@/hooks/use-client-speech-recognition"

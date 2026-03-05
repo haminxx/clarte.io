@@ -19,7 +19,7 @@ function AuthCallbackContent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-transparent">
       <PageThemeBg />
-      <p className="text-muted-foreground">Redirecting…</p>
+      <p className="relative z-10 text-muted-foreground">Redirecting…</p>
     </div>
   )
 }
@@ -29,7 +29,7 @@ export default function AuthCallbackPage() {
     <Suspense fallback={
       <div className="flex min-h-screen items-center justify-center bg-transparent">
         <PageThemeBg />
-        <p className="text-muted-foreground">Loading…</p>
+        <p className="relative z-10 text-muted-foreground">Loading…</p>
       </div>
     }>
       <AuthCallbackContent />
