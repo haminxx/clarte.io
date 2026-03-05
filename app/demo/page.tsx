@@ -78,7 +78,7 @@ export default function DemoPage() {
               Try Clarte
             </h1>
             <p className={cn("mx-auto mt-4 max-w-2xl text-[clamp(0.9375rem,1.5vw,1.125rem)]", isBright ? "text-black/60" : "text-white/60")}>
-              Start a voice call
+              Say &quot;see my screen&quot; or &quot;look at me&quot; to activate screen-share and camera access
             </p>
           </div>
         </AnimateOnScroll>

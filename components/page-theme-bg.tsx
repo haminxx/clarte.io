@@ -20,7 +20,7 @@ export function PageThemeBg({ className }: Props) {
       {isBright ? (
         <div className="absolute inset-0 bg-gradient-to-b from-sky-50 via-blue-50/90 to-sky-100/80" />
       ) : (
-        <div className="absolute inset-0 bg-[#0a0a14]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-950 via-indigo-950/90 to-[#0a0a14]" />
       )}
       {/* Soft orbs similar to landing page */}
       <div className="absolute inset-0 overflow-hidden">

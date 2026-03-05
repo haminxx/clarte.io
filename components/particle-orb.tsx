@@ -117,9 +117,9 @@ export function ParticleOrb({ variant = "dark" }: ParticleOrbProps) {
 
         ctx.beginPath()
         ctx.arc(centerX + p.screenX, centerY + p.screenY, size, 0, Math.PI * 2)
-        // Bright: blue–purple (indigo/violet) for visibility on light backgrounds
-        const [r, g, b] = isBright ? [99, 102, 241] : [255, 255, 255]
-        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha * (isBright ? 0.85 : 0.75)})`
+        // Bright: stronger blue–purple for visibility on light backgrounds
+        const [r, g, b] = isBright ? [59, 130, 246] : [255, 255, 255]
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha * (isBright ? 0.95 : 0.75)})`
         ctx.fill()
       })
 
@@ -151,9 +151,9 @@ export function ParticleOrb({ variant = "dark" }: ParticleOrbProps) {
         centerX + mx1, centerY + my2, 20
       )
       if (isBright) {
-        gradient.addColorStop(0, `rgba(99, 102, 241, ${movingAlpha})`)
-        gradient.addColorStop(0.3, `rgba(139, 92, 246, ${movingAlpha * 0.6})`)
-        gradient.addColorStop(1, "rgba(99, 102, 241, 0)")
+        gradient.addColorStop(0, `rgba(59, 130, 246, ${movingAlpha})`)
+        gradient.addColorStop(0.3, `rgba(147, 51, 234, ${movingAlpha * 0.6})`)
+        gradient.addColorStop(1, "rgba(59, 130, 246, 0)")
       } else {
         gradient.addColorStop(0, `rgba(255, 255, 255, ${movingAlpha})`)
         gradient.addColorStop(0.3, `rgba(200, 255, 200, ${movingAlpha * 0.5})`)
@@ -169,7 +169,7 @@ export function ParticleOrb({ variant = "dark" }: ParticleOrbProps) {
       ctx.beginPath()
       ctx.arc(centerX + mx1, centerY + my2, 4, 0, Math.PI * 2)
       if (isBright) {
-        ctx.fillStyle = `rgba(99, 102, 241, ${movingAlpha})`
+        ctx.fillStyle = `rgba(59, 130, 246, ${movingAlpha})`
       } else {
         ctx.fillStyle = `rgba(255, 255, 255, ${movingAlpha})`
       }

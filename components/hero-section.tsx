@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { AnimateOnScroll } from "./animate-on-scroll"
+import { ParticleOrb } from "@/components/particle-orb"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 import { cn } from "@/lib/utils"
 
@@ -10,8 +11,17 @@ export function HeroSection() {
   const { theme } = useClarteTheme()
   const isBright = theme === "bright"
   return (
-    <section className={cn("relative min-h-screen overflow-hidden w-full", isBright ? "bg-gradient-to-b from-sky-50 via-blue-50/90 to-sky-100/80" : "bg-background")}>
+    <section
+      className={cn(
+        "relative min-h-screen overflow-hidden w-full",
+        isBright ? "bg-gradient-to-b from-sky-50 via-blue-50/90 to-sky-100/80" : "bg-background"
+      )}
+    >
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {/* Large particle orb background, bigger than demo */}
+        <div className="absolute left-1/2 top-1/2 h-[220vmin] w-[220vmin] -translate-x-1/2 -translate-y-1/2">
+          <ParticleOrb variant={isBright ? "bright" : "dark"} />
+        </div>
         {isBright ? (
           <>
             <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] md:h-[900px] md:w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-sky-200/40 via-blue-200/30 to-sky-100/20 blur-3xl animate-hero-gradient-drift" />
