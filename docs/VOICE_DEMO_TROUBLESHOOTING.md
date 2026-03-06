@@ -1,5 +1,21 @@
 # Clarte Demo Voice AI – Pipeline & Troubleshooting
 
+## Voice demo not working?
+
+The call box depends on **two build-time env vars** and a **running Render service**:
+
+1. **Frontend (site build):** `NEXT_PUBLIC_LIVEKIT_URL` and `NEXT_PUBLIC_VOICE_AGENT_URL` must be set where the site is built (e.g. GitHub Actions secrets, `.env.local`). If either is missing you will see:
+   - **"Voice is not configured. Set NEXT_PUBLIC_LIVEKIT_URL"** → add LiveKit WebSocket URL and rebuild.
+   - **"Cannot reach voice service"** or token 404 → set `NEXT_PUBLIC_VOICE_AGENT_URL` to your Render URL (no trailing slash) and rebuild.
+
+2. **Token server (Render):** The app calls `NEXT_PUBLIC_VOICE_AGENT_URL/token`. If that URL is wrong or the Render service is down/cold, the token request fails. Render must have `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET` set.
+
+3. **Agent not joining:** If you join the room but Clarte never speaks (`remoteCount` stays 0), the agent on Render is not joining. Check Render env: `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `OPENAI_API_KEY`, `DEEPGRAM_API_KEY`, and Render logs for "entrypoint started" and "participant_connected".
+
+See **Frontend Env** and **Render Environment Checklist** below for the full list.
+
+---
+
 ## System Architecture
 
 The demo page uses a **LiveKit + Render** pipeline:
