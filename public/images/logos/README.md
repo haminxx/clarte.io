@@ -12,3 +12,5 @@ Place 8 logo PNGs here with these exact names:
 - `exa.png`
 
 The site uses `mix-blend-mode` so logos with solid backgrounds (e.g. black) blend with the theme. Replace any file to update the "Powered by platforms" marquee.
+
+To remove logo backgrounds (transparent PNGs), run from the repo root: `pip install "rembg[cpu]" pillow` then `python scripts/remove-logo-bg.py`. Originals are backed up to `backup/`.

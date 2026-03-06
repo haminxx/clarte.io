@@ -76,6 +76,16 @@ export default function DemoPage() {
     onTranscriptAdd: handleTranscriptAdd,
   })
 
+  // When client STT is used, user transcript comes from the hook; we still need Room's assistant (Clarte) entries.
+  const onTranscriptAddFromRoom = useCallback(
+    (role: string, content: string) => {
+      if (useClientSTT && role === "user") return
+      handleTranscriptAdd(role, content)
+    },
+    [useClientSTT, handleTranscriptAdd]
+  )
+  const onTranscriptPartialFromRoom = useClientSTT ? undefined : handleTranscriptPartial
+
   useEffect(() => {
     const container = transcriptContainerRef.current
     if (container) {
@@ -121,8 +131,8 @@ export default function DemoPage() {
                     onVoiceChange={setSelectedVoice}
                     selectedLanguage={selectedLanguage}
                     onLanguageChange={setSelectedLanguage}
-                    onTranscriptAdd={useClientSTT ? undefined : handleTranscriptAdd}
-                    onTranscriptPartial={useClientSTT ? undefined : handleTranscriptPartial}
+                    onTranscriptAdd={onTranscriptAddFromRoom}
+                    onTranscriptPartial={onTranscriptPartialFromRoom}
                   />
                 ) : (
                   <VoiceCard

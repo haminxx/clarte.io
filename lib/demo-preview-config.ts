@@ -5,10 +5,10 @@
  */
 export const DEMO_PREVIEW_SRC =
   (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_DEMO_PREVIEW_SRC) ||
-  "/demo-preview.gif"
+  "/demo-preview.mp4"
 
 export const DEMO_PREVIEW_TYPE =
   (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_DEMO_PREVIEW_TYPE) ||
-  "gif"
+  "video"
 
 export type DemoPreviewMediaType = "video" | "gif"
