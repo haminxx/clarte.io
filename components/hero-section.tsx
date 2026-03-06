@@ -18,25 +18,25 @@ export function HeroSection() {
       )}
     >
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {/* Large particle orb background, bigger than demo */}
-        <div className="absolute left-1/2 top-1/2 h-[220vmin] w-[220vmin] -translate-x-1/2 -translate-y-1/2">
+        {/* Large particle orb background, bigger than demo — above gradients so visible in dark mode */}
+        <div className="absolute left-1/2 top-1/2 z-[1] h-[220vmin] w-[220vmin] -translate-x-1/2 -translate-y-1/2">
           <ParticleOrb variant={isBright ? "bright" : "dark"} />
         </div>
         {isBright ? (
           <>
-            <div className="absolute inset-0 bg-gradient-to-b from-white via-sky-50/70 to-blue-50/80" />
-            <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] md:h-[900px] md:w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-sky-200/40 via-blue-200/30 to-sky-100/20 blur-3xl animate-hero-gradient-drift" />
-            <div className="absolute right-1/4 top-1/3 h-[300px] w-[300px] md:h-[500px] md:w-[500px] rounded-full bg-sky-200/30 blur-3xl animate-hero-gradient-drift" />
-            <div className="absolute left-1/4 bottom-1/3 h-[250px] w-[250px] md:h-[400px] md:w-[400px] rounded-full bg-blue-200/20 blur-3xl animate-hero-gradient-drift" />
-            <div className="absolute bottom-0 left-0 right-0 h-[250px] md:h-[400px] bg-gradient-to-t from-sky-200/40 via-blue-100/30 to-transparent" />
+            <div className="absolute inset-0 z-0 bg-gradient-to-b from-white via-sky-50/70 to-blue-50/80" />
+            <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] md:h-[900px] md:w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-sky-200/40 via-blue-200/30 to-sky-100/20 blur-3xl animate-hero-gradient-drift z-0" />
+            <div className="absolute right-1/4 top-1/3 h-[300px] w-[300px] md:h-[500px] md:w-[500px] rounded-full bg-sky-200/30 blur-3xl animate-hero-gradient-drift z-0" />
+            <div className="absolute left-1/4 bottom-1/3 h-[250px] w-[250px] md:h-[400px] md:w-[400px] rounded-full bg-blue-200/20 blur-3xl animate-hero-gradient-drift z-0" />
+            <div className="absolute bottom-0 left-0 right-0 h-[250px] md:h-[400px] bg-gradient-to-t from-sky-200/40 via-blue-100/30 to-transparent z-0" />
           </>
         ) : (
           <>
-            <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a14] via-[#0c0f1a] to-[#0a0a14]" />
-            <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] md:h-[900px] md:w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-blue-600/25 via-blue-500/15 to-indigo-600/8 blur-3xl animate-hero-gradient-drift" />
-            <div className="absolute right-1/4 top-1/3 h-[300px] w-[300px] md:h-[500px] md:w-[500px] rounded-full bg-blue-500/15 blur-3xl animate-hero-gradient-drift" />
-            <div className="absolute left-1/4 bottom-1/3 h-[250px] w-[250px] md:h-[400px] md:w-[400px] rounded-full bg-indigo-600/12 blur-3xl animate-hero-gradient-drift" />
-            <div className="absolute bottom-0 left-0 right-0 h-[250px] md:h-[400px] bg-gradient-to-t from-blue-900/30 via-blue-800/15 to-indigo-900/10" />
+            <div className="absolute inset-0 z-0 bg-gradient-to-b from-[#0a0a14] via-[#0c0f1a] to-[#0a0a14]" />
+            <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] md:h-[900px] md:w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-blue-600/25 via-blue-500/15 to-indigo-600/8 blur-3xl animate-hero-gradient-drift z-0" />
+            <div className="absolute right-1/4 top-1/3 h-[300px] w-[300px] md:h-[500px] md:w-[500px] rounded-full bg-blue-500/15 blur-3xl animate-hero-gradient-drift z-0" />
+            <div className="absolute left-1/4 bottom-1/3 h-[250px] w-[250px] md:h-[400px] md:w-[400px] rounded-full bg-indigo-600/12 blur-3xl animate-hero-gradient-drift z-0" />
+            <div className="absolute bottom-0 left-0 right-0 h-[250px] md:h-[400px] bg-gradient-to-t from-blue-900/30 via-blue-800/15 to-indigo-900/10 z-0" />
           </>
         )}
       </div>

@@ -308,7 +308,8 @@
     background: var(--background);
   }
   body {
-    @apply bg-background text-foreground overflow-x-hidden;
+    @apply text-foreground overflow-x-hidden;
+    background: transparent;
   }
 }
 

@@ -36,6 +36,18 @@ export default function DemoPage() {
   const transcriptContainerRef = useRef<HTMLDivElement>(null)
   const transcriptEndRef = useRef<HTMLDivElement>(null)
 
+  // Prefill from URL (e.g. from Chrome extension popup)
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const params = new URLSearchParams(window.location.search)
+    const lang = params.get("language")
+    const voice = params.get("voice")
+    if (lang && ["en", "ko", "es", "zh", "ja", "hi"].includes(lang)) {
+      setSelectedLanguage(lang as "en" | "ko" | "es" | "zh" | "ja" | "hi")
+    }
+    if (voice) setSelectedVoice(voice)
+  }, [])
+
   const handleStartCall = () => {
     setInCall(true)
   }
