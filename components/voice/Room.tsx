@@ -643,7 +643,11 @@ export function Room({
       setStatus("active")
       onConnectionActive?.()
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to get token")
+      setError(
+        baseUrl
+          ? "Cannot reach voice service. Check NEXT_PUBLIC_VOICE_AGENT_URL and that the Render service is running."
+          : (e instanceof Error ? e.message : "Failed to get token")
+      )
       setStatus("error")
     }
   }, [mode, voice, language, userDisplayName, voiceProfileId, onConnectionActive])

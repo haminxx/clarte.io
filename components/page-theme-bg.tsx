@@ -10,6 +10,7 @@ type Props = {
 
 /**
  * Full-page ambient background layer (Dark Mode Ambient Radial Glow).
+ * Applied globally: every page that renders this component gets the same gradient.
  * Renders behind page content; ensure content has relative z-10 so it sits above.
  * For a layout that wraps children, use AmbientBackgroundWrapper instead.
  */

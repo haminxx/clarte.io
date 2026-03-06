@@ -22,6 +22,8 @@ Executive Assistant voice agent with two paths:
 - **Local:** Copy `voice-agent/.env.example` to `voice-agent/.env` and set all keys. Run the agent with `python agent.py dev` or `python start_render.py`.
 - **GitHub:** Use GitHub only for **frontend** build-time vars if you deploy Next.js via Actions (e.g. `NEXT_PUBLIC_LIVEKIT_URL`, `NEXT_PUBLIC_VOICE_AGENT_URL`). The voice agent runs on Render (or your host), so backend keys go in **Render** (or your host’s env), not in GitHub Secrets for the agent.
 
+- **Live site (Firebase):** For the deployed website, set `NEXT_PUBLIC_VOICE_AGENT_URL` and `NEXT_PUBLIC_LIVEKIT_URL` where the site is built (e.g. GitHub Actions secrets used by the Firebase Hosting workflow) so the static build contains the correct URLs; otherwise the demo will try `/api/token`, which does not exist on static hosting.
+
 **Tier 1 only:** `OPENAI_API_KEY`, `EXA_API_KEY`, `NEXT_PUBLIC_VOICE_AGENT_URL`. No LiveKit needed.
 
 **Tier 2/3:** Add `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `NEXT_PUBLIC_LIVEKIT_URL`, and **`DEEPGRAM_API_KEY`** (required for agent to speak).

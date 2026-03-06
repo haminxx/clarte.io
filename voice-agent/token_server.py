@@ -74,6 +74,16 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/token/debug")
+def token_debug():
+    """Return which env vars are set (for debugging config). Does not reveal keys."""
+    return {
+        "livekit_ok": bool(LIVEKIT_API_KEY and LIVEKIT_API_SECRET),
+        "openai_set": bool((os.getenv("OPENAI_API_KEY") or "").strip()),
+        "deepgram_set": bool((os.getenv("DEEPGRAM_API_KEY") or "").strip()),
+    }
+
+
 @app.websocket("/realtime")
 async def realtime_websocket(websocket: WebSocket):
     """Tier 1: Voice-only relay to OpenAI Realtime API. No LiveKit."""
