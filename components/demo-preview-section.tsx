@@ -3,18 +3,15 @@
 import { useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import { DEMO_PREVIEW_SRC, DEMO_PREVIEW_TYPE, type DemoPreviewMediaType } from "@/lib/demo-preview-config"
-import { useClarteTheme } from "@/lib/clarte-theme-context"
 import { cn } from "@/lib/utils"
 
 export function DemoPreviewSection() {
-  const { theme } = useClarteTheme()
   const [mediaError, setMediaError] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const [mounted, setMounted] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const sectionRef = useRef<HTMLElement>(null)
 
-  const isBright = theme === "bright"
   const mediaType: DemoPreviewMediaType = DEMO_PREVIEW_TYPE === "video" ? "video" : "gif"
   const [hasScrolled, setHasScrolled] = useState(false)
 
@@ -92,16 +89,9 @@ export function DemoPreviewSection() {
     <section
       id="demo-preview-section"
       ref={sectionRef}
-      className={cn(
-        "relative w-full -mt-[15vh] overflow-hidden",
-        isBright ? "bg-white" : "bg-black"
-      )}
+      className="relative w-full -mt-[15vh] overflow-hidden bg-black"
     >
-      {isBright ? (
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-sky-50/80 via-blue-50/60 to-sky-100/70" />
-      ) : (
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-blue-950/50 via-indigo-950/40 to-purple-950/50" />
-      )}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black via-purple-950/95 to-black" />
       <div
         className={cn(
           "relative z-10 w-full pb-10 flex flex-col transition-[max-width,padding,height,border-radius] duration-500 ease-out",
@@ -150,7 +140,7 @@ export function DemoPreviewSection() {
 
           <div className="absolute inset-0">
             {mediaError || !DEMO_PREVIEW_SRC ? (
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-900/40 via-indigo-900/30 to-black">
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-900/40 via-purple-950/30 to-black">
                 <div className="text-center text-white/50">
                   <p className="text-sm">Add a demo preview</p>
                   <p className="mt-1 text-xs">Place demo-preview.mp4 or demo-preview.gif in public/</p>
@@ -174,12 +164,7 @@ export function DemoPreviewSection() {
                 onError={() => setMediaError(true)}
               />
             )}
-            <div
-              className={cn(
-                "absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent",
-                isBright && "from-black/70"
-              )}
-            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
           </div>
         </button>
       </div>
