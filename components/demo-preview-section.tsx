@@ -99,10 +99,9 @@ export function DemoPreviewSection() {
       )}
     >
       {isBright ? (
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-sky-50/80 via-blue-50/60 to-sky-100/70" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white via-sky-50/70 to-blue-50/80" />
       ) : (
-        // Top gradient matches hero bottom (blue-900/30, indigo-900/15) for smooth connection
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-blue-900/30 via-indigo-900/20 to-purple-950/50" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-blue-900/30 via-blue-800/20 to-[#0a0a14]" />
       )}
       <div
         className={cn(
@@ -152,7 +151,7 @@ export function DemoPreviewSection() {
 
           <div className="absolute inset-0">
             {mediaError || !DEMO_PREVIEW_SRC ? (
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-900/40 via-indigo-900/30 to-black">
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-900/40 via-blue-800/25 to-black">
                 <div className="text-center text-white/50">
                   <p className="text-sm">Add a demo preview</p>
                   <p className="mt-1 text-xs">Place demo-preview.mp4 or demo-preview.gif in public/</p>

@@ -38,7 +38,7 @@ export function ScrollExpandBox({
       style={{ minHeight: `${scrollHeightVh}vh` }}
       className={cn(
         "relative w-full",
-        isBright ? "bg-gradient-to-b from-sky-50 via-blue-50/90 to-sky-100/80" : "bg-background",
+        isBright ? "bg-gradient-to-b from-white via-sky-50/90 to-blue-50/80" : "bg-background",
         className
       )}
     >

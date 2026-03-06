@@ -45,11 +45,12 @@ export function CompanyLogos() {
                 <img
                   src={logo.src}
                   alt={logo.alt}
-                  className={
+                  className={cn(
+                    theme === "bright" ? "mix-blend-multiply" : "mix-blend-lighten",
                     logo.large
                       ? "h-8 sm:h-9 md:h-10 w-auto object-contain max-h-[2.75rem]"
                       : "h-6 sm:h-7 w-auto object-contain max-h-[2.25rem]"
-                  }
+                  )}
                   loading="lazy"
                 />
               </div>
