@@ -18,7 +18,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Menu } from "lucide-react"
-import { PageThemeBg } from "@/components/page-theme-bg"
 
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null)
@@ -54,7 +53,6 @@ export default function ProfilePage() {
   if (!auth) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-transparent">
-        <PageThemeBg />
         <div className="relative z-10 text-center text-white/60">
           <p>Firebase is not configured.</p>
           <Link href="/" className="mt-4 inline-block text-white underline">
@@ -68,7 +66,6 @@ export default function ProfilePage() {
   if (authLoading || !user) {
     return (
       <div className="flex min-h-screen flex-col bg-transparent">
-        <PageThemeBg />
         <DashboardSidebar />
         <div className="relative z-10 ml-16 flex min-h-screen flex-col lg:ml-16">
           <header className="sticky top-0 z-20 border-b border-white/10 bg-[#0a0a14]/80 backdrop-blur-md">
@@ -88,8 +85,6 @@ export default function ProfilePage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-transparent">
-      <PageThemeBg />
-
       <DashboardSidebar />
 
       <div className="relative z-10 ml-16 flex min-h-screen flex-col lg:ml-16">

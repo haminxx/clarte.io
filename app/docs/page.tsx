@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { BookOpen, Code, Zap, Settings, MessageSquare, Shield, ArrowRight } from "lucide-react"
 import { AnimateOnScroll } from "@/components/animate-on-scroll"
-import { PageThemeBg } from "@/components/page-theme-bg"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 import { cn } from "@/lib/utils"
 
@@ -68,8 +67,6 @@ export default function DocsPage() {
   const isBright = theme === "bright"
   return (
     <div className="min-h-screen bg-transparent">
-      <PageThemeBg />
-
       <Header />
 
       <main className="relative z-10 mx-auto max-w-7xl px-4 pt-[clamp(7rem,22vh,14rem)] pb-24">

@@ -6,7 +6,6 @@ import { getFirebaseAuth } from "@/lib/firebase"
 import { sendEmailVerification } from "firebase/auth"
 import { Mail, Loader2, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { PageThemeBg } from "@/components/page-theme-bg"
 
 export default function SignUpSuccessPage() {
   const [resending, setResending] = useState(false)
@@ -42,8 +41,6 @@ export default function SignUpSuccessPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-transparent px-4">
-      <PageThemeBg />
-
       <div className="relative z-10 w-full max-w-md">
         <div className="rounded-2xl border border-white/10 bg-[#1a1a2e]/90 p-8 shadow-2xl backdrop-blur-md text-center">
           <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">

@@ -17,7 +17,6 @@ const Room = dynamic(() => import("@/components/voice/Room").then((m) => ({ defa
 import { ParticleOrb } from "@/components/particle-orb"
 import { AnimateOnScroll } from "@/components/animate-on-scroll"
 import { useClientSpeechRecognition, isClientSpeechRecognitionSupported } from "@/hooks/use-client-speech-recognition"
-import { PageThemeBg } from "@/components/page-theme-bg"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 import { cn } from "@/lib/utils"
 
@@ -76,8 +75,6 @@ export default function DemoPage() {
 
   return (
     <div className="min-h-screen bg-transparent">
-      <PageThemeBg />
-
       <Header />
 
       <main className="relative z-10 mx-auto w-full max-w-[min(48rem,92vw)] xl:max-w-[min(56rem,88vw)] 2xl:max-w-[min(64rem,85vw)] px-4 pt-[clamp(7rem,22vh,14rem)] pb-24">

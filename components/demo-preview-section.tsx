@@ -94,13 +94,15 @@ export function DemoPreviewSection() {
       ref={sectionRef}
       className={cn(
         "relative w-full -mt-[15vh] overflow-hidden",
+        // No solid bg at top; gradient matches hero bottom for seamless blend
         isBright ? "bg-white" : "bg-black"
       )}
     >
       {isBright ? (
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-sky-50/80 via-blue-50/60 to-sky-100/70" />
       ) : (
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-blue-950/50 via-indigo-950/40 to-purple-950/50" />
+        // Top gradient matches hero bottom (blue-900/30, indigo-900/15) for smooth connection
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-blue-900/30 via-indigo-900/20 to-purple-950/50" />
       )}
       <div
         className={cn(

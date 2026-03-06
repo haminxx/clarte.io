@@ -2,6 +2,7 @@ import React from "react"
 import type { Metadata } from 'next'
 import './globals.css'
 import { ClarteThemeProvider } from "@/lib/clarte-theme-context"
+import { PageThemeBg } from "@/components/page-theme-bg"
 
 export const metadata: Metadata = {
   title: 'Clarte - Voice AI that runs at the speed of thought',
@@ -33,8 +34,24 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+(function(){
+  var k='clarte-theme';
+  try {
+    var v = localStorage.getItem(k);
+    if (v === 'dark' || v === 'bright') document.documentElement.setAttribute('data-clarte-theme', v);
+  } catch(e){}
+})();
+`,
+          }}
+        />
+      </head>
       <body className="font-sans antialiased">
         <ClarteThemeProvider>
+          <PageThemeBg />
           {children}
         </ClarteThemeProvider>
       </body>

@@ -26,20 +26,15 @@ export function useClarteTheme() {
 }
 
 export function ClarteThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = React.useState<ClarteTheme>("dark")
-  const [mounted, setMounted] = React.useState(false)
-
-  React.useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  React.useEffect(() => {
-    if (!mounted || typeof window === "undefined") return
+  const [theme, setThemeState] = React.useState<ClarteTheme>(() => {
+    if (typeof window === "undefined") return "dark"
     const stored = localStorage.getItem(STORAGE_KEY) as ClarteTheme | null
-    if (stored === "dark" || stored === "bright") {
-      setThemeState(stored)
-    }
-  }, [mounted])
+    return (stored === "dark" || stored === "bright") ? stored : "dark"
+  })
+
+  React.useEffect(() => {
+    document.documentElement.setAttribute("data-clarte-theme", theme)
+  }, [theme])
 
   const setTheme = React.useCallback((t: ClarteTheme) => {
     setThemeState(t)
@@ -52,10 +47,6 @@ export function ClarteThemeProvider({ children }: { children: React.ReactNode })
   const toggleTheme = React.useCallback(() => {
     setTheme(theme === "dark" ? "bright" : "dark")
   }, [setTheme, theme])
-
-  React.useEffect(() => {
-    document.documentElement.setAttribute("data-clarte-theme", theme)
-  }, [theme])
 
   return (
     <ClarteThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>

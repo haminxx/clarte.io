@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
-import { PageThemeBg } from "@/components/page-theme-bg"
 
 /**
  * Firebase Auth: OAuth redirect lands here (e.g. signInWithRedirect).
@@ -18,7 +17,6 @@ function AuthCallbackContent() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-transparent">
-      <PageThemeBg />
       <p className="relative z-10 text-muted-foreground">Redirecting…</p>
     </div>
   )
@@ -28,7 +26,6 @@ export default function AuthCallbackPage() {
   return (
     <Suspense fallback={
       <div className="flex min-h-screen items-center justify-center bg-transparent">
-        <PageThemeBg />
         <p className="relative z-10 text-muted-foreground">Loading…</p>
       </div>
     }>
