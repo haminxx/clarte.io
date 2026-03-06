@@ -1,5 +1,17 @@
 # Deployment & branches
 
+## Default branch and push
+
+**`v0/clarte_main`** is the deployment branch and should be treated as the default branch for this project.
+
+- **On GitHub:** In the repo **Settings → General → Default branch**, set the default branch to **`v0/clarte_main`**. Then new clones and default `git push` behavior will target this branch.
+- **Locally:** So that `git push` (without arguments) goes to `v0/clarte_main` when you are on that branch, set the upstream once:
+  ```bash
+  git checkout v0/clarte_main
+  git branch --set-upstream-to=origin/v0/clarte_main
+  ```
+  After that, `git push` from `v0/clarte_main` will push to `origin/v0/clarte_main` and trigger deployment.
+
 ## Which version is on the live website?
 
 The **deployed (production) website** is built and published from the branch:

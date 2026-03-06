@@ -308,7 +308,8 @@
     background: #0A0A14; /* matches Dark Mode Ambient Radial Glow base */
   }
   body {
-    @apply bg-background text-foreground overflow-x-hidden;
+    @apply text-foreground overflow-x-hidden;
+    background: transparent;
   }
 }
 

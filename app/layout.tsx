@@ -2,6 +2,7 @@ import React from "react"
 import type { Metadata } from 'next'
 import './globals.css'
 import { ClarteThemeProvider } from "@/lib/clarte-theme-context"
+import { PageThemeBg } from "@/components/page-theme-bg"
 
 export const metadata: Metadata = {
   title: 'Clarte - Voice AI that runs at the speed of thought',
@@ -35,6 +36,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="font-sans antialiased">
         <ClarteThemeProvider>
+          <PageThemeBg />
           {children}
         </ClarteThemeProvider>
       </body>

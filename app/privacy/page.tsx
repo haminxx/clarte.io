@@ -2,7 +2,6 @@
 
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { PageThemeBg } from "@/components/page-theme-bg"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 import { cn } from "@/lib/utils"
 
@@ -12,8 +11,6 @@ export default function PrivacyPage() {
 
   return (
     <div className="min-h-screen bg-transparent">
-      <PageThemeBg />
-
       <Header />
 
       <main className="relative z-10 mx-auto max-w-4xl px-4 pt-[clamp(7rem,22vh,14rem)] pb-24">

@@ -11,7 +11,6 @@ import dynamic from "next/dynamic"
 import Link from "next/link"
 import { getFirebaseAuth } from "@/lib/firebase"
 import { onAuthStateChanged, type User } from "firebase/auth"
-import { PageThemeBg } from "@/components/page-theme-bg"
 import { useRouter } from "next/navigation"
 
 const VoiceAgentCard = dynamic(
@@ -47,7 +46,6 @@ function VoicePageContent() {
   if (!auth) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-transparent">
-        <PageThemeBg />
         <div className="text-center text-white/60">
           <p>Firebase is not configured.</p>
           <Link href="/" className="mt-4 inline-block text-white underline">
@@ -61,7 +59,6 @@ function VoicePageContent() {
   if (authLoading || !user) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-transparent">
-        <PageThemeBg />
         <div className="h-12 w-12 animate-spin rounded-full border-2 border-white/30 border-t-white" />
         <p className="mt-4 text-sm text-white/60">Loading…</p>
       </div>
@@ -70,8 +67,6 @@ function VoicePageContent() {
 
   return (
     <div className="min-h-screen bg-transparent">
-      <PageThemeBg />
-      
       <div className="relative z-10 mx-auto max-w-lg px-4 py-6">
         {!embed && (
           <div className="mb-4 flex items-center justify-between">
@@ -100,7 +95,6 @@ export default function VoicePage() {
   return (
     <Suspense fallback={
       <div className="flex min-h-screen flex-col items-center justify-center bg-transparent">
-        <PageThemeBg />
         <div className="h-12 w-12 animate-spin rounded-full border-2 border-white/30 border-t-white" />
         <p className="mt-4 text-sm text-white/60">Loading…</p>
       </div>
