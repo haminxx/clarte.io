@@ -33,7 +33,7 @@ export default function DownloadPage() {
               </span>
             </h1>
             <p className={cn("mx-auto mt-6 max-w-2xl text-lg", isBright ? "text-black/60" : "text-white/60")}>
-              Get Clarte on your desktop or mobile device. Voice AI that runs at the speed of thought.
+              Get Clarte on your desktop or mobile device.
             </p>
           </div>
         </AnimateOnScroll>
