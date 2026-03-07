@@ -48,8 +48,8 @@ export function CompanyLogos() {
                   className={cn(
                     theme === "bright" ? "mix-blend-multiply" : "mix-blend-lighten",
                     logo.large
-                      ? "h-8 sm:h-9 md:h-10 w-auto object-contain max-h-[2.75rem]"
-                      : "h-6 sm:h-7 w-auto object-contain max-h-[2.25rem]"
+                      ? "h-6 sm:h-7 md:h-8 w-auto object-contain max-h-[2.25rem]"
+                      : "h-5 sm:h-6 w-auto object-contain max-h-[1.75rem]"
                   )}
                   loading="lazy"
                 />

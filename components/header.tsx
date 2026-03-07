@@ -203,8 +203,7 @@ export function Header() {
           <nav className="hidden items-center gap-3 lg:flex">
             {navLinks.map((link) => {
               const isActive =
-                link.href !== "/download" &&
-                (pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href)))
+                pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href))
               return (
                 <Link
                   key={link.href}
@@ -266,8 +265,7 @@ export function Header() {
             <nav className="flex flex-col gap-3">
               {navLinks.map((link) => {
                 const isActive =
-                  link.href !== "/download" &&
-                  (pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href)))
+                  pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href))
                 return (
                   <Link
                     key={link.href}
