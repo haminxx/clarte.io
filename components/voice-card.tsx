@@ -24,7 +24,7 @@ export const LANGUAGE_OPTIONS = [
   { name: "English", langId: "en" as const },
   { name: "한국어", langId: "ko" as const },
   { name: "Español", langId: "es" as const },
-  { name: "Chinese (Mandarin)", langId: "zh" as const },
+  { name: "中文 (Mandarin)", langId: "zh" as const },
   { name: "日本語", langId: "ja" as const },
   { name: "हिन्दी", langId: "hi" as const },
 ] as const

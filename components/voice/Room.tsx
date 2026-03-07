@@ -458,6 +458,12 @@ async function fetchToken(
   })
   const raw = await res.text()
   if (!res.ok) {
+    if (res.status === 404 && tokenUrl === "/api/token") {
+      return {
+        error:
+          "Token endpoint not found. For production (e.g. Firebase Hosting), set NEXT_PUBLIC_VOICE_AGENT_URL to your Render service URL and rebuild.",
+      }
+    }
     let errMsg = raw || `Token request failed: ${res.status}`
     try {
       const parsed = JSON.parse(raw) as { error?: string; detail?: string }

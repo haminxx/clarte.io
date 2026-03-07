@@ -47,7 +47,7 @@ export function HeroSection() {
           <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[1fr_1fr] lg:grid-rows-[auto_auto] lg:items-end lg:gap-x-[clamp(2rem,5vw,80px)] lg:gap-y-4">
             {/* Left: headline - blur to clear a bit slower */}
             <AnimateOnScroll animateOnMount delay={0} animation="fade-blur-slow" className="order-1">
-              <h1 className={cn("font-semibold leading-[1.1] tracking-tight text-[clamp(2rem,4.5vw,3.5rem)] sm:text-[clamp(2.25rem,4.8vw,3.75rem)] md:text-[clamp(2.5rem,5vw,4rem)] xl:text-[clamp(3rem,3.8vw,56px)]", isBright ? "text-black" : "text-white")}>
+              <h1 className={cn("font-semibold leading-[1.05] tracking-tight text-[clamp(1.75rem,3.8vw,3.25rem)] sm:text-[clamp(2rem,4vw,3.5rem)] md:text-[clamp(2.25rem,4.2vw,3.75rem)] xl:text-[clamp(2.75rem,3.5vw,52px)]", isBright ? "text-black" : "text-white")}>
                 Find absolute{" "}
                 <span className="group relative inline-block cursor-default rounded px-1.5 py-0.5 bg-transparent backdrop-blur-xl blur-[3px] transition-all duration-300 hover:blur-none">
                   clarity
