@@ -4,7 +4,7 @@ import { AnimateOnScroll } from "./animate-on-scroll"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 import { cn } from "@/lib/utils"
 
-// Local logo assets; large = Firebase, UCSD, LiveKit, Render, Cursor (4-5x bigger)
+// Local logo assets; large = UCSD, LiveKit, Render, Cursor; Firebase a bit smaller; small = OpenAI, Deepgram, Exa
 const logos = [
   { name: "UC San Diego", src: "/images/logos/ucsd.png", alt: "UC San Diego", large: true },
   { name: "OpenAI", src: "/images/logos/openai.png", alt: "OpenAI", large: false },
@@ -12,7 +12,7 @@ const logos = [
   { name: "Render", src: "/images/logos/render.png", alt: "Render", large: true },
   { name: "Cursor", src: "/images/logos/cursor.png", alt: "Cursor", large: true },
   { name: "Deepgram", src: "/images/logos/deepgram.png", alt: "Deepgram", large: false },
-  { name: "Firebase", src: "/images/logos/firebase.png", alt: "Firebase", large: true },
+  { name: "Firebase", src: "/images/logos/firebase.png", alt: "Firebase", large: false },
   { name: "Exa", src: "/images/logos/exa.png", alt: "Exa", large: false },
 ]
 

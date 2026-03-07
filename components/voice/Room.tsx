@@ -820,7 +820,7 @@ export function Room({
                 {voiceSelect}
               </div>
               <div className="flex items-center gap-2">
-                {autoStart && onDisconnect && status !== "starting" && (
+                {autoStart && onDisconnect && status === "active" && (
                   <Button variant="outline" size="sm" onClick={onDisconnect} className="gap-2">
                     <PhoneOff className="h-4 w-4" />
                     Back
@@ -868,7 +868,7 @@ export function Room({
           <p className="text-sm text-destructive text-center">{error}</p>
         )}
         <div className="flex items-center gap-2">
-          {autoStart && onDisconnect && status !== "starting" && (
+          {autoStart && onDisconnect && status === "active" && (
             <Button variant="outline" size="sm" onClick={onDisconnect} className="gap-2">
               <PhoneOff className="h-4 w-4" />
               Back

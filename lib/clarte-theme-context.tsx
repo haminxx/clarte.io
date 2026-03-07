@@ -29,7 +29,9 @@ export function ClarteThemeProvider({ children }: { children: React.ReactNode })
   const [theme, setThemeState] = React.useState<ClarteTheme>(() => {
     if (typeof window === "undefined") return "dark"
     const stored = localStorage.getItem(STORAGE_KEY) as ClarteTheme | null
-    return (stored === "dark" || stored === "bright") ? stored : "dark"
+    if (stored === "dark" || stored === "bright") return stored
+    const fromDoc = document.documentElement.getAttribute("data-clarte-theme") as ClarteTheme | null
+    return (fromDoc === "dark" || fromDoc === "bright") ? fromDoc : "dark"
   })
 
   React.useEffect(() => {
@@ -38,9 +40,11 @@ export function ClarteThemeProvider({ children }: { children: React.ReactNode })
 
   React.useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY) as ClarteTheme | null
-    if (stored === "dark" || stored === "bright") {
-      setThemeState(stored)
-      document.documentElement.setAttribute("data-clarte-theme", stored)
+    const fromDoc = document.documentElement.getAttribute("data-clarte-theme") as ClarteTheme | null
+    const next = (stored === "dark" || stored === "bright") ? stored : (fromDoc === "dark" || fromDoc === "bright") ? fromDoc : null
+    if (next) {
+      setThemeState(next)
+      document.documentElement.setAttribute("data-clarte-theme", next)
     }
   }, [])
 
