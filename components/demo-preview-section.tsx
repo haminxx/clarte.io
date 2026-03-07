@@ -125,11 +125,11 @@ export function DemoPreviewSection() {
           aria-label="Expand demo preview"
         >
           <div className="relative z-10 flex h-full flex-col justify-between p-6 sm:p-8 lg:p-12">
-            <div className={cn("rounded-lg p-4 sm:p-5", isBright && "bg-white/90 backdrop-blur-sm")}>
-              <span className={cn("mb-2 inline-block text-xs font-medium uppercase tracking-widest", isBright ? "text-gray-600" : "text-white/60")}>
+            <div>
+              <span className="mb-2 inline-block text-xs font-medium uppercase tracking-widest text-white/60">
                 Featured
               </span>
-              <h2 className={cn("max-w-2xl text-2xl font-semibold leading-tight sm:text-3xl lg:text-4xl", isBright ? "text-gray-900" : "text-white")}>
+              <h2 className="max-w-2xl text-2xl font-semibold leading-tight text-white sm:text-3xl lg:text-4xl">
                 Clarte in Action
               </h2>
             </div>
