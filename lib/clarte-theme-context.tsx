@@ -17,7 +17,7 @@ export function useClarteTheme() {
   // During prerender/SSR, provider may not be in tree yet; return default
   if (!ctx) {
     return {
-      theme: "dark" as ClarteTheme,
+      theme: "bright" as ClarteTheme,
       setTheme: () => {},
       toggleTheme: () => {},
     }
@@ -27,11 +27,11 @@ export function useClarteTheme() {
 
 export function ClarteThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = React.useState<ClarteTheme>(() => {
-    if (typeof window === "undefined") return "dark"
+    if (typeof window === "undefined") return "bright"
     const stored = localStorage.getItem(STORAGE_KEY) as ClarteTheme | null
     if (stored === "dark" || stored === "bright") return stored
     const fromDoc = document.documentElement.getAttribute("data-clarte-theme") as ClarteTheme | null
-    return (fromDoc === "dark" || fromDoc === "bright") ? fromDoc : "dark"
+    return (fromDoc === "dark" || fromDoc === "bright") ? fromDoc : "bright"
   })
 
   React.useEffect(() => {

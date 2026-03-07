@@ -43,7 +43,8 @@ export default function RootLayout({
   try {
     var v = localStorage.getItem(k);
     if (v === 'dark' || v === 'bright') document.documentElement.setAttribute('data-clarte-theme', v);
-  } catch(e){}
+    else document.documentElement.setAttribute('data-clarte-theme', 'bright');
+  } catch(e){ document.documentElement.setAttribute('data-clarte-theme', 'bright'); }
 })();
 `,
           }}
