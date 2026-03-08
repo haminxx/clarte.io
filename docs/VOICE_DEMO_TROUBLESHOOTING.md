@@ -12,6 +12,8 @@ The call box depends on **two build-time env vars** and a **running Render servi
 
 3. **Agent not joining:** If you join the room but Clarte never speaks (`remoteCount` stays 0), the agent on Render is not joining. Check Render env: `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `OPENAI_API_KEY`, `DEEPGRAM_API_KEY`, and Render logs for "entrypoint started" and "participant_connected".
 
+**Why Clarte might not respond at all:** (1) **Token/connect** — wrong or missing frontend env, Render down, or 503 from `/token`. (2) **Agent never joins** — wrong `LIVEKIT_*` on Render or agent subprocess not running; check logs for `entrypoint started` and `participant_connected`. (3) **Agent joins but is silent** — missing/invalid `OPENAI_API_KEY` or `DEEPGRAM_API_KEY`; check logs for `First LLM text chunk` and `First TTS frame ready`. Use `GET /token/debug` on Render to confirm `livekit_ok` and `deepgram_set`.
+
 See **Frontend Env** and **Render Environment Checklist** below for the full list.
 
 ### Why is my call not working? (checklist)
