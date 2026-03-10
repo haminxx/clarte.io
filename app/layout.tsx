@@ -2,6 +2,7 @@ import React from "react"
 import type { Metadata } from 'next'
 import './globals.css'
 import { ClarteThemeProvider } from "@/lib/clarte-theme-context"
+import { LanguageProvider } from "@/lib/language-context"
 import { PageThemeBg } from "@/components/page-theme-bg"
 
 export const metadata: Metadata = {
@@ -52,8 +53,10 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased">
         <ClarteThemeProvider>
-          <PageThemeBg />
-          {children}
+          <LanguageProvider>
+            <PageThemeBg />
+            {children}
+          </LanguageProvider>
         </ClarteThemeProvider>
       </body>
     </html>

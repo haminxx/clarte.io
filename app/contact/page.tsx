@@ -16,20 +16,22 @@ import {
 import { Loader2, CheckCircle } from "lucide-react"
 import { AnimateOnScroll } from "@/components/animate-on-scroll"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
+import { useTranslation } from "@/lib/language-context"
 import { cn } from "@/lib/utils"
 
 const JOB_TITLE_OPTIONS = [
-  { value: "engineer", label: "Engineer" },
-  { value: "product_manager", label: "Product Manager" },
-  { value: "student", label: "Student" },
-  { value: "researcher", label: "Researcher" },
-  { value: "educator", label: "Educator" },
-  { value: "founder", label: "Founder" },
-  { value: "other", label: "Other" },
+  { value: "engineer", labelKey: "engineer" },
+  { value: "product_manager", labelKey: "product_manager" },
+  { value: "student", labelKey: "student" },
+  { value: "researcher", labelKey: "researcher" },
+  { value: "educator", labelKey: "educator" },
+  { value: "founder", labelKey: "founder" },
+  { value: "other", labelKey: "other" },
 ] as const
 
 export default function ContactPage() {
   const { theme } = useClarteTheme()
+  const { t } = useTranslation()
   const isBright = theme === "bright"
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -78,10 +80,10 @@ export default function ContactPage() {
         <AnimateOnScroll animation="fade-up">
           <div className="mb-12 text-center">
             <h1 className={cn("text-4xl font-bold md:text-5xl", isBright ? "text-black" : "text-white")}>
-              Request Access
+              {t("contact.title")}
             </h1>
             <p className={cn("mx-auto mt-4 max-w-2xl text-lg", isBright ? "text-black/60" : "text-white/60")}>
-              Request early access to Clarte. We&apos;ll review your request and get back to you.
+              {t("contact.subtitle")}
             </p>
           </div>
         </AnimateOnScroll>
@@ -100,9 +102,9 @@ export default function ContactPage() {
                   <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/10">
                     <CheckCircle className="h-8 w-8 text-green-400" />
                   </div>
-                  <h2 className={cn("text-2xl font-bold", isBright ? "text-black" : "text-white")}>Request Received!</h2>
+                  <h2 className={cn("text-2xl font-bold", isBright ? "text-black" : "text-white")}>{t("contact.requestReceived")}</h2>
                   <p className={cn("mt-4", isBright ? "text-black/60" : "text-white/60")}>
-                    Thank you for your interest. We&apos;ll review your request and get back to you soon.
+                    {t("contact.thankYou")}
                   </p>
                   <Button
                     className={cn("mt-6", isBright ? "bg-black text-white hover:bg-black/90" : "bg-white text-black hover:bg-white/90")}
@@ -119,7 +121,7 @@ export default function ContactPage() {
                       setError(null)
                     }}
                   >
-                    Submit Another Request
+                    {t("contact.submitAnother")}
                   </Button>
                 </div>
               ) : (
@@ -130,7 +132,7 @@ export default function ContactPage() {
                     </div>
                   )}
                   <div>
-                    <label className={cn("mb-2 block text-sm", isBright ? "text-black/60" : "text-white/60")}>Full name</label>
+                    <label className={cn("mb-2 block text-sm", isBright ? "text-black/60" : "text-white/60")}>{t("contact.fullName")}</label>
                     <Input
                       type="text"
                       value={formData.name}
@@ -140,12 +142,12 @@ export default function ContactPage() {
                           ? "border-black/15 bg-white/80 text-black placeholder:text-black/40"
                           : "border-white/20 bg-white/5 text-white placeholder:text-white/40"
                       )}
-                      placeholder="Your full name"
+                      placeholder={t("contact.placeholderName")}
                       required
                     />
                   </div>
                   <div>
-                    <label className={cn("mb-2 block text-sm", isBright ? "text-black/60" : "text-white/60")}>Email</label>
+                    <label className={cn("mb-2 block text-sm", isBright ? "text-black/60" : "text-white/60")}>{t("contact.email")}</label>
                     <Input
                       type="email"
                       value={formData.email}
@@ -155,12 +157,12 @@ export default function ContactPage() {
                           ? "border-black/15 bg-white/80 text-black placeholder:text-black/40"
                           : "border-white/20 bg-white/5 text-white placeholder:text-white/40"
                       )}
-                      placeholder="you@company.com"
+                      placeholder={t("contact.placeholderEmail")}
                       required
                     />
                   </div>
                   <div>
-                    <label className={cn("mb-2 block text-sm", isBright ? "text-black/60" : "text-white/60")}>Job title</label>
+                    <label className={cn("mb-2 block text-sm", isBright ? "text-black/60" : "text-white/60")}>{t("contact.jobTitle")}</label>
                     <Select
                       value={formData.jobTitle}
                       onValueChange={(value) => setFormData({ ...formData, jobTitle: value })}
@@ -174,7 +176,7 @@ export default function ContactPage() {
                             : "border-white/20 bg-white/5 text-white [&>span]:text-white/90"
                         )}
                       >
-                        <SelectValue placeholder="Select your job title" />
+                        <SelectValue placeholder={t("contact.selectJobTitle")} />
                       </SelectTrigger>
                       <SelectContent className={cn(isBright ? "border-black/10 bg-white" : "border-white/10 bg-[#1a1a2e]")}>
                         {JOB_TITLE_OPTIONS.map((opt) => (
@@ -187,7 +189,7 @@ export default function ContactPage() {
                                 : "text-white focus:bg-white/10 focus:text-white"
                             )}
                           >
-                            {opt.label}
+                            {t(`contact.${opt.labelKey}`)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -195,7 +197,7 @@ export default function ContactPage() {
                   </div>
                   {isStudent && (
                     <div>
-                      <label className={cn("mb-2 block text-sm", isBright ? "text-black/60" : "text-white/60")}>School email</label>
+                      <label className={cn("mb-2 block text-sm", isBright ? "text-black/60" : "text-white/60")}>{t("contact.schoolEmail")}</label>
                       <Input
                         type="email"
                         value={formData.schoolEmail}
@@ -205,12 +207,12 @@ export default function ContactPage() {
                             ? "border-black/15 bg-white/80 text-black placeholder:text-black/40"
                             : "border-white/20 bg-white/5 text-white placeholder:text-white/40"
                         )}
-                        placeholder="you@university.edu"
+                        placeholder={t("contact.placeholderSchoolEmail")}
                       />
                     </div>
                   )}
                   <div>
-                    <label className={cn("mb-2 block text-sm", isBright ? "text-black/60" : "text-white/60")}>Industry</label>
+                    <label className={cn("mb-2 block text-sm", isBright ? "text-black/60" : "text-white/60")}>{t("contact.industry")}</label>
                     <Input
                       type="text"
                       value={formData.industry}
@@ -220,13 +222,13 @@ export default function ContactPage() {
                           ? "border-black/15 bg-white/80 text-black placeholder:text-black/40"
                           : "border-white/20 bg-white/5 text-white placeholder:text-white/40"
                       )}
-                      placeholder="e.g. Technology, Healthcare, Education"
+                      placeholder={t("contact.placeholderIndustry")}
                       required
                     />
                   </div>
                   <div>
                     <label className={cn("mb-2 block text-sm", isBright ? "text-black/60" : "text-white/60")}>
-                      What do you plan to use Clarte for?
+                      {t("contact.useCase")}
                     </label>
                     <Textarea
                       value={formData.useCase}
@@ -237,7 +239,7 @@ export default function ContactPage() {
                           ? "border-black/15 bg-white/80 text-black placeholder:text-black/40"
                           : "border-white/20 bg-white/5 text-white placeholder:text-white/40"
                       )}
-                      placeholder="Describe how you plan to use Clarte..."
+                      placeholder={t("contact.placeholderUseCase")}
                       required
                     />
                   </div>
@@ -249,10 +251,10 @@ export default function ContactPage() {
                     {loading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Submitting...
+                        {t("contact.submitting")}
                       </>
                     ) : (
-                      "Submit Request"
+                      t("contact.submitRequest")
                     )}
                   </Button>
                 </form>

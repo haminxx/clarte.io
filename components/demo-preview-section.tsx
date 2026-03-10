@@ -4,10 +4,12 @@ import { useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import { DEMO_PREVIEW_SRC, DEMO_PREVIEW_TYPE, type DemoPreviewMediaType } from "@/lib/demo-preview-config"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
+import { useTranslation } from "@/lib/language-context"
 import { cn } from "@/lib/utils"
 
 export function DemoPreviewSection() {
   const { theme } = useClarteTheme()
+  const { t } = useTranslation()
   const [mediaError, setMediaError] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -127,10 +129,10 @@ export function DemoPreviewSection() {
           <div className="relative z-10 flex h-full flex-col justify-between p-6 sm:p-8 lg:p-12">
             <div>
               <span className="mb-2 inline-block text-xs font-medium uppercase tracking-widest text-white/60">
-                Featured
+                {t("demoPreview.featured")}
               </span>
               <h2 className="max-w-2xl text-2xl font-semibold leading-tight text-white sm:text-3xl lg:text-4xl">
-                Clarte in Action
+                {t("demoPreview.title")}
               </h2>
             </div>
 
@@ -140,7 +142,7 @@ export function DemoPreviewSection() {
                 onClick={(e) => e.stopPropagation()}
                 className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/20"
               >
-                Try the Demo
+                {t("demoPreview.tryDemo")}
               </Link>
             </div>
           </div>
@@ -149,8 +151,8 @@ export function DemoPreviewSection() {
             {mediaError || !DEMO_PREVIEW_SRC ? (
               <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-900/40 via-blue-800/25 to-black">
                 <div className="text-center text-white/50">
-                  <p className="text-sm">Add a demo preview</p>
-                  <p className="mt-1 text-xs">Place demo-preview.mp4 or demo-preview.gif in public/</p>
+                  <p className="text-sm">{t("demoPreview.addPreview")}</p>
+                  <p className="mt-1 text-xs">{t("demoPreview.addPreviewHint")}</p>
                 </div>
               </div>
             ) : mediaType === "video" ? (

@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button"
 import { AnimateOnScroll } from "./animate-on-scroll"
 import { ParticleOrb } from "@/components/particle-orb"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
+import { useTranslation } from "@/lib/language-context"
 import { cn } from "@/lib/utils"
 
 export function HeroSection() {
   const { theme } = useClarteTheme()
+  const { t } = useTranslation()
   const isBright = theme === "bright"
   return (
     <section
@@ -48,11 +50,11 @@ export function HeroSection() {
             {/* Left: headline - blur to clear a bit slower */}
             <AnimateOnScroll animateOnMount delay={0} animation="fade-blur-slow" className="order-1">
               <h1 className={cn("font-semibold leading-[0.95] tracking-tight text-[clamp(1.7rem,3.4vw,3.1rem)] sm:text-[clamp(1.95rem,3.6vw,3.35rem)] md:text-[clamp(2.1rem,3.8vw,3.6rem)] xl:text-[clamp(2.6rem,3.2vw,50px)]", isBright ? "text-black" : "text-white")}>
-                Find absolute{" "}
+                {t("hero.taglineBefore")}
                 <span className="group relative inline-block cursor-default rounded px-1.5 py-0.5 bg-transparent backdrop-blur-xl blur-[3px] transition-all duration-300 hover:blur-none">
-                  clarity
+                  {t("hero.taglineClarity")}
                 </span>
-                {" "}with a voice AI that questions, debates, and validates
+                {t("hero.taglineAfter")}
               </h1>
             </AnimateOnScroll>
             {/* Right: buttons then description - subtitle appears after headline, buttons last */}
@@ -60,7 +62,7 @@ export function HeroSection() {
               <AnimateOnScroll animateOnMount delay={900} animation="fade-blur" className="flex flex-wrap gap-3 sm:gap-4">
                 <Link href="/download">
                   <Button className={cn("text-[clamp(0.875rem,1.2vw,1rem)] h-[clamp(2.25rem,4vh,2.75rem)] px-[clamp(1rem,2vw,1.5rem)]", isBright ? "bg-black text-white hover:bg-black/90" : "bg-white text-black hover:bg-white/90")}>
-                    Download
+                    {t("hero.download")}
                   </Button>
                 </Link>
                 <Link href="/demo">
@@ -68,15 +70,15 @@ export function HeroSection() {
                     variant="outline"
                     className={cn("text-[clamp(0.875rem,1.2vw,1rem)] h-[clamp(2.25rem,4vh,2.75rem)] px-[clamp(1rem,2vw,1.5rem)]", isBright ? "border-black/30 bg-transparent text-black hover:bg-black/10" : "border-white/20 bg-transparent text-white hover:bg-white/10")}
                   >
-                    Demo
+                    {t("hero.demo")}
                   </Button>
                 </Link>
               </AnimateOnScroll>
               <AnimateOnScroll animateOnMount delay={500} animation="fade-blur" className="w-full max-w-[min(450px,55vw)] lg:max-w-none lg:text-right">
                 <div className={cn("leading-relaxed text-left lg:text-right space-y-1 text-[clamp(0.75rem,1.1vw,1.125rem)] sm:text-[clamp(0.8125rem,1.15vw,1rem)] md:text-[clamp(0.875rem,1.2vw,1.125rem)]", isBright ? "text-black/70" : "text-white/60")}>
-                  <p>Learning is about how you think, not just what you know</p>
-                  <p>Clarte challenges you to think critically, pivot instantly,</p>
-                  <p>and build true cognitive flexibility in the moment</p>
+                  <p>{t("hero.subtitle1")}</p>
+                  <p>{t("hero.subtitle2")}</p>
+                  <p>{t("hero.subtitle3")}</p>
                 </div>
               </AnimateOnScroll>
             </div>

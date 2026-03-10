@@ -6,9 +6,11 @@ import { usePathname } from "next/navigation"
 import { AnimateOnScroll } from "./animate-on-scroll"
 import { cn } from "@/lib/utils"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
+import { useTranslation } from "@/lib/language-context"
 
 export function Footer() {
   const { theme } = useClarteTheme()
+  const { t } = useTranslation()
   const isBright = theme === "bright"
   const footerLinkClass = cn(
     "group relative inline-block text-sm transition-all duration-300 ease-out",
@@ -47,31 +49,31 @@ export function Footer() {
         <div className="grid gap-8 md:grid-cols-4">
           {/* Brand */}
           <div className="md:col-span-1">
-            <p className={cn("text-lg italic", isBright ? "text-black/80" : "text-white/80")}>Your thoughts, refined</p>
+            <p className={cn("text-lg italic", isBright ? "text-black/80" : "text-white/80")}>{t("footer.tagline")}</p>
           </div>
 
           {/* Main Links */}
           <div>
-            <h3 className={cn("mb-4 text-sm font-semibold", isBright ? "text-black" : "text-white")}>Main</h3>
+            <h3 className={cn("mb-4 text-sm font-semibold", isBright ? "text-black" : "text-white")}>{t("footer.main")}</h3>
             <ul className="space-y-3">
               <li>
                 <Link href="/" className={footerLinkClass}>
-                  <span className="relative inline-block after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-white after:to-white/80 after:transition-transform after:duration-300 after:ease-out group-hover:after:scale-x-100">Home</span>
+                  <span className="relative inline-block after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-white after:to-white/80 after:transition-transform after:duration-300 after:ease-out group-hover:after:scale-x-100">{t("footer.home")}</span>
                 </Link>
               </li>
               <li>
                 <Link href="/about" className={footerLinkClass}>
-                  <span className="relative inline-block after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-white after:to-white/80 after:transition-transform after:duration-300 after:ease-out group-hover:after:scale-x-100">About</span>
+                  <span className="relative inline-block after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-white after:to-white/80 after:transition-transform after:duration-300 after:ease-out group-hover:after:scale-x-100">{t("nav.about")}</span>
                 </Link>
               </li>
               <li>
                 <Link href="/api-reference" className={footerLinkClass}>
-                  <span className="relative inline-block after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-white after:to-white/80 after:transition-transform after:duration-300 after:ease-out group-hover:after:scale-x-100">API</span>
+                  <span className="relative inline-block after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-white after:to-white/80 after:transition-transform after:duration-300 after:ease-out group-hover:after:scale-x-100">{t("nav.api")}</span>
                 </Link>
               </li>
               <li>
                 <Link href="/demo" className={footerLinkClass}>
-                  <span className="relative inline-block after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-white after:to-white/80 after:transition-transform after:duration-300 after:ease-out group-hover:after:scale-x-100">Demo</span>
+                  <span className="relative inline-block after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-white after:to-white/80 after:transition-transform after:duration-300 after:ease-out group-hover:after:scale-x-100">{t("nav.demo")}</span>
                 </Link>
               </li>
             </ul>
@@ -79,21 +81,21 @@ export function Footer() {
 
           {/* Resources */}
           <div>
-            <h3 className={cn("mb-4 text-sm font-semibold", isBright ? "text-black" : "text-white")}>Resources</h3>
+            <h3 className={cn("mb-4 text-sm font-semibold", isBright ? "text-black" : "text-white")}>{t("footer.resources")}</h3>
             <ul className="space-y-3">
               <li>
                 <Link href="/download" className={footerLinkClass}>
-                  <span className="relative inline-block after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-white after:to-white/80 after:transition-transform after:duration-300 after:ease-out group-hover:after:scale-x-100">Download</span>
+                  <span className="relative inline-block after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-white after:to-white/80 after:transition-transform after:duration-300 after:ease-out group-hover:after:scale-x-100">{t("nav.download")}</span>
                 </Link>
               </li>
               <li>
                 <Link href="/contact" className={footerLinkClass}>
-                  <span className="relative inline-block after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-white after:to-white/80 after:transition-transform after:duration-300 after:ease-out group-hover:after:scale-x-100">Contact</span>
+                  <span className="relative inline-block after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-white after:to-white/80 after:transition-transform after:duration-300 after:ease-out group-hover:after:scale-x-100">{t("footer.contact")}</span>
                 </Link>
               </li>
               <li>
                 <a href="https://github.com/haminxx/clarte.io" target="_blank" rel="noopener noreferrer" className={footerLinkClass}>
-                  <span className="relative inline-block after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-white after:to-white/80 after:transition-transform after:duration-300 after:ease-out group-hover:after:scale-x-100">GitHub</span>
+                  <span className="relative inline-block after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-white after:to-white/80 after:transition-transform after:duration-300 after:ease-out group-hover:after:scale-x-100">{t("footer.github")}</span>
                 </a>
               </li>
             </ul>
@@ -101,16 +103,16 @@ export function Footer() {
 
           {/* Legal */}
           <div>
-            <h3 className={cn("mb-4 text-sm font-semibold", isBright ? "text-black" : "text-white")}>Legal</h3>
+            <h3 className={cn("mb-4 text-sm font-semibold", isBright ? "text-black" : "text-white")}>{t("footer.legal")}</h3>
             <ul className="space-y-3">
               <li>
                 <Link href="/privacy" className={footerLinkClass}>
-                  <span className="relative inline-block after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-white after:to-white/80 after:transition-transform after:duration-300 after:ease-out group-hover:after:scale-x-100">Privacy Policy</span>
+                  <span className="relative inline-block after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-white after:to-white/80 after:transition-transform after:duration-300 after:ease-out group-hover:after:scale-x-100">{t("footer.privacy")}</span>
                 </Link>
               </li>
               <li>
                 <Link href="/terms" className={footerLinkClass}>
-                  <span className="relative inline-block after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-white after:to-white/80 after:transition-transform after:duration-300 after:ease-out group-hover:after:scale-x-100">Terms of Service</span>
+                  <span className="relative inline-block after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-gradient-to-r after:from-white after:to-white/80 after:transition-transform after:duration-300 after:ease-out group-hover:after:scale-x-100">{t("footer.terms")}</span>
                 </Link>
               </li>
             </ul>
@@ -121,7 +123,7 @@ export function Footer() {
         {/* Copyright */}
         <div className={cn("mt-8 border-t pt-8 text-center", isBright ? "border-black/10" : "border-white/10")}>
           <p className={cn("text-sm", isBright ? "text-black/60" : "text-white/60")}>
-            © {new Date().getFullYear()} Clarte. All rights reserved.
+            © {new Date().getFullYear()} Clarte. {t("footer.copyright")}
           </p>
         </div>
       </div>

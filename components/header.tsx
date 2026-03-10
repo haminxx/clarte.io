@@ -15,17 +15,20 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
+import { useTranslation } from "@/lib/language-context"
+import { LanguageSelector } from "@/components/language-selector"
 import { EyelashEyeClosed, EyelashEyeOpen } from "@/components/icons/theme-eye"
 
 const navLinks = [
-  { href: "/about", label: "About" },
-  { href: "/download", label: "Download" },
-  { href: "/api-reference", label: "API" },
-  { href: "/demo", label: "Demo" },
+  { href: "/about", labelKey: "about" },
+  { href: "/download", labelKey: "download" },
+  { href: "/api-reference", labelKey: "api" },
+  { href: "/demo", labelKey: "demo" },
 ]
 
 export function Header() {
   const { theme, toggleTheme } = useClarteTheme()
+  const { t } = useTranslation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
@@ -99,13 +102,13 @@ export function Header() {
           <DropdownMenuItem asChild>
             <Link href="/profile" className={cn("cursor-pointer", theme === "dark" ? "text-white" : "text-black")}>
               <UserIcon className="mr-2 h-4 w-4" />
-              Profile
+              {t("header.profile")}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link href="/settings" className={cn("cursor-pointer", theme === "dark" ? "text-white" : "text-black")}>
               <Settings className="mr-2 h-4 w-4" />
-              Settings
+              {t("header.settings")}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem
@@ -113,7 +116,7 @@ export function Header() {
             className={cn("cursor-pointer", theme === "dark" ? "text-white focus:bg-white/10" : "text-black focus:bg-black/5")}
           >
             <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
+            {t("header.signOut")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -130,7 +133,7 @@ export function Header() {
             className={cn("w-full bg-transparent", theme === "dark" ? "border-white/20 text-white hover:bg-white/10" : "border-black/20 text-black hover:bg-black/10")}
           >
             <UserIcon className="mr-2 h-4 w-4" />
-            Profile
+            {t("header.profile")}
           </Button>
         </Link>
         <Link href="/settings" onClick={() => setMobileMenuOpen(false)}>
@@ -139,7 +142,7 @@ export function Header() {
             className={cn("w-full bg-transparent", theme === "dark" ? "border-white/20 text-white hover:bg-white/10" : "border-black/20 text-black hover:bg-black/10")}
           >
             <Settings className="mr-2 h-4 w-4" />
-            Settings
+            {t("header.settings")}
           </Button>
         </Link>
         <Button
@@ -151,7 +154,7 @@ export function Header() {
           }}
         >
           <LogOut className="mr-2 h-4 w-4" />
-          Sign Out
+          {t("header.signOut")}
         </Button>
       </div>
     )
@@ -180,7 +183,7 @@ export function Header() {
             type="button"
             onClick={toggleTheme}
             className={cn("rounded p-1 transition-colors hover:opacity-80", theme === "dark" ? "text-white" : "text-black")}
-            aria-label={theme === "dark" ? "Switch to bright theme" : "Switch to dark theme"}
+            aria-label={theme === "dark" ? t("header.themeSwitchToBright") : t("header.themeSwitchToDark")}
           >
             <span className="relative flex h-5 w-5 items-center justify-center">
               <EyelashEyeClosed
@@ -214,7 +217,7 @@ export function Header() {
                     isActive ? navActive : navCls
                   )}
                 >
-                  {link.label}
+                  {t(`nav.${link.labelKey}`)}
                 </Link>
               )
             })}
@@ -226,8 +229,9 @@ export function Header() {
               theme === "bright" ? "bg-black text-white hover:bg-black/90" : "text-black bg-gradient-to-r from-white to-white/90 hover:from-white/95 hover:to-white/80 shadow-sm"
             )}
           >
-            Request Access
+            {t("header.requestAccess")}
           </Link>
+          <LanguageSelector />
           <AuthButtons />
 
           <Button
@@ -277,7 +281,7 @@ export function Header() {
                     )}
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    {link.label}
+                    {t(`nav.${link.labelKey}`)}
                   </Link>
                 )
               })}
@@ -289,8 +293,11 @@ export function Header() {
                 )}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Request Access
+                {t("header.requestAccess")}
               </Link>
+              <div className="flex justify-center py-2">
+                <LanguageSelector />
+              </div>
               <MobileAuthButtons />
             </nav>
           </div>

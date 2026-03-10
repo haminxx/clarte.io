@@ -6,6 +6,7 @@ import Link from "next/link"
 import { ExternalLink, Laptop, Smartphone, Puzzle } from "lucide-react"
 import { AnimateOnScroll } from "@/components/animate-on-scroll"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
+import { useTranslation } from "@/lib/language-context"
 import { cn } from "@/lib/utils"
 
 const CHROME_WEB_STORE_URL = "https://chromewebstore.google.com/detail/clarte/fnhlcolenkljepfpjilmgfilbbhnamdi?authuser=0&hl=en"
@@ -18,6 +19,7 @@ const cardBase = (isBright: boolean) =>
 
 export default function DownloadPage() {
   const { theme } = useClarteTheme()
+  const { t } = useTranslation()
   const isBright = theme === "bright"
   return (
     <div className="min-h-screen bg-transparent">
@@ -27,13 +29,13 @@ export default function DownloadPage() {
         <AnimateOnScroll animation="fade-up" animateOnMount delay={100}>
           <div className="mb-16 text-center">
             <h1 className={cn("text-4xl font-bold md:text-5xl lg:text-6xl", isBright ? "text-black" : "text-white")}>
-              Download{" "}
+              {t("download.title")}{" "}
               <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
                 Clarte
               </span>
             </h1>
             <p className={cn("mx-auto mt-6 max-w-2xl text-lg", isBright ? "text-black/60" : "text-white/60")}>
-              Get Clarte on your desktop or mobile device.
+              {t("download.subtitle")}
             </p>
           </div>
         </AnimateOnScroll>
@@ -45,20 +47,20 @@ export default function DownloadPage() {
               <div className="mb-4 flex items-center justify-between">
                 <span className={cn("flex items-center gap-2 text-sm font-medium uppercase tracking-wide", isBright ? "text-black/70" : "text-white/70")}>
                   <Laptop className="h-5 w-5 text-blue-400/80" />
-                  Desktop
+                  {t("download.desktop")}
                 </span>
                 <span className={cn("rounded-full px-3 py-1 text-xs font-medium", isBright ? "bg-amber-100 text-amber-800" : "bg-amber-500/20 text-amber-300")}>
-                  Coming soon
+                  {t("download.comingSoon")}
                 </span>
               </div>
-              <h2 className={cn("mb-2 text-lg font-semibold", isBright ? "text-black" : "text-white")}>Desktop Application</h2>
+              <h2 className={cn("mb-2 text-lg font-semibold", isBright ? "text-black" : "text-white")}>{t("download.desktopAppTitle")}</h2>
               <p className={cn("mb-4 flex-1 text-sm leading-relaxed", isBright ? "text-black/60" : "text-white/60")}>
-                Full-featured desktop experience for Windows and macOS. Screen share, camera, and voice—all in one.
+                {t("download.desktopAppDesc")}
               </p>
               <div className={cn("flex flex-wrap gap-2 text-xs", isBright ? "text-black/50" : "text-white/50")}>
-                <span>Windows</span>
+                <span>{t("download.windows")}</span>
                 <span aria-hidden>·</span>
-                <span>macOS</span>
+                <span>{t("download.macOS")}</span>
               </div>
             </div>
           </AnimateOnScroll>
@@ -69,18 +71,18 @@ export default function DownloadPage() {
               <div className="mb-4 flex items-center justify-between">
                 <span className={cn("flex items-center gap-2 text-sm font-medium uppercase tracking-wide", isBright ? "text-black/70" : "text-white/70")}>
                   <Smartphone className="h-5 w-5 text-blue-400/80" />
-                  Mobile
+                  {t("download.mobile")}
                 </span>
                 <span className={cn("rounded-full px-3 py-1 text-xs font-medium", isBright ? "bg-amber-100 text-amber-800" : "bg-amber-500/20 text-amber-300")}>
-                  Coming soon
+                  {t("download.comingSoon")}
                 </span>
               </div>
-              <h2 className={cn("mb-2 text-lg font-semibold", isBright ? "text-black" : "text-white")}>iOS App</h2>
+              <h2 className={cn("mb-2 text-lg font-semibold", isBright ? "text-black" : "text-white")}>{t("download.iosAppTitle")}</h2>
               <p className={cn("mb-4 flex-1 text-sm leading-relaxed", isBright ? "text-black/60" : "text-white/60")}>
-                Take Clarte with you. Voice AI on iPhone with Siri integration and background support.
+                {t("download.iosAppDesc")}
               </p>
               <div className={cn("text-xs", isBright ? "text-black/50" : "text-white/50")}>
-                App Store
+                {t("download.appStore")}
               </div>
             </div>
           </AnimateOnScroll>
@@ -100,15 +102,15 @@ export default function DownloadPage() {
               <div className="mb-4 flex items-center justify-between">
                 <span className={cn("flex items-center gap-2 text-sm font-medium uppercase tracking-wide", isBright ? "text-black/70" : "text-white/70")}>
                   <Puzzle className="h-5 w-5 text-blue-400/80" />
-                  Extension
+                  {t("download.extension")}
                 </span>
               </div>
-              <h2 className={cn("mb-2 text-lg font-semibold", isBright ? "text-black" : "text-white")}>Chrome Extension</h2>
+              <h2 className={cn("mb-2 text-lg font-semibold", isBright ? "text-black" : "text-white")}>{t("download.chromeExtensionTitle")}</h2>
               <p className={cn("mb-4 flex-1 text-sm leading-relaxed", isBright ? "text-black/60" : "text-white/60")}>
-                Access Clarte from any tab. Quick voice AI without leaving your browser.
+                {t("download.chromeExtensionDesc")}
               </p>
               <div className="flex items-center gap-2 text-blue-400">
-                <span className="text-sm font-medium">Add to Chrome</span>
+                <span className="text-sm font-medium">{t("download.addToChrome")}</span>
                 <ExternalLink className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </div>
             </a>
@@ -118,11 +120,11 @@ export default function DownloadPage() {
         <AnimateOnScroll animation="fade-up" delay={200}>
           <div className={cn("mt-12 rounded-2xl border p-6 text-center backdrop-blur-md", isBright ? "border-black/10 bg-white/60" : "border-white/10 bg-[#1a1a2e]/30")}>
             <p className={cn("text-sm", isBright ? "text-black/60" : "text-white/60")}>
-              Prefer the web?{" "}
+              {t("download.preferWeb")}{" "}
               <Link href="/demo" className="text-blue-400 hover:underline">
-                Try the demo
+                {t("download.tryDemo")}
               </Link>
-              {" "}—no download required.
+              {" "}{t("download.noDownloadRequired")}
             </p>
           </div>
         </AnimateOnScroll>
