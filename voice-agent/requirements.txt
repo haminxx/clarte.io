@@ -7,4 +7,5 @@ fastapi
 uvicorn[standard]
 websockets
 firebase-admin
+# gpt-realtime-1.5 is used in agent.py and realtime_relay.py; use openai>=1.6 if needed
 openai

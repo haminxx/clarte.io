@@ -28,6 +28,8 @@ Executive Assistant voice agent with two paths:
 
 **Tier 2/3:** Add `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `NEXT_PUBLIC_LIVEKIT_URL`, and **`DEEPGRAM_API_KEY`** (required for agent to speak).
 
+**USE_DEEPGRAM_STT (optional):** Set to `true` in Render env (or `voice-agent/.env`) to use **Deepgram STT** + **GPT-4o with vision** + **Deepgram TTS**. This pipeline is faster for STT (Deepgram Nova) and supports screen share/camera via GPT-4o vision. Default: OpenAI Realtime (STT+LLM) + Deepgram TTS.
+
 **Voice profiles (optional):** For custom/cloned Deepgram voices (dashboard, desktop, iOS), the token server and agent use Firestore. Set `FIREBASE_SERVICE_ACCOUNT` (JSON string) in the token server (and agent) environment. Authenticated clients can create/list/update/delete records in the `voiceProfiles` collection and pass `voice_profile_id` when requesting a token; the agent will use the profile's `deepgram_model` when `status == "ready"`.
 
 Frontend vars are baked in at **build time** (Next.js). Backend vars are read at **runtime** by the Python process.

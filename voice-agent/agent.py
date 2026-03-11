@@ -56,7 +56,7 @@ No premature advice. No filler ("That's a great question!"). 1–2 sentences max
 **Stay quiet / hold:** If the user asks you to stay quiet, stay on hold, wait, or similar – acknowledge briefly (e.g. "I'll wait.") and remain silent until they speak again. Do not ask follow-up questions until they re-engage.
 
 ## TOOLS
-search_web: Step 3 only. check_schedule: availability. log_feedback: notes. request_screen_share / request_camera: when asked. switch_to_english / switch_to_korean: language switch. show_guidance: math (LaTeX), steps, screen positions (x,y 0–100).
+search_web: Step 3 only. check_schedule: availability. log_feedback: notes. request_screen_share / request_camera: when asked. switch_to_english / switch_to_korean: language switch. switch_persona: change mode (thinking, advice, psychological, motivated, soft) when topic or user needs different style. show_guidance: math (LaTeX), steps, screen positions (x,y 0–100).
 """
 
 # Persona keys used by the frontend to select Deepgram voices.
@@ -86,6 +86,12 @@ FOLLOW_UP_PHRASES_EN = [
     "What would you like to think through today?",
     "What's been occupying your thoughts?",
 ]
+OPENING_PHRASES_EN = [
+    "Hello there!",
+    "Hi there!",
+    "Hello!",
+    "Hey!",
+]
 FOLLOW_UP_PHRASES_KO = [
     "오늘 무엇을 함께 생각해 보시겠어요?",
     "오늘 뭐 하셨어요?",
@@ -95,6 +101,15 @@ FOLLOW_UP_PHRASES_KO = [
     "무엇이 마음에 걸리시나요?",
     "요즘 어떤 생각이 드시나요?",
 ]
+OPENING_PHRASES_KO = [
+    "안녕하세요!",
+    "여보세요!",
+    "안녕!",
+]
+OPENING_PHRASES_ES = ["Hola!", "Qué tal!", "Hola ahí!"]
+OPENING_PHRASES_ZH = ["你好！", "嗨！", "你好呀！"]
+OPENING_PHRASES_HI = ["नमस्ते!", "हैलो!", "कैसे हो!"]
+OPENING_PHRASES_JA = ["こんにちは！", "やあ！", "ハロー！"]
 
 
 DEFAULT_DEEPGRAM_MODEL = "aura-2-asteria-en"
@@ -214,16 +229,30 @@ def _parse_metadata(job) -> dict:
 
 
 from tools import do_check_schedule, do_log_feedback, do_search_web
+from personas import get_persona, detect_persona, PERSONA_IDS
+
+# Deepgram STT + GPT-4o vision pipeline (Option A)
+USE_DEEPGRAM_STT = (os.getenv("USE_DEEPGRAM_STT") or "").strip().lower() in ("1", "true", "yes")
 
 
 class ExecutiveAssistantAgent(Agent):
-    """Single unified Executive Assistant with schedule, search, memory, and screen/camera request tools."""
+    """Single unified Executive Assistant with schedule, search, memory, and screen/camera request tools.
+    Supports persona modes (thinking, advice, psychological, motivated, soft) with optional switching."""
 
-    def __init__(self, room, session=None) -> None:
-        super().__init__(instructions=EXECUTIVE_ASSISTANT_PROMPT)
+    def __init__(self, room, session=None, initial_persona: str = "thinking") -> None:
+        persona = get_persona(initial_persona) or get_persona("thinking")
+        full_instructions = (
+            EXECUTIVE_ASSISTANT_PROMPT
+            + "\n\n## CURRENT MODE\n"
+            + (persona.prompt_addon if persona else "")
+        )
+        super().__init__(instructions=full_instructions)
         self._room = room
         self._session = session  # for TTS language switch tools
         self._silence_timer: Optional[asyncio.Task] = None
+        self._current_persona = initial_persona
+        self._persona_history: list[str] = []
+        self._persona_turn_count = 0
 
     async def tts_node(
         self, text: AsyncIterable[str], model_settings: ModelSettings
@@ -444,14 +473,91 @@ class ExecutiveAssistantAgent(Agent):
         """Inform the user that Korean responses are now preferred."""
         return "한국어로 전환하겠습니다. 이제 한국어로 응답할게요."
 
+    @function_tool(
+        description="Switch response mode/persona based on conversation topic or user request. Modes: thinking (Socratic, no advice), advice (direct, actionable), psychological (emotional support, gentle), motivated (direct, motivating, strong language ok), soft (gentle, quote-based). Call when the user clearly needs a different style or when topic shifts to emotional/advice/reflection.",
+    )
+    async def switch_persona(self, context: RunContext, mode: str) -> str:
+        """Update current persona mode. Returns the new mode's instructions so you adopt them from now on."""
+        mode_lower = (mode or "").strip().lower()
+        if mode_lower not in PERSONA_IDS:
+            return f"Unknown mode. Use one of: {', '.join(PERSONA_IDS)}. Staying in {self._current_persona}."
+        persona = get_persona(mode_lower)
+        if not persona:
+            return f"Staying in {self._current_persona}."
+        self._current_persona = mode_lower
+        logger.info("Persona switched to %s", mode_lower)
+        return f"Switched to {mode_lower} mode. From now on: {persona.prompt_addon}"
+
+
+class VisionExecutiveAssistantAgent(ExecutiveAssistantAgent):
+    """Executive Assistant with video frame sampling for screen share/camera vision.
+    Used when USE_DEEPGRAM_STT=true with GPT-4o (vision) + Deepgram STT/TTS."""
+
+    def __init__(self, room, session=None, initial_persona: str = "thinking") -> None:
+        super().__init__(room=room, session=session, initial_persona=initial_persona)
+        self._latest_frame = None
+        self._video_stream: Optional[rtc.VideoStream] = None
+        self._video_tasks: list = []
+
+    async def on_enter(self) -> None:
+        """Subscribe to video tracks for screen share/camera."""
+        room = self._room
+
+        def _maybe_add_video(track) -> None:
+            if track and getattr(track, "kind", None) == rtc.TrackKind.KIND_VIDEO:
+                self._create_video_stream(track)
+
+        for p in room.remote_participants.values():
+            for pub in p.track_publications.values():
+                track = getattr(pub, "track", None)
+                _maybe_add_video(track)
+
+        @room.on("track_subscribed")
+        def _on_track(track, publication, participant):
+            _maybe_add_video(track)
+
+    def _create_video_stream(self, track: rtc.Track) -> None:
+        if self._video_stream:
+            try:
+                self._video_stream.close()
+            except Exception:
+                pass
+        self._video_stream = rtc.VideoStream(track)
+
+        async def _read():
+            try:
+                async for event in self._video_stream:
+                    self._latest_frame = event.frame
+            except Exception as e:
+                logger.debug("Video stream read error: %s", e)
+
+        t = asyncio.create_task(_read())
+        self._video_tasks.append(t)
+        t.add_done_callback(lambda _: self._video_tasks.remove(t) if t in self._video_tasks else None)
+
+    async def on_user_turn_completed(self, turn_ctx, new_message) -> None:
+        """Add latest video frame to user message for vision."""
+        if self._latest_frame:
+            try:
+                from livekit.agents.llm import ImageContent
+                content = getattr(new_message, "content", None)
+                if content is not None:
+                    if isinstance(content, list):
+                        content.append(ImageContent(image=self._latest_frame))
+                    else:
+                        new_message.content = [content, ImageContent(image=self._latest_frame)]
+            except Exception as e:
+                logger.debug("Failed to add video frame: %s", e)
+            self._latest_frame = None
+
 
 server = AgentServer()
 
 
 @server.rtc_session(agent_name="clarte")
 async def entrypoint(ctx: agents.JobContext) -> None:
-    """Single entrypoint: Executive Assistant only. No agent routing."""
-    logger.info("entrypoint started")
+    """Single entrypoint: Executive Assistant. Uses Deepgram STT + GPT-4o vision when USE_DEEPGRAM_STT=true."""
+    logger.info("entrypoint started (USE_DEEPGRAM_STT=%s)", USE_DEEPGRAM_STT)
     meta = _parse_metadata(getattr(ctx, "job", None))
     voice, mode, language, user_name = meta["voice"], meta["mode"], meta["language"], meta.get("user_name")
     voice_profile_id = meta.get("voice_profile_id")
@@ -480,15 +586,6 @@ async def entrypoint(ctx: agents.JobContext) -> None:
     for _, p in room.remote_participants.items():
         logger.info("Existing participant: %s", p.identity)
 
-    from openai.types.beta.realtime.session import TurnDetection
-
-    turn_detection = TurnDetection(
-        type="semantic_vad",
-        eagerness="high",
-        create_response=True,
-        interrupt_response=True,
-    )
-
     # Resolve Deepgram Aura model from VoiceProfile (if present) or language + persona.
     deepgram_model: str
     if voice_profile_id:
@@ -503,57 +600,140 @@ async def entrypoint(ctx: agents.JobContext) -> None:
     else:
         deepgram_model = _resolve_deepgram_model(language, voice)
 
-    try:
-        session = AgentSession(
-            llm=openai.realtime.RealtimeModel(
-                model="gpt-4o-realtime-preview",
-                modalities=["text"],
-                turn_detection=turn_detection,
-            ),
-            tts=deepgram.TTS(
-                model=deepgram_model,
-            ),
-        )
-    except Exception as e:
-        logger.exception("Failed to initialize Deepgram TTS: %s (check DEEPGRAM_API_KEY and model=%s)", e, deepgram_model)
-        raise
-    logger.info("Using Deepgram TTS (model=%s) with OpenAI Realtime LLM (language=%s, persona=%s)", deepgram_model, language, voice)
-
-    @session.on("user_input_transcribed")
-    def on_user_input_transcribed(event: UserInputTranscribedEvent) -> None:
-        """Forward user speech transcription to frontend for live transcript display (partial + final)."""
-        transcript = (event.transcript or "").strip()
-        if not transcript:
-            return
-
-        msg_type = "transcript_partial" if not event.is_final else "transcript_add"
-        payload = json.dumps({"type": msg_type, "role": "user", "content": transcript})
-
-        async def _publish() -> None:
-            try:
-                await room.local_participant.publish_data(payload, reliable=True)
-            except Exception as e:
-                logger.debug("transcript publish failed: %s", e)
-
-        asyncio.create_task(_publish())
-
-    room_opts = room_io.RoomOptions(video_input=True)  # allow video when user enables screen/camera
-    agent = ExecutiveAssistantAgent(room=room, session=session)
-    logger.info("Starting Executive Assistant session (voice=%s, mode=%s, language=%s, user_name=%s)", voice, mode, language, user_name or "(none)")
-    await session.start(
-        room=room,
-        agent=agent,
-        room_options=room_opts,
-    )
-    # Opening: "Hello!" vs "Hello, [name]!" (or Korean equivalents)
-    if language == "ko":
-        opening = f"안녕하세요, {user_name}님!" if user_name else "안녕하세요!"
-        follow_up = random.choice(FOLLOW_UP_PHRASES_KO)
+    if USE_DEEPGRAM_STT:
+        # Option A: Deepgram STT + GPT-4o (vision) + Deepgram TTS
+        stt_lang = "en-US" if language == "en" else ("ko" if language == "ko" else "en-US")
+        try:
+            session = AgentSession(
+                stt=deepgram.STT(model="nova-3", language=stt_lang, interim_results=True),
+                llm=openai.LLM(model="gpt-4o"),
+                tts=deepgram.TTS(model=deepgram_model),
+            )
+        except Exception as e:
+            logger.exception("Failed to initialize Deepgram STT pipeline: %s", e)
+            raise
+        logger.info("Using Deepgram STT + GPT-4o vision + Deepgram TTS (model=%s)", deepgram_model)
+        agent = VisionExecutiveAssistantAgent(room=room, session=session)
+        room_opts = room_io.RoomOptions(video_input=True)
+        await session.start(room=room, agent=agent, room_options=room_opts)
+        # Opening greeting
+        opening_phrases_by_lang = {
+            "en": OPENING_PHRASES_EN,
+            "ko": OPENING_PHRASES_KO,
+            "es": OPENING_PHRASES_ES,
+            "zh": OPENING_PHRASES_ZH,
+            "hi": OPENING_PHRASES_HI,
+            "ja": OPENING_PHRASES_JA,
+        }
+        follow_ups_by_lang = {"en": FOLLOW_UP_PHRASES_EN, "ko": FOLLOW_UP_PHRASES_KO}
+        lang_key = language if language in opening_phrases_by_lang else "en"
+        openings = opening_phrases_by_lang[lang_key]
+        follow_ups = follow_ups_by_lang.get(lang_key, FOLLOW_UP_PHRASES_EN)
+        if user_name and language == "ko":
+            opening = f"안녕하세요, {user_name}님!"
+        elif user_name and language == "en":
+            opening = f"Hello, {user_name}!"
+        elif user_name:
+            opening = random.choice(openings).rstrip("!") + f", {user_name}!"
+        else:
+            opening = random.choice(openings)
+        follow_up = random.choice(follow_ups)
+        greeting_text = f"{opening} {follow_up}"
+        if hasattr(session, "say"):
+            await session.say(greeting_text)
+        elif hasattr(session, "generate_reply"):
+            await session.generate_reply(instructions=f'Say exactly: "{greeting_text}"')
+        else:
+            logger.warning("No say/generate_reply on session; skipping opening greeting")
     else:
-        opening = f"Hello, {user_name}!" if user_name else "Hello!"
-        follow_up = random.choice(FOLLOW_UP_PHRASES_EN)
-    greeting = f'Say exactly: "{opening} {follow_up}"'
-    await session.generate_reply(instructions=greeting)
+        # Default: OpenAI Realtime (STT+LLM) + Deepgram TTS
+        from openai.types.beta.realtime.session import TurnDetection
+        turn_detection = TurnDetection(
+            type="semantic_vad",
+            eagerness="high",
+            create_response=True,
+            interrupt_response=True,
+        )
+        try:
+            session = AgentSession(
+                llm=openai.realtime.RealtimeModel(
+                    model="gpt-realtime-1.5",
+                    modalities=["text"],
+                    turn_detection=turn_detection,
+                ),
+                tts=deepgram.TTS(model=deepgram_model),
+            )
+        except Exception as e:
+            logger.exception("Failed to initialize Deepgram TTS: %s (check DEEPGRAM_API_KEY and model=%s)", e, deepgram_model)
+            raise
+        logger.info("Using Deepgram TTS (model=%s) with OpenAI Realtime LLM (language=%s, persona=%s)", deepgram_model, language, voice)
+
+        room_opts = room_io.RoomOptions(video_input=True)
+        agent = ExecutiveAssistantAgent(room=room, session=session)
+
+        def on_user_input_transcribed(event: UserInputTranscribedEvent) -> None:
+            """Forward user speech transcription to frontend for live transcript display (partial + final)."""
+            transcript = (event.transcript or "").strip()
+            if not transcript:
+                return
+
+            msg_type = "transcript_partial" if not event.is_final else "transcript_add"
+            payload = json.dumps({"type": msg_type, "role": "user", "content": transcript})
+
+            async def _publish() -> None:
+                try:
+                    await room.local_participant.publish_data(payload, reliable=True)
+                except Exception as e:
+                    logger.debug("transcript publish failed: %s", e)
+
+            asyncio.create_task(_publish())
+
+            if event.is_final:
+                agent._persona_history.append(transcript)
+                if len(agent._persona_history) > 5:
+                    agent._persona_history.pop(0)
+                agent._persona_turn_count += 1
+                if agent._persona_turn_count >= 2:
+                    agent._persona_turn_count = 0
+                    detected = detect_persona(agent._persona_history)
+                    if detected != agent._current_persona:
+                        agent._current_persona = detected
+                        logger.info("Persona auto-detected: %s", detected)
+
+        session.on("user_input_transcribed")(on_user_input_transcribed)
+
+        logger.info(
+            "Starting session with model=gpt-realtime-1.5, deepgram_model=%s (voice=%s, mode=%s, language=%s, user_name=%s)",
+            deepgram_model, voice, mode, language, user_name or "(none)",
+        )
+        await session.start(
+            room=room,
+            agent=agent,
+            room_options=room_opts,
+        )
+        opening_phrases_by_lang = {
+            "en": OPENING_PHRASES_EN,
+            "ko": OPENING_PHRASES_KO,
+            "es": OPENING_PHRASES_ES,
+            "zh": OPENING_PHRASES_ZH,
+            "hi": OPENING_PHRASES_HI,
+            "ja": OPENING_PHRASES_JA,
+        }
+        follow_ups_by_lang = {"en": FOLLOW_UP_PHRASES_EN, "ko": FOLLOW_UP_PHRASES_KO}
+        lang_key = language if language in opening_phrases_by_lang else "en"
+        openings = opening_phrases_by_lang[lang_key]
+        follow_ups = follow_ups_by_lang.get(lang_key, FOLLOW_UP_PHRASES_EN)
+        if user_name and language == "ko":
+            opening = f"안녕하세요, {user_name}님!"
+        elif user_name and language == "en":
+            opening = f"Hello, {user_name}!"
+        elif user_name:
+            opening = random.choice(openings).rstrip("!") + f", {user_name}!"
+        else:
+            opening = random.choice(openings)
+        follow_up = random.choice(follow_ups)
+        greeting = f'Say exactly: "{opening} {follow_up}"'
+        await session.generate_reply(instructions=greeting)
 
     await asyncio.Future()
 

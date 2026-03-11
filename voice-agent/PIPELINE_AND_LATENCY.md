@@ -67,8 +67,8 @@ flowchart TB
 
 | Path | When | Flow |
 |------|------|------|
-| **Path A: LiveKit** | `LIVEKIT_URL` set and `NEXT_PUBLIC_USE_DIRECT_RELAY` not set | Browser → Firebase (app) → Token from Render → LiveKit → Render Agent (OpenAI + Deepgram TTS) |
-| **Path B: Relay (VoiceRoomDirect)** | `LIVEKIT_URL` unset or `NEXT_PUBLIC_USE_DIRECT_RELAY=true` | Browser → Firebase (app) → WebSocket to Render `/realtime` → OpenAI Realtime |
+| **Path A: LiveKit** | `LIVEKIT_URL` set and `NEXT_PUBLIC_USE_DIRECT_RELAY` not set | Browser → Firebase (app) → Token from Render → LiveKit → Render Agent (OpenAI Realtime gpt-realtime-1.5 + Deepgram TTS) |
+| **Path B: Relay (VoiceRoomDirect)** | `LIVEKIT_URL` unset or `NEXT_PUBLIC_USE_DIRECT_RELAY=true` | Browser → Firebase (app) → WebSocket to Render `/realtime` → OpenAI Realtime (gpt-realtime-1.5, native audio; no Deepgram) |
 
 **Pipeline choice (VoiceAgentCard):** Uses VoiceRoomDirect (lighter bundle) when LiveKit is not configured or when `NEXT_PUBLIC_USE_DIRECT_RELAY=true`. Otherwise uses Room (LiveKit) for full features (screen share, camera, Deepgram TTS, conversation save).
 
@@ -82,7 +82,7 @@ flowchart TB
 | **Render – Token** | 100–500 | Cold start ~15 min; warm ~100–500 ms |
 | **Render – Health** | 50–300 | Warmup before token |
 | **LiveKit** | 50–150 | WebRTC signaling, join room |
-| **OpenAI Realtime** | 300–800 | Speech understanding + text generation (first response) |
+| **OpenAI Realtime** | 300–800 | gpt-realtime-1.5; speech understanding + text generation (first response) |
 | **Deepgram Aura TTS** | 100–250 | Aura-2 streaming; single-hop TTS for all responses |
 | **Exa (search_web)** | 500–2000 | When tool called in Step 3 |
 | **Network (Browser ↔ Render)** | 50–200 | Depends on region |
@@ -190,7 +190,7 @@ The current pipeline (OpenAI Realtime + Deepgram Aura TTS) balances quality and 
 
 | Option | Latency | Notes |
 |--------|---------|-------|
-| **OpenAI Realtime** (current) | 300–800 ms | All-in-one STT+LLM; hard to beat for realtime voice |
+| **OpenAI Realtime** (current) | 300–800 ms | gpt-realtime-1.5; all-in-one STT+LLM; hard to beat for realtime voice |
 | **Groq (Claude, Llama)** | ~50–200 ms | Very fast LPU; needs separate STT (Deepgram, Whisper) — adds hop |
 | **Claude API** | Moderate | No built-in realtime; custom pipeline: STT → Claude → TTS |
 

@@ -16,6 +16,17 @@ The call box depends on **two build-time env vars** and a **running Render servi
 
 See **Frontend Env** and **Render Environment Checklist** below for the full list.
 
+### Which path am I on?
+
+The demo uses **two connection paths**. Which one you get depends on frontend env:
+
+| Path | When | STT + LLM | TTS | What to check if it doesn’t work |
+|------|------|-----------|-----|----------------------------------|
+| **Path A: LiveKit** | `NEXT_PUBLIC_LIVEKIT_URL` is set and `NEXT_PUBLIC_USE_DIRECT_RELAY` is not `"true"` | OpenAI Realtime (gpt-realtime-1.5) | **Deepgram Aura** | Render: `LIVEKIT_*`, `OPENAI_API_KEY`, **`DEEPGRAM_API_KEY`**. Use `/token/debug` for `livekit_ok` and `deepgram_set`. |
+| **Path B: Direct relay** | `NEXT_PUBLIC_LIVEKIT_URL` is unset, or `NEXT_PUBLIC_USE_DIRECT_RELAY=true` | OpenAI Realtime (gpt-realtime-1.5) | **OpenAI native audio** (no Deepgram) | Render: only `OPENAI_API_KEY`. No Deepgram; voice is OpenAI’s. |
+
+If you expect the **Clarte voice** (Deepgram Aura), use **Path A** (set `NEXT_PUBLIC_LIVEKIT_URL` and do not force direct relay). Path B uses OpenAI’s built-in voice and does not use Deepgram.
+
 ### Why is my call not working? (checklist)
 
 1. **Is `NEXT_PUBLIC_LIVEKIT_URL` set at build time?** If not, you get "Voice is not configured" immediately.
@@ -43,10 +54,9 @@ The demo page uses a **LiveKit + Render** pipeline:
          │◀──────────────────────────────────────────────▶│
          │                       │                        │
          │                       │  Agent receives audio  │
-         │                       │  ┌─────────────────┐   │
-         │                       │  │ OpenAI Realtime │   │  STT + LLM
-         │                       │  │ (gpt-realtime)  │   │
-         │                       │  └────────┬────────┘   │
+         │                       │  ┌─────────────────────────────┐   │
+         │                       │  │ OpenAI Realtime (1.5)      │   │  STT + LLM
+         │                       │  └────────┬────────────────────┘   │
          │                       │           │            │
          │                       │  ┌────────▼────────┐   │
          │                       │  │ Deepgram Aura   │   │  TTS
@@ -64,6 +74,28 @@ The demo page uses a **LiveKit + Render** pipeline:
 3. **TTS (Text-to-Speech):** Agent text → **Deepgram Aura** → audio frames → LiveKit → user speaker.
 
 If you see your speech in the transcript, STT is working. If the agent never speaks, the failure is in **LLM** or **TTS**.
+
+### Pipeline (Path A) – STT → LLM → TTS
+
+Path A uses **OpenAI Realtime (gpt-realtime-1.5)** for STT and LLM, and **Deepgram Aura** for TTS:
+
+1. **STT:** User mic → LiveKit → Render agent → **OpenAI Realtime (gpt-realtime-1.5)** transcribes audio to text.
+2. **LLM:** The same Realtime session produces the text reply (no separate LLM call).
+3. **TTS:** Agent sends that text to **Deepgram Aura** (LiveKit plugin) → audio frames → LiveKit → user speaker.
+
+So: **OpenAI Realtime = STT + LLM**; **Deepgram = TTS**. Path B (direct relay) uses only OpenAI Realtime (no LiveKit, no Deepgram); audio out is OpenAI’s native voice.
+
+### STT – LLM – TTS Pipeline (OpenAI Realtime + Deepgram)
+
+- **STT (Speech-to-Text):** User mic → LiveKit → Render agent → **OpenAI Realtime** transcribes audio to text. The same model handles both STT and LLM in one session.
+- **LLM:** OpenAI Realtime generates the text reply (same session as STT; no separate LLM call).
+- **TTS (Text-to-Speech):** Agent text → **Deepgram Aura** (via LiveKit plugin) → audio frames → LiveKit → user speaker.
+
+The agent uses **half-cascade**: OpenAI Realtime with `modalities=["text"]` (text-only output), and **Deepgram Aura** for all speech synthesis. The LiveKit `deepgram.TTS` plugin sends text to `https://api.deepgram.com/v1/speak?model=<model>` with `DEEPGRAM_API_KEY` in the `Authorization: Token <key>` header and streams audio back. No extra Deepgram setup is required beyond the API key; voice is chosen via metadata from the token request (e.g. `aura-2-thalia-en`).
+
+### OpenAI Realtime model
+
+The agent uses the **gpt-realtime-1.5** model. The relay path (Path B) also uses **gpt-realtime-1.5**. If you need to revert to an older model, set `model="gpt-realtime"` or `model="gpt-4o-realtime-preview"` in `voice-agent/agent.py` and the WebSocket URL in `voice-agent/realtime_relay.py`.
 
 ### Deepgram: no voice setup required
 
@@ -99,6 +131,7 @@ In **Render Dashboard → Your Service → Environment**, ensure:
 | `OPENAI_API_KEY` | Yes | OpenAI Realtime API (billing required) |
 | `DEEPGRAM_API_KEY` | Yes | Deepgram Aura TTS – **required for agent to speak** |
 | `EXA_API_KEY` | Optional | For search_web tool |
+| `USE_DEEPGRAM_STT` | Optional | Set to `true` for Deepgram STT + GPT-4o vision + Deepgram TTS (faster STT, screen/camera support). Default: OpenAI Realtime STT+LLM. |
 
 ### Render Logs to Check
 

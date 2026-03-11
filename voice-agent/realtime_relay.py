@@ -195,7 +195,7 @@ async def handle_realtime_websocket(websocket):
         await websocket.close()
         return
 
-    openai_url = "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview"
+    openai_url = "wss://api.openai.com/v1/realtime?model=gpt-realtime-1.5"
     headers = {"Authorization": f"Bearer {api_key}"}
 
     try:
