@@ -295,9 +295,6 @@ export function Header() {
               >
                 {t("header.requestAccess")}
               </Link>
-              <div className="flex justify-center py-2">
-                <LanguageSelector />
-              </div>
               <MobileAuthButtons />
             </nav>
           </div>
