@@ -8,7 +8,9 @@ import React, { useCallback, useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { PhoneOff, Loader2, Phone } from "lucide-react"
 
-const VOICE_AGENT_URL = process.env.NEXT_PUBLIC_VOICE_AGENT_URL ?? ""
+const VOICE_AGENT_URL_RAW = process.env.NEXT_PUBLIC_VOICE_AGENT_URL ?? ""
+/** Treat placeholder URLs (from CI when secrets missing) as not configured. */
+const VOICE_AGENT_URL = VOICE_AGENT_URL_RAW && !VOICE_AGENT_URL_RAW.includes("placeholder") ? VOICE_AGENT_URL_RAW : ""
 const RELAY_WS_URL = VOICE_AGENT_URL
   ? (VOICE_AGENT_URL.startsWith("https") ? "wss:" : "ws:") + VOICE_AGENT_URL.replace(/^https?:/, "") + "/realtime"
   : ""
@@ -91,6 +93,7 @@ export function VoiceRoomDirect({ onDisconnect, autoStart = false }: VoiceRoomDi
   const outputQueueRef = useRef<Int16Array[]>([])
   const outputContextRef = useRef<AudioContext | null>(null)
   const useDeltasRef = useRef<boolean | null>(null)
+  const errorOccurredRef = useRef(false)
 
   const disconnect = useCallback(() => {
     if (wsRef.current) {
@@ -126,6 +129,29 @@ export function VoiceRoomDirect({ onDisconnect, autoStart = false }: VoiceRoomDi
     }
     setStatus("connecting")
     setError(null)
+    errorOccurredRef.current = false
+
+    // Warm up Render service (helps with cold starts) and verify reachability
+    const baseUrl = VOICE_AGENT_URL.replace(/\/$/, "")
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 15000)
+    try {
+      const res = await fetch(`${baseUrl}/health`, { method: "GET", signal: controller.signal })
+      clearTimeout(timeout)
+      if (!res.ok) {
+        setError("Voice service unhealthy. Check Render logs and OPENAI_API_KEY.")
+        setStatus("error")
+        return
+      }
+    } catch (e) {
+      clearTimeout(timeout)
+      setError(
+        "Cannot reach voice service. Ensure NEXT_PUBLIC_VOICE_AGENT_URL points to your Render URL and the service is running."
+      )
+      setStatus("error")
+      return
+    }
+
     let stream: MediaStream | null = null
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -174,6 +200,7 @@ export function VoiceRoomDirect({ onDisconnect, autoStart = false }: VoiceRoomDi
       try {
         const data = JSON.parse(event.data)
         if (data.type === "error") {
+          errorOccurredRef.current = true
           setError(data.error?.message ?? "Unknown error")
           setStatus("error")
           return
@@ -209,12 +236,20 @@ export function VoiceRoomDirect({ onDisconnect, autoStart = false }: VoiceRoomDi
     }
 
     ws.onerror = () => {
+      errorOccurredRef.current = true
       setError("WebSocket error")
       setStatus("error")
     }
 
-    ws.onclose = () => {
-      if (status !== "error") setStatus("idle")
+    ws.onclose = (ev) => {
+      if (errorOccurredRef.current) return
+      if (ev.code !== 1000 && ev.code !== 1005) {
+        errorOccurredRef.current = true
+        setError(ev.reason || "Connection closed unexpectedly. The voice service may be restarting.")
+        setStatus("error")
+      } else {
+        setStatus("idle")
+      }
     }
   }, [])
 
@@ -284,12 +319,12 @@ export function VoiceRoomDirect({ onDisconnect, autoStart = false }: VoiceRoomDi
             ) : (
               <Phone className="h-5 w-5" />
             )}
-            {status === "connecting" ? "Connecting…" : "Start voice call"}
+            {status === "connecting" ? "Connecting…" : status === "error" ? "Retry" : "Start voice call"}
           </Button>
         </div>
         {!RELAY_WS_URL && (
           <p className="text-xs text-muted-foreground text-center max-w-xs">
-            Set NEXT_PUBLIC_VOICE_AGENT_URL (e.g. http://localhost:8080 for local dev).
+            Set NEXT_PUBLIC_VOICE_AGENT_URL (Render URL for production; add to GitHub Actions secrets and rebuild).
           </p>
         )}
       </div>
