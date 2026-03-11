@@ -134,7 +134,7 @@ export function VoiceRoomDirect({ onDisconnect, autoStart = false }: VoiceRoomDi
     // Warm up Render service (helps with cold starts) and verify reachability
     const baseUrl = VOICE_AGENT_URL.replace(/\/$/, "")
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 15000)
+    const timeout = setTimeout(() => controller.abort(), 30_000)
     try {
       const res = await fetch(`${baseUrl}/health`, { method: "GET", signal: controller.signal })
       clearTimeout(timeout)

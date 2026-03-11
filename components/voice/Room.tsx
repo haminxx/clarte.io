@@ -36,6 +36,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 
 export type CallMode = "voice-only" | "voice-with-screen" | "voice-with-screen-camera" | "voice-with-camera"
@@ -43,8 +45,12 @@ export type CallMode = "voice-only" | "voice-with-screen" | "voice-with-screen-c
 type SupportedLanguage = "en" | "ko" | "es" | "zh" | "ja" | "hi"
 
 /** Phase 2: Fail fast if LiveKit URL is not set (client env inlined at build). */
-const LIVEKIT_URL = process.env.NEXT_PUBLIC_LIVEKIT_URL ?? ""
-const VOICE_AGENT_URL = process.env.NEXT_PUBLIC_VOICE_AGENT_URL ?? ""
+const LIVEKIT_URL_RAW = process.env.NEXT_PUBLIC_LIVEKIT_URL ?? ""
+const VOICE_AGENT_URL_RAW = process.env.NEXT_PUBLIC_VOICE_AGENT_URL ?? ""
+/** Treat placeholder URLs (from CI when secrets missing) as not configured. */
+const isPlaceholderUrl = (url: string) => !url || url.includes("placeholder")
+const LIVEKIT_URL = isPlaceholderUrl(LIVEKIT_URL_RAW) ? "" : LIVEKIT_URL_RAW
+const VOICE_AGENT_URL = isPlaceholderUrl(VOICE_AGENT_URL_RAW) ? "" : VOICE_AGENT_URL_RAW
 
 // LIVEKIT_URL required only for Tier 2/3 (screen share, camera). Tier 1 uses VoiceRoomDirect.
 
@@ -431,7 +437,9 @@ async function fetchToken(
   voice?: string,
   language?: SupportedLanguage,
   user_name?: string | null,
-  voiceProfileId?: string | null
+  voiceProfileId?: string | null,
+  agentMode?: string | null,
+  signal?: AbortSignal
 ): Promise<{ token: string; room: string } | { error: string }> {
   const normalizedLanguage: SupportedLanguage =
     language && ["en", "ko", "es", "zh", "ja", "hi"].includes(language)
@@ -451,13 +459,33 @@ async function fetchToken(
   if (vpId && vpId.length >= 3) {
     body.voice_profile_id = vpId
   }
-  const res = await fetch(tokenUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  })
+  if (agentMode && (agentMode === "silent_secretary" || agentMode === "both_agents")) {
+    body.agent_mode = agentMode
+  }
+  let res: Response
+  try {
+    res = await fetch(tokenUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal,
+    })
+  } catch (e) {
+    const isAbort = e instanceof Error && e.name === "AbortError"
+    return {
+      error: isAbort
+        ? "Token request timed out. Voice service may be slow. Retry in a few seconds."
+        : "Cannot reach voice service. Check NEXT_PUBLIC_VOICE_AGENT_URL and network.",
+    }
+  }
   const raw = await res.text()
   if (!res.ok) {
+    if (res.status === 503) {
+      return {
+        error:
+          "LiveKit API key/secret not configured on the voice service. Add LIVEKIT_API_KEY and LIVEKIT_API_SECRET to Render.",
+      }
+    }
     if (res.status === 404 && tokenUrl === "/api/token") {
       return {
         error:
@@ -513,6 +541,10 @@ interface RoomProps {
   onTranscriptPartial?: (role: string, content: string) => void
   /** Optional: Deepgram VoiceProfile ID for cloned/custom voices (dashboard/desktop/iOS, not demo). */
   voiceProfileId?: string | null
+  /** Two-agent mode: "silent_secretary" (default, only Clarte speaks) or "both_agents" (user hears both). */
+  agentMode?: "silent_secretary" | "both_agents" | null
+  /** Called when user changes agent mode. */
+  onAgentModeChange?: (mode: "silent_secretary" | "both_agents") => void
 }
 
 export function Room({
@@ -534,6 +566,8 @@ export function Room({
   onTranscriptAdd,
   onTranscriptPartial,
   voiceProfileId,
+  agentMode = "silent_secretary",
+  onAgentModeChange,
 }: RoomProps) {
   const [token, setToken] = useState<string | null>(null)
   const [roomName, setRoomName] = useState<string | null>(null)
@@ -631,14 +665,42 @@ export function Room({
       console.log("[Clarte Voice] Using local /api/token for dev")
     }
     if (baseUrl) {
+      const healthController = new AbortController()
+      const healthTimeout = setTimeout(() => healthController.abort(), 30_000)
       try {
-        await fetch(`${baseUrl}/health`)
-      } catch {
-        /* ignore warmup failures */
+        const healthRes = await fetch(`${baseUrl}/health`, {
+          method: "GET",
+          signal: healthController.signal,
+        })
+        clearTimeout(healthTimeout)
+        if (!healthRes.ok) {
+          setError("Voice service unhealthy. Check Render logs and OPENAI_API_KEY.")
+          setStatus("error")
+          return
+        }
+      } catch (e) {
+        clearTimeout(healthTimeout)
+        setError(
+          "Voice service unreachable. Render may be cold-starting. Retry in a few seconds."
+        )
+        setStatus("error")
+        return
       }
     }
     try {
-      const result = await fetchToken(tokenUrl, mode, voice, language, userDisplayName, voiceProfileId ?? null)
+      const tokenController = new AbortController()
+      const tokenTimeout = setTimeout(() => tokenController.abort(), 30_000)
+      const result = await fetchToken(
+        tokenUrl,
+        mode,
+        voice,
+        language,
+        userDisplayName,
+        voiceProfileId ?? null,
+        agentMode ?? null,
+        tokenController.signal
+      )
+      clearTimeout(tokenTimeout)
       if ("error" in result) {
         setError(result.error)
         setStatus("error")
@@ -656,7 +718,7 @@ export function Room({
       )
       setStatus("error")
     }
-  }, [mode, voice, language, userDisplayName, voiceProfileId, onConnectionActive])
+  }, [mode, voice, language, userDisplayName, voiceProfileId, agentMode, onConnectionActive])
 
   const configured = Boolean(LIVEKIT_URL)
 
@@ -732,6 +794,22 @@ export function Room({
     </Select>
   )
 
+  const agentModeToggle = onAgentModeChange ? (
+    <div className="flex items-center gap-2">
+      <Switch
+        id="agent-mode"
+        checked={agentMode === "both_agents"}
+        onCheckedChange={(checked) =>
+          onAgentModeChange(checked ? "both_agents" : "silent_secretary")
+        }
+        disabled={pickerDisabled}
+      />
+      <Label htmlFor="agent-mode" className="text-sm cursor-pointer">
+        Hear both agents
+      </Label>
+    </div>
+  ) : null
+
   if (status === "active" && token && roomName) {
     if (cardLayout) {
       return (
@@ -739,9 +817,10 @@ export function Room({
           {cardHeader}
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 {languageSelect}
                 {voiceSelect}
+                {agentModeToggle}
               </div>
               <LiveKitRoom
                 serverUrl={LIVEKIT_URL}
@@ -821,9 +900,10 @@ export function Room({
               <p className="text-sm text-destructive text-center">{error}</p>
             )}
             <div className="flex flex-wrap items-center justify-between gap-3 w-full">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 {languageSelect}
                 {voiceSelect}
+                {agentModeToggle}
               </div>
               <div className="flex items-center gap-2">
                 {autoStart && onDisconnect && status === "active" && (

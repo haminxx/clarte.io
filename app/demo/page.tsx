@@ -1,36 +1,48 @@
 "use client"
 
-import { useState, useCallback, useRef, useEffect } from "react"
-import dynamic from "next/dynamic"
+import { useState, useCallback, useRef, useEffect, type ComponentType } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { VoiceCard } from "@/components/voice-card"
 
-const Room = dynamic(() => import("@/components/voice/Room").then((m) => ({ default: m.Room })), {
-  ssr: false,
-  loading: () => (
-    <div className="flex min-h-[200px] items-center justify-center rounded-2xl border border-border bg-card/90">
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
-    </div>
-  ),
-})
+const LIVEKIT_URL_RAW = process.env.NEXT_PUBLIC_LIVEKIT_URL ?? ""
+const USE_DIRECT_RELAY = process.env.NEXT_PUBLIC_USE_DIRECT_RELAY === "true"
+/** Treat placeholder URLs (from CI when secrets missing) as not configured. */
+const isPlaceholderUrl = (url: string) => !url || url.includes("placeholder")
+const LIVEKIT_URL = isPlaceholderUrl(LIVEKIT_URL_RAW) ? "" : LIVEKIT_URL_RAW
+/** Use lighter WebSocket relay when LiveKit not configured or flag set. */
+const useDirectRelay = !LIVEKIT_URL || USE_DIRECT_RELAY
 import { ParticleOrb } from "@/components/particle-orb"
 import { AnimateOnScroll } from "@/components/animate-on-scroll"
 import { useClientSpeechRecognition, isClientSpeechRecognitionSupported } from "@/hooks/use-client-speech-recognition"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 import { cn } from "@/lib/utils"
 
-if (typeof window !== "undefined" && !process.env.NEXT_PUBLIC_LIVEKIT_URL) {
-  console.warn("[Clarte] NEXT_PUBLIC_LIVEKIT_URL is undefined. Voice calls may not work.")
-}
-
 export default function DemoPage() {
   const { theme } = useClarteTheme()
   const isBright = theme === "bright"
   const [inCall, setInCall] = useState(false)
   const [connectionActive, setConnectionActive] = useState(false)
+  const [RoomComponent, setRoomComponent] = useState<ComponentType<any> | null>(null)
+  const [VoiceRoomDirectComponent, setVoiceRoomDirectComponent] = useState<ComponentType<any> | null>(null)
+
+  useEffect(() => {
+    if (!inCall) {
+      setRoomComponent(null)
+      setVoiceRoomDirectComponent(null)
+      return
+    }
+    if (useDirectRelay) {
+      import("@/components/voice/VoiceRoomDirect").then((m) =>
+        setVoiceRoomDirectComponent(() => m.VoiceRoomDirect)
+      )
+    } else {
+      import("@/components/voice/Room").then((m) => setRoomComponent(() => m.Room))
+    }
+  }, [inCall])
   const [selectedVoice, setSelectedVoice] = useState("aura-2-thalia-en")
   const [selectedLanguage, setSelectedLanguage] = useState<"en" | "ko" | "es" | "zh" | "ja" | "hi">("en")
+  const [agentMode, setAgentMode] = useState<"silent_secretary" | "both_agents">("silent_secretary")
   const [transcriptEntries, setTranscriptEntries] = useState<{ role: string; content: string }[]>([])
   const [transcriptPartial, setTranscriptPartial] = useState<string>("")
   const transcriptContainerRef = useRef<HTMLDivElement>(null)
@@ -118,8 +130,13 @@ export default function DemoPage() {
             </div>
             <div className="relative z-20 w-full max-w-[min(32rem,92vw)] xl:max-w-[min(36rem,88vw)] 2xl:max-w-[min(42rem,85vw)] flex flex-col gap-4">
               <div className="w-full rounded-2xl border border-border bg-card/90 p-4 sm:p-5 md:p-6 shadow-2xl backdrop-blur-md mx-auto min-w-0">
-                {inCall ? (
-                  <Room
+                {inCall && VoiceRoomDirectComponent ? (
+                  <VoiceRoomDirectComponent
+                    onDisconnect={handleDisconnect}
+                    autoStart
+                  />
+                ) : inCall && RoomComponent ? (
+                  <RoomComponent
                     mode="voice-only"
                     voice={selectedVoice}
                     language={selectedLanguage}
@@ -133,7 +150,13 @@ export default function DemoPage() {
                     onLanguageChange={setSelectedLanguage}
                     onTranscriptAdd={onTranscriptAddFromRoom}
                     onTranscriptPartial={onTranscriptPartialFromRoom}
+                    agentMode={agentMode}
+                    onAgentModeChange={setAgentMode}
                   />
+                ) : inCall ? (
+                  <div className="flex min-h-[200px] items-center justify-center rounded-2xl border border-border bg-card/90">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
+                  </div>
                 ) : (
                   <VoiceCard
                     onStartCall={handleStartCall}

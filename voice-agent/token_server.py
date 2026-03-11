@@ -59,6 +59,10 @@ VALID_LANGUAGES = frozenset({"en", "ko", "es", "zh", "ja", "hi"})
 VALID_PERSONAS = frozenset({"female", "male"})
 
 
+VALID_AGENT_MODES = frozenset({"silent_secretary", "both_agents"})
+ENABLE_TWO_AGENT = (os.getenv("ENABLE_TWO_AGENT") or "").strip().lower() in ("1", "true", "yes")
+
+
 class TokenRequest(BaseModel):
     identity: Optional[str] = None
     room_name: Optional[str] = None
@@ -67,6 +71,7 @@ class TokenRequest(BaseModel):
     language: Optional[str] = None
     user_name: Optional[str] = None
     voice_profile_id: Optional[str] = None
+    agent_mode: Optional[str] = None
 
 
 @app.get("/health")
@@ -123,6 +128,9 @@ def get_token(body: Optional[TokenRequest] = Body(None)):
     if voice_profile_id and (not isinstance(voice_profile_id, str) or len(voice_profile_id.strip()) < 3):
         voice_profile_id = None
 
+    raw_agent_mode = (body.agent_mode if body else None) or "silent_secretary"
+    agent_mode = raw_agent_mode if raw_agent_mode in VALID_AGENT_MODES else "silent_secretary"
+
     try:
         from livekit.api import (
             AccessToken,
@@ -136,24 +144,24 @@ def get_token(body: Optional[TokenRequest] = Body(None)):
         at.with_name(identity or "user")
         room = room_name or f"clarte-{uuid.uuid4().hex[:12]}"
         at.with_grants(VideoGrants(room_join=True, room=room))
-        meta = {"voice": voice, "mode": mode, "language": language}
+        meta = {"voice": voice, "mode": mode, "language": language, "agent_mode": agent_mode}
         if user_name:
             meta["user_name"] = user_name
         if voice_profile_id:
             meta["voice_profile_id"] = voice_profile_id
-        at.with_room_config(
-            RoomConfiguration(
-                agents=[
-                    RoomAgentDispatch(
-                        agent_name="clarte",
-                        metadata=json.dumps(meta),
-                    )
-                ],
-            ),
-        )
+
+        agent_dispatches = []
+        agent_dispatches.append(RoomAgentDispatch(agent_name="clarte", metadata=json.dumps(meta)))
+        if ENABLE_TWO_AGENT:
+            agent_dispatches.append(RoomAgentDispatch(agent_name="secretary", metadata=json.dumps(meta)))
+
+        at.with_room_config(RoomConfiguration(agents=agent_dispatches))
 
         token = at.to_jwt()
-        logger.info("Token issued for room=%s voice=%s mode=%s language=%s", room, voice, mode, language)
+        logger.info(
+            "Token issued for room=%s voice=%s mode=%s language=%s agent_mode=%s two_agent=%s",
+            room, voice, mode, language, agent_mode, ENABLE_TWO_AGENT,
+        )
         return {"token": token, "room": room}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

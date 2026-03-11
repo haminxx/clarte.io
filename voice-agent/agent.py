@@ -26,6 +26,8 @@ logger = logging.getLogger(__name__)
 EXECUTIVE_ASSISTANT_PROMPT = """
 You are Clarte, an Alfred-style Voice AI: guide users to their own clarity using the Rubber Duck theory and Golden Circle (Why, How, What). Never give direct advice prematurely.
 
+When you receive "[Screen context from Secretary: ...]" in the conversation, use that visual context to inform your responses (e.g. translation, math help, document understanding). Do not mention "Secretary" to the user; integrate the context naturally.
+
 ## 3-STEP STRUCTURE (strict order)
 **Step 1 – Inquiry:** Don't answer; ask back. Uncover Why → How → What. No tools.
 **Step 2 – Debate:** Give feedback, blind spots, counter-perspective. User defends. No search_web.
@@ -198,7 +200,7 @@ def _parse_metadata(job) -> dict:
     Metadata is injected by the token server via RoomAgentDispatch. Example:
     {"voice": "aura-2-thalia-en", "mode": "casual", "language": "en", "user_name": "Alex"}
     """
-    out = {"voice": "female", "mode": "expert", "language": "en", "user_name": None, "voice_profile_id": None}
+    out = {"voice": "female", "mode": "expert", "language": "en", "user_name": None, "voice_profile_id": None, "agent_mode": "silent_secretary"}
     try:
         meta = getattr(job, "metadata", None) if job else None
         if not meta:
@@ -212,6 +214,8 @@ def _parse_metadata(job) -> dict:
             out["mode"] = data["mode"]
         if data.get("language") in VALID_LANGUAGES:
             out["language"] = data["language"]
+        if data.get("agent_mode") in ("silent_secretary", "both_agents"):
+            out["agent_mode"] = data["agent_mode"]
         INVALID_NAMES = frozenset({"undefined", "null", ""})
         if data.get("user_name") and isinstance(data["user_name"], str):
             val = data["user_name"].strip()
@@ -554,18 +558,38 @@ class VisionExecutiveAssistantAgent(ExecutiveAssistantAgent):
 server = AgentServer()
 
 
+def _mask_livekit_url(url: Optional[str]) -> str:
+    """Mask LiveKit URL for logging (show domain suffix only)."""
+    if not url or not url.strip():
+        return "(not set)"
+    s = url.strip()
+    if len(s) <= 24:
+        return "..."
+    return "..." + s[-24:]
+
+
 @server.rtc_session(agent_name="clarte")
 async def entrypoint(ctx: agents.JobContext) -> None:
     """Single entrypoint: Executive Assistant. Uses Deepgram STT + GPT-4o vision when USE_DEEPGRAM_STT=true."""
-    logger.info("entrypoint started (USE_DEEPGRAM_STT=%s)", USE_DEEPGRAM_STT)
+    livekit_url = (os.getenv("LIVEKIT_URL") or "").strip()
+    deepgram_set = bool((os.getenv("DEEPGRAM_API_KEY") or "").strip())
+    openai_set = bool((os.getenv("OPENAI_API_KEY") or "").strip())
+    logger.info(
+        "entrypoint started USE_DEEPGRAM_STT=%s LIVEKIT_URL=%s DEEPGRAM_API_KEY=%s OPENAI_API_KEY=%s",
+        USE_DEEPGRAM_STT,
+        _mask_livekit_url(livekit_url),
+        "set" if deepgram_set else "NOT SET",
+        "set" if openai_set else "NOT SET",
+    )
     meta = _parse_metadata(getattr(ctx, "job", None))
     voice, mode, language, user_name = meta["voice"], meta["mode"], meta["language"], meta.get("user_name")
     voice_profile_id = meta.get("voice_profile_id")
 
-    if not (os.getenv("OPENAI_API_KEY") or "").strip():
-        logger.error("OPENAI_API_KEY is not set. LLM will fail.")
-
-    if not (os.getenv("DEEPGRAM_API_KEY") or "").strip():
+    if not openai_set:
+        logger.error(
+            "OPENAI_API_KEY is not set. LLM will fail. Set it in Render Dashboard → Environment."
+        )
+    if not deepgram_set:
         logger.error(
             "DEEPGRAM_API_KEY is not set. TTS will fail and the agent will be silent. "
             "Set it in Render Dashboard → Environment, or in voice-agent/.env for local runs."
@@ -614,6 +638,23 @@ async def entrypoint(ctx: agents.JobContext) -> None:
             raise
         logger.info("Using Deepgram STT + GPT-4o vision + Deepgram TTS (model=%s)", deepgram_model)
         agent = VisionExecutiveAssistantAgent(room=room, session=session)
+
+        def _on_secretary_data(data_packet):
+            try:
+                payload = data_packet.data if hasattr(data_packet, "data") else data_packet
+                data = json.loads(payload.decode("utf-8"))
+                if data.get("type") == "secretary_context" and data.get("content"):
+                    content = f"[Screen context from Secretary: {data['content']}]"
+                    if hasattr(session, "update_chat_ctx") and session.update_chat_ctx:
+                        session.update_chat_ctx(lambda ctx: ctx.append(text=content, role="user"))
+                    elif hasattr(session, "chat_ctx") and session.chat_ctx is not None:
+                        session.chat_ctx.append(text=content, role="user")
+                    logger.info("Clarte received secretary context (%d chars)", len(data["content"]))
+            except Exception as e:
+                logger.debug("Secretary data handler failed: %s", e)
+
+        room.on("data_received")(_on_secretary_data)
+
         room_opts = room_io.RoomOptions(video_input=True)
         await session.start(room=room, agent=agent, room_options=room_opts)
         # Opening greeting
@@ -670,6 +711,22 @@ async def entrypoint(ctx: agents.JobContext) -> None:
 
         room_opts = room_io.RoomOptions(video_input=True)
         agent = ExecutiveAssistantAgent(room=room, session=session)
+
+        def _on_secretary_data(data_packet):
+            try:
+                payload = data_packet.data if hasattr(data_packet, "data") else data_packet
+                data = json.loads(payload.decode("utf-8"))
+                if data.get("type") == "secretary_context" and data.get("content"):
+                    content = f"[Screen context from Secretary: {data['content']}]"
+                    if hasattr(session, "update_chat_ctx") and session.update_chat_ctx:
+                        session.update_chat_ctx(lambda ctx: ctx.append(text=content, role="user"))
+                    elif hasattr(session, "chat_ctx") and session.chat_ctx is not None:
+                        session.chat_ctx.append(text=content, role="user")
+                    logger.info("Clarte received secretary context (%d chars)", len(data["content"]))
+            except Exception as e:
+                logger.debug("Secretary data handler failed: %s", e)
+
+        room.on("data_received")(_on_secretary_data)
 
         def on_user_input_transcribed(event: UserInputTranscribedEvent) -> None:
             """Forward user speech transcription to frontend for live transcript display (partial + final)."""
@@ -736,6 +793,146 @@ async def entrypoint(ctx: agents.JobContext) -> None:
         await session.generate_reply(instructions=greeting)
 
     await asyncio.Future()
+
+
+SECRETARY_CONTEXT_THROTTLE_SEC = 8
+SECRETARY_PROMPT = (
+    "Describe what you see in this image concisely in 1-3 sentences. "
+    "Focus on: text content, UI elements, documents, code, or visible context that would help an assistant understand what the user is working on."
+)
+
+
+def _frame_to_base64(frame: rtc.VideoFrame) -> Optional[str]:
+    """Convert LiveKit VideoFrame to base64 JPEG for OpenAI vision."""
+    try:
+        from livekit.agents.utils.images import encode, EncodeOptions, ResizeOptions
+        import base64
+        img_bytes = encode(
+            frame,
+            EncodeOptions(
+                format="JPEG",
+                quality=85,
+                resize_options=ResizeOptions(width=640, height=480, strategy="scale_aspect_fit"),
+            ),
+        )
+        return base64.b64encode(img_bytes).decode("utf-8")
+    except Exception as e:
+        logger.debug("Secretary frame encode failed: %s", e)
+        return None
+
+
+async def _secretary_analyze_frame(frame: rtc.VideoFrame) -> Optional[str]:
+    """Use GPT-4o vision to analyze a video frame. Returns description or None."""
+    b64 = _frame_to_base64(frame)
+    if not b64:
+        return None
+    key = (os.getenv("OPENAI_API_KEY") or "").strip()
+    if not key:
+        return None
+    try:
+        from openai import OpenAI
+        client = OpenAI(api_key=key)
+        res = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": SECRETARY_PROMPT},
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}},
+                    ],
+                }
+            ],
+            max_tokens=200,
+        )
+        if res.choices and res.choices[0].message.content:
+            return res.choices[0].message.content.strip()
+    except Exception as e:
+        logger.debug("Secretary vision API failed: %s", e)
+    return None
+
+
+@server.rtc_session(agent_name="secretary")
+async def secretary_entrypoint(ctx: agents.JobContext) -> None:
+    """Secretary agent: observes screen/camera, sends context to Clarte via data channel. Silent by default (Option C)."""
+    meta = _parse_metadata(getattr(ctx, "job", None))
+    agent_mode = meta.get("agent_mode") or "silent_secretary"
+    logger.info("secretary_entrypoint started agent_mode=%s", agent_mode)
+
+    auto_sub = AutoSubscribe.SUBSCRIBE_ALL
+    await ctx.connect(auto_subscribe=auto_sub)
+    room = ctx.room
+
+    latest_frame: Optional[rtc.VideoFrame] = None
+    video_stream: Optional[rtc.VideoStream] = None
+    video_tasks: list = []
+
+    def _maybe_add_video(track) -> None:
+        nonlocal video_stream, video_tasks
+        if track and getattr(track, "kind", None) == rtc.TrackKind.KIND_VIDEO:
+            if video_stream:
+                try:
+                    video_stream.close()
+                except Exception:
+                    pass
+            video_stream = rtc.VideoStream(track)
+
+            async def _read():
+                nonlocal latest_frame
+                try:
+                    async for event in video_stream:
+                        latest_frame = event.frame
+                except Exception as e:
+                    logger.debug("Secretary video stream error: %s", e)
+
+            t = asyncio.create_task(_read())
+            video_tasks.append(t)
+            t.add_done_callback(lambda _: video_tasks.remove(t) if t in video_tasks else None)
+
+    for p in room.remote_participants.values():
+        for pub in p.track_publications.values():
+            track = getattr(pub, "track", None)
+            _maybe_add_video(track)
+
+    @room.on("track_subscribed")
+    def _on_track(track, publication, participant):
+        _maybe_add_video(track)
+
+    last_publish = 0.0
+
+    async def _context_loop():
+        nonlocal last_publish
+        while True:
+            await asyncio.sleep(SECRETARY_CONTEXT_THROTTLE_SEC)
+            frame = latest_frame
+            if not frame:
+                continue
+            if time.time() - last_publish < SECRETARY_CONTEXT_THROTTLE_SEC - 0.5:
+                continue
+            desc = await _secretary_analyze_frame(frame)
+            if desc:
+                try:
+                    payload = json.dumps({"type": "secretary_context", "content": desc})
+                    await room.local_participant.publish_data(payload, reliable=True)
+                    last_publish = time.time()
+                    logger.info("Secretary published context (%d chars)", len(desc))
+                except Exception as e:
+                    logger.debug("Secretary publish failed: %s", e)
+
+    loop_task = asyncio.create_task(_context_loop())
+    try:
+        await asyncio.Future()
+    finally:
+        loop_task.cancel()
+        try:
+            await loop_task
+        except asyncio.CancelledError:
+            pass
+        if video_stream:
+            try:
+                video_stream.close()
+            except Exception:
+                pass
 
 
 if __name__ == "__main__":
