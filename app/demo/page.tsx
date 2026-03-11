@@ -165,6 +165,8 @@ export default function DemoPage() {
                     onVoiceChange={setSelectedVoice}
                     selectedLanguage={selectedLanguage}
                     onLanguageChange={setSelectedLanguage}
+                    agentMode={agentMode}
+                    onAgentModeChange={setAgentMode}
                   />
                 )}
               </div>

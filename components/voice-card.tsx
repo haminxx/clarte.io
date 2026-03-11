@@ -9,6 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 
 /** Deepgram Aura-2 voice options exposed on the demo page. */
@@ -38,6 +40,8 @@ interface VoiceCardProps {
   onVoiceChange?: (voiceId: string) => void
   selectedLanguage?: SupportedLanguage
   onLanguageChange?: (lang: SupportedLanguage) => void
+  agentMode?: "silent_secretary" | "both_agents"
+  onAgentModeChange?: (mode: "silent_secretary" | "both_agents") => void
 }
 
 export function VoiceCard({
@@ -47,6 +51,8 @@ export function VoiceCard({
   onVoiceChange,
   selectedLanguage = "en",
   onLanguageChange,
+  agentMode = "silent_secretary",
+  onAgentModeChange,
 }: VoiceCardProps) {
   const { theme } = useClarteTheme()
   const isBright = theme === "bright"
@@ -77,12 +83,12 @@ export function VoiceCard({
 
       <div className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <Select
               value={selectedLanguage}
               onValueChange={(value) => onLanguageChange?.(value as SupportedLanguage)}
             >
-              <SelectTrigger className="w-[120px] rounded-full justify-between">
+              <SelectTrigger className="w-fit min-w-[5rem] max-w-[9rem] rounded-full justify-between px-3 py-1.5 text-sm">
                 <SelectValue placeholder="Language" />
               </SelectTrigger>
               <SelectContent>
@@ -97,7 +103,7 @@ export function VoiceCard({
               value={selectedVoiceId}
               onValueChange={(value) => onVoiceChange?.(value)}
             >
-              <SelectTrigger className="w-[140px] rounded-full justify-between">
+              <SelectTrigger className="w-fit min-w-[5rem] max-w-[9rem] rounded-full justify-between px-3 py-1.5 text-sm">
                 <SelectValue placeholder="Voice" />
               </SelectTrigger>
               <SelectContent>
@@ -108,6 +114,21 @@ export function VoiceCard({
                 ))}
               </SelectContent>
             </Select>
+            {onAgentModeChange && (
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="voicecard-agent-mode"
+                  checked={agentMode === "both_agents"}
+                  onCheckedChange={(checked) =>
+                    onAgentModeChange(checked ? "both_agents" : "silent_secretary")
+                  }
+                  disabled={isActive}
+                />
+                <Label htmlFor="voicecard-agent-mode" className="text-sm cursor-pointer whitespace-nowrap">
+                  Hear both agents
+                </Label>
+              </div>
+            )}
           </div>
           <Button
             size="lg"

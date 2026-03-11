@@ -762,7 +762,7 @@ export function Room({
       value={selectedLanguage}
       onValueChange={(value) => onLanguageChange?.(value as SupportedLanguage)}
     >
-      <SelectTrigger className="w-[120px] rounded-full">
+      <SelectTrigger className="w-fit min-w-[5rem] max-w-[9rem] rounded-full px-3 py-1.5 text-sm">
         <SelectValue placeholder="Language" />
       </SelectTrigger>
       <SelectContent>
@@ -781,7 +781,7 @@ export function Room({
       value={selectedVoiceId}
       onValueChange={(value) => onVoiceChange?.(value)}
     >
-      <SelectTrigger className="w-[140px] rounded-full">
+      <SelectTrigger className="w-fit min-w-[5rem] max-w-[9rem] rounded-full px-3 py-1.5 text-sm">
         <SelectValue placeholder="Voice" />
       </SelectTrigger>
       <SelectContent>
@@ -795,7 +795,7 @@ export function Room({
   )
 
   const agentModeToggle = onAgentModeChange ? (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 shrink-0">
       <Switch
         id="agent-mode"
         checked={agentMode === "both_agents"}
@@ -804,7 +804,7 @@ export function Room({
         }
         disabled={pickerDisabled}
       />
-      <Label htmlFor="agent-mode" className="text-sm cursor-pointer">
+      <Label htmlFor="agent-mode" className="text-sm cursor-pointer whitespace-nowrap">
         Hear both agents
       </Label>
     </div>
