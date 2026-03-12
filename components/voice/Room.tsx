@@ -36,8 +36,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 
 export type CallMode = "voice-only" | "voice-with-screen" | "voice-with-screen-camera" | "voice-with-camera"
@@ -438,7 +436,6 @@ async function fetchToken(
   language?: SupportedLanguage,
   user_name?: string | null,
   voiceProfileId?: string | null,
-  agentMode?: string | null,
   signal?: AbortSignal
 ): Promise<{ token: string; room: string } | { error: string }> {
   const normalizedLanguage: SupportedLanguage =
@@ -541,10 +538,6 @@ interface RoomProps {
   onTranscriptPartial?: (role: string, content: string) => void
   /** Optional: Deepgram VoiceProfile ID for cloned/custom voices (dashboard/desktop/iOS, not demo). */
   voiceProfileId?: string | null
-  /** Two-agent mode: "silent_secretary" (default, only Clarte speaks) or "both_agents" (user hears both). */
-  agentMode?: "silent_secretary" | "both_agents" | null
-  /** Called when user changes agent mode. */
-  onAgentModeChange?: (mode: "silent_secretary" | "both_agents") => void
 }
 
 export function Room({
@@ -574,6 +567,7 @@ export function Room({
   const [status, setStatus] = useState<"idle" | "starting" | "active" | "error">("idle")
   const [error, setError] = useState<string | null>(null)
   const transcriptRef = React.useRef<{ role: string; content: string }[]>([])
+  const disconnectingRef = React.useRef(false)
 
   const withScreen = mode === "voice-with-screen" || mode === "voice-with-screen-camera"
   const withCamera = mode === "voice-with-screen-camera" || mode === "voice-with-camera"
@@ -596,22 +590,26 @@ export function Room({
     [onTranscriptPartial]
   )
 
-  const disconnect = useCallback(async () => {
+  const disconnect = useCallback(() => {
+    if (disconnectingRef.current) return
+    disconnectingRef.current = true
+
     const transcript = [...transcriptRef.current]
     const savedRoomName = roomName
     transcriptRef.current = []
+    const parentOnDisconnect = onDisconnect
+
     setToken(null)
     setRoomName(null)
     setStatus("idle")
     setError(null)
 
     if (userId && getAuthToken) {
-      try {
-        const authToken = await getAuthToken()
+      getAuthToken().then((authToken) => {
         if (authToken) {
           const baseUrl = (VOICE_AGENT_URL ?? "").replace(/\/$/, "")
           const saveUrl = baseUrl ? `${baseUrl}/conversations/save` : "/api/conversations/save"
-          const res = await fetch(saveUrl, {
+          return fetch(saveUrl, {
             method: "POST",
             headers: {
               Authorization: `Bearer ${authToken}`,
@@ -622,15 +620,22 @@ export function Room({
               transcript,
               room_name: savedRoomName,
             }),
+          }).then((res) => {
+            if (res.ok) onConversationSaved?.()
           })
-          if (res.ok) onConversationSaved?.()
         }
-      } catch (e) {
+      }).catch((e) => {
         console.warn("[Clarte Voice] Save conversation failed:", e)
-      }
+      })
     }
 
-    onDisconnect?.()
+    requestAnimationFrame(() => {
+      try {
+        parentOnDisconnect?.()
+      } finally {
+        disconnectingRef.current = false
+      }
+    })
   }, [onDisconnect, userId, getAuthToken, roomName, onConversationSaved])
 
   const startCall = useCallback(async () => {
@@ -697,7 +702,6 @@ export function Room({
         language,
         userDisplayName,
         voiceProfileId ?? null,
-        agentMode ?? null,
         tokenController.signal
       )
       clearTimeout(tokenTimeout)
@@ -718,7 +722,7 @@ export function Room({
       )
       setStatus("error")
     }
-  }, [mode, voice, language, userDisplayName, voiceProfileId, agentMode, onConnectionActive])
+  }, [mode, voice, language, userDisplayName, voiceProfileId, onConnectionActive])
 
   const configured = Boolean(LIVEKIT_URL)
 
@@ -794,22 +798,6 @@ export function Room({
     </Select>
   )
 
-  const agentModeToggle = onAgentModeChange ? (
-    <div className="flex items-center gap-2 shrink-0">
-      <Switch
-        id="agent-mode"
-        checked={agentMode === "both_agents"}
-        onCheckedChange={(checked) =>
-          onAgentModeChange(checked ? "both_agents" : "silent_secretary")
-        }
-        disabled={pickerDisabled}
-      />
-      <Label htmlFor="agent-mode" className="text-sm cursor-pointer whitespace-nowrap">
-        Hear both agents
-      </Label>
-    </div>
-  ) : null
-
   if (status === "active" && token && roomName) {
     if (cardLayout) {
       return (
@@ -820,7 +808,6 @@ export function Room({
               <div className="flex items-center gap-3 flex-wrap">
                 {languageSelect}
                 {voiceSelect}
-                {agentModeToggle}
               </div>
               <LiveKitRoom
                 serverUrl={LIVEKIT_URL}
@@ -903,7 +890,6 @@ export function Room({
               <div className="flex items-center gap-3 flex-wrap">
                 {languageSelect}
                 {voiceSelect}
-                {agentModeToggle}
               </div>
               <div className="flex items-center gap-2">
                 {autoStart && onDisconnect && status === "active" && (

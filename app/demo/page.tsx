@@ -42,7 +42,6 @@ export default function DemoPage() {
   }, [inCall])
   const [selectedVoice, setSelectedVoice] = useState("aura-2-thalia-en")
   const [selectedLanguage, setSelectedLanguage] = useState<"en" | "ko" | "es" | "zh" | "ja" | "hi">("en")
-  const [agentMode, setAgentMode] = useState<"silent_secretary" | "both_agents">("silent_secretary")
   const [transcriptEntries, setTranscriptEntries] = useState<{ role: string; content: string }[]>([])
   const [transcriptPartial, setTranscriptPartial] = useState<string>("")
   const transcriptContainerRef = useRef<HTMLDivElement>(null)
@@ -165,8 +164,6 @@ export default function DemoPage() {
                     onVoiceChange={setSelectedVoice}
                     selectedLanguage={selectedLanguage}
                     onLanguageChange={setSelectedLanguage}
-                    agentMode={agentMode}
-                    onAgentModeChange={setAgentMode}
                   />
                 )}
               </div>

@@ -27,6 +27,10 @@ The demo uses **two connection paths**. Which one you get depends on frontend en
 
 If you expect the **Clarte voice** (Deepgram Aura), use **Path A** (set `NEXT_PUBLIC_LIVEKIT_URL` and do not force direct relay). Path B uses OpenAI’s built-in voice and does not use Deepgram.
 
+### Website freezes when ending call
+
+If the page freezes when you click "End call", the disconnect flow now defers parent state updates via `requestAnimationFrame` so LiveKit cleanup can complete. If you still see freezes, check the browser console for errors and ensure you are on the latest build.
+
 ### Why is my call not working? (checklist)
 
 1. **Is `NEXT_PUBLIC_LIVEKIT_URL` set at build time?** If not, you get "Voice is not configured" immediately.

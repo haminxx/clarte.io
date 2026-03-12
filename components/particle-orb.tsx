@@ -66,13 +66,15 @@ export function ParticleOrb({ variant = "dark" }: ParticleOrbProps) {
 
     const handleMouseMove = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect()
+      const centerX = rect.left + rect.width / 2
+      const centerY = rect.top + rect.height / 2
       mouseRef.current = {
-        x: (e.clientX - rect.left - rect.width / 2) / rect.width,
-        y: (e.clientY - rect.top - rect.height / 2) / rect.height
+        x: Math.max(-1, Math.min(1, (e.clientX - centerX) / (rect.width * 0.5))),
+        y: Math.max(-1, Math.min(1, (e.clientY - centerY) / (rect.height * 0.5)))
       }
     }
 
-    canvas.addEventListener("mousemove", handleMouseMove)
+    window.addEventListener("mousemove", handleMouseMove)
 
     const animate = () => {
       const rect = canvas.getBoundingClientRect()
@@ -82,17 +84,13 @@ export function ParticleOrb({ variant = "dark" }: ParticleOrbProps) {
       const centerY = rect.height / 2
 
       // Update rotation based on mouse
-      rotationRef.current.y += (mouseRef.current.x * 0.5 - rotationRef.current.y) * 0.05
-      rotationRef.current.x += (mouseRef.current.y * 0.3 - rotationRef.current.x) * 0.05
+      rotationRef.current.y += (mouseRef.current.x * 0.6 - rotationRef.current.y) * 0.08
+      rotationRef.current.x += (mouseRef.current.y * 0.4 - rotationRef.current.x) * 0.08
 
-      // Auto rotation
-      const autoRotationY = Date.now() * 0.0002
-      const autoRotationX = Date.now() * 0.0001
-
-      const cosY = Math.cos(rotationRef.current.y + autoRotationY)
-      const sinY = Math.sin(rotationRef.current.y + autoRotationY)
-      const cosX = Math.cos(rotationRef.current.x + autoRotationX)
-      const sinX = Math.sin(rotationRef.current.x + autoRotationX)
+      const cosY = Math.cos(rotationRef.current.y)
+      const sinY = Math.sin(rotationRef.current.y)
+      const cosX = Math.cos(rotationRef.current.x)
+      const sinX = Math.sin(rotationRef.current.x)
 
       const isBright = variant === "bright"
 
@@ -187,7 +185,7 @@ export function ParticleOrb({ variant = "dark" }: ParticleOrbProps) {
 
     return () => {
       window.removeEventListener("resize", resizeCanvas)
-      canvas.removeEventListener("mousemove", handleMouseMove)
+      window.removeEventListener("mousemove", handleMouseMove)
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current)
       }
