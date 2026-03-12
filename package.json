@@ -47,7 +47,6 @@
     "date-fns": "4.1.0",
     "embla-carousel-react": "8.5.1",
     "firebase": "^11.10.0",
-    "framer-motion": "^11.11.17",
     "input-otp": "1.4.1",
     "livekit-server-sdk": "^2.10.0",
     "lucide-react": "^0.454.0",
@@ -58,12 +57,12 @@
     "react-dom": "19.2.0",
     "react-hook-form": "^7.60.0",
     "react-resizable-panels": "^2.1.7",
-    "recharts": "2.15.4",
     "resend": "^4.8.0",
     "sonner": "^1.7.4",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^1.1.2",
+    "@vapi-ai/web": "^2.0.0",
     "zod": "3.25.76"
   },
   "devDependencies": {

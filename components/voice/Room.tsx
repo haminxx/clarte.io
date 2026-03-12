@@ -50,7 +50,7 @@ const isPlaceholderUrl = (url: string) => !url || url.includes("placeholder")
 const LIVEKIT_URL = isPlaceholderUrl(LIVEKIT_URL_RAW) ? "" : LIVEKIT_URL_RAW
 const VOICE_AGENT_URL = isPlaceholderUrl(VOICE_AGENT_URL_RAW) ? "" : VOICE_AGENT_URL_RAW
 
-// LIVEKIT_URL required only for Tier 2/3 (screen share, camera). Tier 1 uses VoiceRoomDirect.
+// LIVEKIT_URL required for Room (screen share, camera). Tier 1 voice-only uses VapiRoom.
 
 /** Mobile detection for mic error messaging */
 function isMobile(): boolean {
@@ -222,7 +222,7 @@ function RoomInner({
     }
   }, [microphoneTrack, krisp])
 
-  /* LiveKit path uses Krisp for noise filtering. High-pass filter applied in VoiceRoomDirect (WebSocket path). */
+  /* LiveKit path uses Krisp for noise filtering. */
 
   React.useEffect(() => {
     if (!localParticipant) return
@@ -538,6 +538,10 @@ interface RoomProps {
   onTranscriptPartial?: (role: string, content: string) => void
   /** Optional: Deepgram VoiceProfile ID for cloned/custom voices (dashboard/desktop/iOS, not demo). */
   voiceProfileId?: string | null
+  /** Optional: agent mode for token request (silent_secretary, both_agents). */
+  agentMode?: "silent_secretary" | "both_agents"
+  /** Optional: callback when agent mode changes. */
+  onAgentModeChange?: (mode: "silent_secretary" | "both_agents") => void
 }
 
 export function Room({

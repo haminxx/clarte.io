@@ -67,10 +67,10 @@ flowchart TB
 
 | Path | When | Flow |
 |------|------|------|
-| **Path A: LiveKit** | `LIVEKIT_URL` set and `NEXT_PUBLIC_USE_DIRECT_RELAY` not set | Browser → Firebase (app) → Token from Render → LiveKit → Render Agent (OpenAI Realtime gpt-realtime-1.5 + Deepgram TTS) |
-| **Path B: Relay (VoiceRoomDirect)** | `LIVEKIT_URL` unset or `NEXT_PUBLIC_USE_DIRECT_RELAY=true` | Browser → Firebase (app) → WebSocket to Render `/realtime` → OpenAI Realtime (gpt-realtime-1.5, native audio; no Deepgram) |
+| **Vapi (Tier 1)** | Default | Browser → Vapi.ai (voice-only) |
+| **LiveKit (Tier 2/3)** | When user says "see my screen" or "look at me" | Browser → Firebase (app) → Token from Render → LiveKit → Render Agent (OpenAI Realtime gpt-realtime-1.5 + Deepgram TTS) |
 
-**Pipeline choice (VoiceAgentCard):** Uses VoiceRoomDirect (lighter bundle) when LiveKit is not configured or when `NEXT_PUBLIC_USE_DIRECT_RELAY=true`. Otherwise uses Room (LiveKit) for full features (screen share, camera, Deepgram TTS, conversation save).
+**Pipeline choice (VoiceAgentCard):** Uses VapiRoom when LiveKit is not configured. Otherwise uses Room (LiveKit) for full features (screen share, camera, Deepgram TTS, conversation save).
 
 ---
 
@@ -164,8 +164,8 @@ Use these to pinpoint whether the bottleneck is OpenAI Realtime, Deepgram TTS, o
 | **Deepgram Aura-2 TTS** | Applied; low-latency streaming (100–250 ms) |
 | Prompt trimmed ~30% | Applied |
 | Keep-warm workflow | `.github/workflows/render-keep-warm.yml`; set `VOICE_AGENT_URL` secret |
-| **High-pass filter (100 Hz)** | Applied in VoiceRoomDirect (WebSocket path). Attenuates low-frequency ambient noise (rumble, HVAC, traffic). LiveKit path uses Krisp for noise filtering. |
-| **Website weight** | Unused fonts removed; Recharts lazy-loaded; Firebase auth lazy-loaded in Header. VoiceRoomDirect used when LiveKit unset for lighter voice-only bundle. |
+| **High-pass filter (100 Hz)** | LiveKit path uses Krisp for noise filtering. |
+| **Website weight** | Unused fonts removed; Recharts lazy-loaded; Firebase auth lazy-loaded in Header. VapiRoom used when LiveKit unset for voice-only. |
 
 ---
 

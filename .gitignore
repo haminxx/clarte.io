@@ -16,8 +16,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files
+# env files (but allow .env.example for documentation)
 .env*
+!.env.example
 
 # backend venv
 backend/.venv
@@ -43,3 +44,10 @@ apps/chrome-extension/dist/
 apps/ios/*.xcodeproj/xcuserdata/
 apps/ios/*.xcworkspace/xcuserdata/
 DerivedData/
+
+# Python
+__pycache__/
+*.pyc
+
+# Cursor
+.cursor/

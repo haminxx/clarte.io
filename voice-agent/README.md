@@ -2,7 +2,7 @@
 
 Executive Assistant voice agent with two paths:
 
-- **Tier 1 (voice-only):** Browser connects to `/realtime` WebSocket relay. No LiveKit. Tools (Exa, stubs) run on relay.
+- **Tier 1 (voice-only):** Browser uses Vapi.ai. No LiveKit. Set `NEXT_PUBLIC_VAPI_PUBLIC_KEY` and `NEXT_PUBLIC_VAPI_ASSISTANT_ID`.
 - **Tier 2/3 (screen share, camera):** Browser connects to LiveKit; Python agent joins. Uses same tools.
 
 ## Environment check (frontend vs backend)
@@ -24,7 +24,7 @@ Executive Assistant voice agent with two paths:
 
 - **Live site (Firebase):** For the deployed website, set `NEXT_PUBLIC_VOICE_AGENT_URL` and `NEXT_PUBLIC_LIVEKIT_URL` where the site is built (e.g. GitHub Actions secrets used by the Firebase Hosting workflow) so the static build contains the correct URLs; otherwise the demo will try `/api/token`, which does not exist on static hosting.
 
-**Tier 1 only:** `OPENAI_API_KEY`, `EXA_API_KEY`, `NEXT_PUBLIC_VOICE_AGENT_URL`. No LiveKit needed.
+**Tier 1 only:** `NEXT_PUBLIC_VAPI_PUBLIC_KEY`, `NEXT_PUBLIC_VAPI_ASSISTANT_ID`. No LiveKit needed.
 
 **Tier 2/3:** Add `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `NEXT_PUBLIC_LIVEKIT_URL`, and **`DEEPGRAM_API_KEY`** (required for agent to speak).
 

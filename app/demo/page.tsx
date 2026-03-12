@@ -4,42 +4,51 @@ import { useState, useCallback, useRef, useEffect, type ComponentType } from "re
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { VoiceCard } from "@/components/voice-card"
+import type { CallMode } from "@/components/voice/Room"
+import type { SwitchMode } from "@/components/voice/VapiRoom"
 
 const LIVEKIT_URL_RAW = process.env.NEXT_PUBLIC_LIVEKIT_URL ?? ""
-const USE_DIRECT_RELAY = process.env.NEXT_PUBLIC_USE_DIRECT_RELAY === "true"
 /** Treat placeholder URLs (from CI when secrets missing) as not configured. */
 const isPlaceholderUrl = (url: string) => !url || url.includes("placeholder")
 const LIVEKIT_URL = isPlaceholderUrl(LIVEKIT_URL_RAW) ? "" : LIVEKIT_URL_RAW
-/** Use lighter WebSocket relay when LiveKit not configured or flag set. */
-const useDirectRelay = !LIVEKIT_URL || USE_DIRECT_RELAY
 import { ParticleOrb } from "@/components/particle-orb"
 import { AnimateOnScroll } from "@/components/animate-on-scroll"
 import { useClientSpeechRecognition, isClientSpeechRecognitionSupported } from "@/hooks/use-client-speech-recognition"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 import { cn } from "@/lib/utils"
 
+function switchModeToCallMode(mode: SwitchMode): CallMode {
+  if (mode === "screen") return "voice-with-screen"
+  if (mode === "camera") return "voice-with-camera"
+  return "voice-with-screen-camera"
+}
+
 export default function DemoPage() {
   const { theme } = useClarteTheme()
   const isBright = theme === "bright"
   const [inCall, setInCall] = useState(false)
   const [connectionActive, setConnectionActive] = useState(false)
+  const [callMode, setCallMode] = useState<"vapi" | "livekit">("vapi")
+  const [livekitMode, setLivekitMode] = useState<CallMode>("voice-with-screen")
   const [RoomComponent, setRoomComponent] = useState<ComponentType<any> | null>(null)
-  const [VoiceRoomDirectComponent, setVoiceRoomDirectComponent] = useState<ComponentType<any> | null>(null)
+  const [VapiRoomComponent, setVapiRoomComponent] = useState<ComponentType<any> | null>(null)
 
   useEffect(() => {
     if (!inCall) {
       setRoomComponent(null)
-      setVoiceRoomDirectComponent(null)
+      setVapiRoomComponent(null)
       return
     }
-    if (useDirectRelay) {
-      import("@/components/voice/VoiceRoomDirect").then((m) =>
-        setVoiceRoomDirectComponent(() => m.VoiceRoomDirect)
+    if (callMode === "vapi") {
+      import("@/components/voice/VapiRoom").then((m) =>
+        setVapiRoomComponent(() => m.VapiRoom)
       )
     } else {
-      import("@/components/voice/Room").then((m) => setRoomComponent(() => m.Room))
+      import("@/components/voice/Room").then((m) =>
+        setRoomComponent(() => m.Room)
+      )
     }
-  }, [inCall])
+  }, [inCall, callMode])
   const [selectedVoice, setSelectedVoice] = useState("aura-2-thalia-en")
   const [selectedLanguage, setSelectedLanguage] = useState<"en" | "ko" | "es" | "zh" | "ja" | "hi">("en")
   const [transcriptEntries, setTranscriptEntries] = useState<{ role: string; content: string }[]>([])
@@ -66,9 +75,15 @@ export default function DemoPage() {
   const handleDisconnect = () => {
     setInCall(false)
     setConnectionActive(false)
+    setCallMode("vapi")
     setTranscriptEntries([])
     setTranscriptPartial("")
   }
+
+  const handleSwitchToScreenMode = useCallback((mode: SwitchMode) => {
+    setLivekitMode(switchModeToCallMode(mode))
+    setCallMode("livekit")
+  }, [])
 
   const handleTranscriptAdd = useCallback((role: string, content: string) => {
     setTranscriptEntries((prev) => [...prev, { role, content }])
@@ -81,7 +96,7 @@ export default function DemoPage() {
 
   const useClientSTT = isClientSpeechRecognitionSupported()
   useClientSpeechRecognition({
-    enabled: inCall && useClientSTT && connectionActive,
+    enabled: inCall && callMode === "livekit" && useClientSTT && connectionActive,
     language: selectedLanguage,
     onTranscriptPartial: handleTranscriptPartial,
     onTranscriptAdd: handleTranscriptAdd,
@@ -129,14 +144,18 @@ export default function DemoPage() {
             </div>
             <div className="relative z-20 w-full max-w-[min(32rem,92vw)] xl:max-w-[min(36rem,88vw)] 2xl:max-w-[min(42rem,85vw)] flex flex-col gap-4">
               <div className="w-full rounded-2xl border border-border bg-card/90 p-4 sm:p-5 md:p-6 shadow-2xl backdrop-blur-md mx-auto min-w-0">
-                {inCall && VoiceRoomDirectComponent ? (
-                  <VoiceRoomDirectComponent
+                {inCall && callMode === "vapi" && VapiRoomComponent ? (
+                  <VapiRoomComponent
                     onDisconnect={handleDisconnect}
                     autoStart
+                    cardLayout
+                    onTranscriptAdd={handleTranscriptAdd}
+                    onTranscriptPartial={handleTranscriptPartial}
+                    onSwitchToScreenMode={handleSwitchToScreenMode}
                   />
-                ) : inCall && RoomComponent ? (
+                ) : inCall && callMode === "livekit" && RoomComponent ? (
                   <RoomComponent
-                    mode="voice-only"
+                    mode={livekitMode}
                     voice={selectedVoice}
                     language={selectedLanguage}
                     autoStart
@@ -149,8 +168,6 @@ export default function DemoPage() {
                     onLanguageChange={setSelectedLanguage}
                     onTranscriptAdd={onTranscriptAddFromRoom}
                     onTranscriptPartial={onTranscriptPartialFromRoom}
-                    agentMode={agentMode}
-                    onAgentModeChange={setAgentMode}
                   />
                 ) : inCall ? (
                   <div className="flex min-h-[200px] items-center justify-center rounded-2xl border border-border bg-card/90">

@@ -1,7 +1,6 @@
 """
 Token server: issues LiveKit access tokens for the frontend.
 Run with the agent on Render so the frontend can get a token and join a room.
-Also provides /realtime WebSocket for Tier 1 (voice-only, no LiveKit).
 POST /conversations/save: save conversation with summary + mindmap to Firestore.
 """
 import json
@@ -14,7 +13,7 @@ from typing import Any, Optional
 logger = logging.getLogger(__name__)
 
 from dotenv import load_dotenv
-from fastapi import Body, FastAPI, HTTPException, Header, WebSocket
+from fastapi import Body, FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -87,15 +86,6 @@ def token_debug():
         "openai_set": bool((os.getenv("OPENAI_API_KEY") or "").strip()),
         "deepgram_set": bool((os.getenv("DEEPGRAM_API_KEY") or "").strip()),
     }
-
-
-@app.websocket("/realtime")
-async def realtime_websocket(websocket: WebSocket):
-    """Tier 1: Voice-only relay to OpenAI Realtime API. No LiveKit."""
-    await websocket.accept()
-    from realtime_relay import handle_realtime_websocket
-
-    await handle_realtime_websocket(websocket)
 
 
 @app.post("/token")

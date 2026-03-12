@@ -18,12 +18,12 @@ See **Frontend Env** and **Render Environment Checklist** below for the full lis
 
 ### Which path am I on?
 
-The demo uses **two connection paths**. Which one you get depends on frontend env:
+The demo uses **two connection paths**. Default is Vapi.ai; when screen/camera is requested, it switches to LiveKit:
 
 | Path | When | STT + LLM | TTS | What to check if it doesn’t work |
 |------|------|-----------|-----|----------------------------------|
-| **Path A: LiveKit** | `NEXT_PUBLIC_LIVEKIT_URL` is set and `NEXT_PUBLIC_USE_DIRECT_RELAY` is not `"true"` | OpenAI Realtime (gpt-realtime-1.5) | **Deepgram Aura** | Render: `LIVEKIT_*`, `OPENAI_API_KEY`, **`DEEPGRAM_API_KEY`**. Use `/token/debug` for `livekit_ok` and `deepgram_set`. |
-| **Path B: Direct relay** | `NEXT_PUBLIC_LIVEKIT_URL` is unset, or `NEXT_PUBLIC_USE_DIRECT_RELAY=true` | OpenAI Realtime (gpt-realtime-1.5) | **OpenAI native audio** (no Deepgram) | Render: only `OPENAI_API_KEY`. No Deepgram; voice is OpenAI’s. |
+| **Vapi (Tier 1)** | Default. Start of call. | Vapi.ai | Vapi.ai | Set `NEXT_PUBLIC_VAPI_PUBLIC_KEY` and `NEXT_PUBLIC_VAPI_ASSISTANT_ID` in `.env.local`. Create assistant at [Vapi Dashboard](https://dashboard.vapi.ai). |
+| **LiveKit (Tier 2/3)** | After user says "see my screen" or "look at me" | OpenAI Realtime (gpt-realtime-1.5) | **Deepgram Aura** | Render: `LIVEKIT_*`, `OPENAI_API_KEY`, **`DEEPGRAM_API_KEY`**. Use `/token/debug` for `livekit_ok` and `deepgram_set`.’s. |
 
 If you expect the **Clarte voice** (Deepgram Aura), use **Path A** (set `NEXT_PUBLIC_LIVEKIT_URL` and do not force direct relay). Path B uses OpenAI’s built-in voice and does not use Deepgram.
 
@@ -79,15 +79,15 @@ The demo page uses a **LiveKit + Render** pipeline:
 
 If you see your speech in the transcript, STT is working. If the agent never speaks, the failure is in **LLM** or **TTS**.
 
-### Pipeline (Path A) – STT → LLM → TTS
+### Pipeline (LiveKit) – STT → LLM → TTS
 
-Path A uses **OpenAI Realtime (gpt-realtime-1.5)** for STT and LLM, and **Deepgram Aura** for TTS:
+LiveKit path uses **OpenAI Realtime (gpt-realtime-1.5)** for STT and LLM, and **Deepgram Aura** for TTS:
 
 1. **STT:** User mic → LiveKit → Render agent → **OpenAI Realtime (gpt-realtime-1.5)** transcribes audio to text.
 2. **LLM:** The same Realtime session produces the text reply (no separate LLM call).
 3. **TTS:** Agent sends that text to **Deepgram Aura** (LiveKit plugin) → audio frames → LiveKit → user speaker.
 
-So: **OpenAI Realtime = STT + LLM**; **Deepgram = TTS**. Path B (direct relay) uses only OpenAI Realtime (no LiveKit, no Deepgram); audio out is OpenAI’s native voice.
+So: **OpenAI Realtime = STT + LLM**; **Deepgram = TTS**. Vapi (Tier 1) uses Vapi.ai; LiveKit path uses OpenAI Realtime (no LiveKit, no Deepgram); audio out is OpenAI’s native voice.
 
 ### STT – LLM – TTS Pipeline (OpenAI Realtime + Deepgram)
 
@@ -99,7 +99,7 @@ The agent uses **half-cascade**: OpenAI Realtime with `modalities=["text"]` (tex
 
 ### OpenAI Realtime model
 
-The agent uses the **gpt-realtime-1.5** model. The relay path (Path B) also uses **gpt-realtime-1.5**. If you need to revert to an older model, set `model="gpt-realtime"` or `model="gpt-4o-realtime-preview"` in `voice-agent/agent.py` and the WebSocket URL in `voice-agent/realtime_relay.py`.
+The agent uses the **gpt-realtime-1.5** model. If you need to revert to an older model, set `model="gpt-realtime"` or `model="gpt-4o-realtime-preview"` in `voice-agent/agent.py`.
 
 ### Deepgram: no voice setup required
 
@@ -192,7 +192,9 @@ If the request succeeds, you get a `test.wav` file; if you get 401/403 or an err
 
 | Variable | Purpose |
 |----------|---------|
-| `NEXT_PUBLIC_LIVEKIT_URL` | LiveKit WebSocket URL |
+| `NEXT_PUBLIC_VAPI_PUBLIC_KEY` | Vapi.ai public API key (Tier 1 voice-only) |
+| `NEXT_PUBLIC_VAPI_ASSISTANT_ID` | Vapi.ai assistant ID (create at [Vapi Dashboard](https://dashboard.vapi.ai)) |
+| `NEXT_PUBLIC_LIVEKIT_URL` | LiveKit WebSocket URL (Tier 2/3 screen/camera) |
 | `NEXT_PUBLIC_VOICE_AGENT_URL` | Render URL (no trailing slash) for token |
 
-Both must be set for the demo to connect when using **static hosting** (e.g. Firebase Hosting). For Firebase Hosting there is no Next.js server, so `/api/token` does not exist — you must set `NEXT_PUBLIC_VOICE_AGENT_URL` to your Render service URL. When running the Next.js server (e.g. Vercel or `next start`), you can use `/api/token` if `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET` are set on the server; for production static deploy, always set `NEXT_PUBLIC_VOICE_AGENT_URL`.
+For **voice-only** (Tier 1), set `NEXT_PUBLIC_VAPI_PUBLIC_KEY` and `NEXT_PUBLIC_VAPI_ASSISTANT_ID`. For **screen share and camera** (Tier 2/3), set `NEXT_PUBLIC_LIVEKIT_URL` and `NEXT_PUBLIC_VOICE_AGENT_URL`. When using static hosting (e.g. Firebase Hosting), you must set `NEXT_PUBLIC_VOICE_AGENT_URL` to your Render service URL for LiveKit token requests.

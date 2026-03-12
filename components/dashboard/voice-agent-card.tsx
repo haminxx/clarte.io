@@ -3,11 +3,12 @@
 import { useState, useEffect } from "react"
 import { VoiceCard } from "@/components/voice-card"
 
-const LIVEKIT_URL = process.env.NEXT_PUBLIC_LIVEKIT_URL ?? ""
-const USE_DIRECT_RELAY = process.env.NEXT_PUBLIC_USE_DIRECT_RELAY === "true"
+const LIVEKIT_URL_RAW = process.env.NEXT_PUBLIC_LIVEKIT_URL ?? ""
+/** Treat placeholder URLs (from CI when secrets missing) as not configured. */
+const LIVEKIT_URL = !LIVEKIT_URL_RAW || LIVEKIT_URL_RAW.includes("placeholder") ? "" : LIVEKIT_URL_RAW
 
-/** Use lighter WebSocket relay when LiveKit not configured or flag set. */
-const useDirectRelay = !LIVEKIT_URL || USE_DIRECT_RELAY
+/** Use Vapi when LiveKit not configured; otherwise use Room (LiveKit) for full features. */
+const useVapi = !LIVEKIT_URL
 
 interface VoiceAgentCardProps {
   userId?: string | null
@@ -18,7 +19,7 @@ interface VoiceAgentCardProps {
 
 /**
  * Voice agent card for dashboard embedding.
- * Voice-only: uses VoiceRoomDirect (WebSocket) when LiveKit unset for lighter bundle.
+ * Voice-only: uses VapiRoom when LiveKit unset.
  * Otherwise lazy-loads Room (LiveKit) when user clicks Connect.
  */
 export function VoiceAgentCard({ userId, userDisplayName, getAuthToken, onConversationSaved }: VoiceAgentCardProps) {
@@ -26,17 +27,17 @@ export function VoiceAgentCard({ userId, userDisplayName, getAuthToken, onConver
   const [selectedVoice, setSelectedVoice] = useState("marin")
   const [selectedLanguage, setSelectedLanguage] = useState<"en" | "ko">("en")
   const [Room, setRoom] = useState<React.ComponentType<any> | null>(null)
-  const [VoiceRoomDirect, setVoiceRoomDirect] = useState<React.ComponentType<any> | null>(null)
+  const [VapiRoom, setVapiRoom] = useState<React.ComponentType<any> | null>(null)
 
   useEffect(() => {
     if (!inCall) {
       setRoom(null)
-      setVoiceRoomDirect(null)
+      setVapiRoom(null)
       return
     }
-    if (useDirectRelay) {
-      import("@/components/voice/VoiceRoomDirect").then((m) =>
-        setVoiceRoomDirect(() => m.VoiceRoomDirect)
+    if (useVapi) {
+      import("@/components/voice/VapiRoom").then((m) =>
+        setVapiRoom(() => m.VapiRoom)
       )
     } else {
       import("@/components/voice/Room").then((m) => setRoom(() => m.Room))
@@ -48,8 +49,8 @@ export function VoiceAgentCard({ userId, userDisplayName, getAuthToken, onConver
 
   return (
     <div className="rounded-2xl border border-white/10 bg-[#1a1a2e]/50 p-4 sm:p-6">
-      {inCall && VoiceRoomDirect ? (
-        <VoiceRoomDirect onDisconnect={handleDisconnect} autoStart />
+      {inCall && VapiRoom ? (
+        <VapiRoom onDisconnect={handleDisconnect} autoStart cardLayout />
       ) : inCall && Room ? (
         <Room
           mode="voice-only"
