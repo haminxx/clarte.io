@@ -6,7 +6,6 @@ import { Footer } from "@/components/footer"
 import { VoiceCard } from "@/components/voice-card"
 import type { CallMode } from "@/components/voice/Room"
 import type { SwitchMode } from "@/components/voice/VapiRoom"
-import type { SecretaryMode } from "@/components/voice/SecretaryRoom"
 
 const LIVEKIT_URL_RAW = process.env.NEXT_PUBLIC_LIVEKIT_URL ?? ""
 const isPlaceholderUrl = (url: string) => !url || url.includes("placeholder")
@@ -30,7 +29,6 @@ export default function DemoPage() {
   const [connectionActive, setConnectionActive] = useState(false)
   const [callMode, setCallMode] = useState<"vapi" | "livekit" | "parallel">("vapi")
   const [showSecretaryRoom, setShowSecretaryRoom] = useState(false)
-  const [secretaryMode, setSecretaryMode] = useState<SecretaryMode>("screen")
   const [livekitMode, setLivekitMode] = useState<CallMode>("voice-with-screen")
   const [RoomComponent, setRoomComponent] = useState<ComponentType<any> | null>(null)
   const [VapiRoomComponent, setVapiRoomComponent] = useState<ComponentType<any> | null>(null)
@@ -84,7 +82,6 @@ export default function DemoPage() {
   }
 
   const handleRequestScreenContext = useCallback((mode: SwitchMode) => {
-    setSecretaryMode(mode)
     setCallMode("parallel")
     setShowSecretaryRoom(true)
   }, [])
@@ -176,7 +173,6 @@ export default function DemoPage() {
                       <SecretaryRoomComponent
                         voice={selectedVoice}
                         language={selectedLanguage}
-                        mode={secretaryMode}
                         onSendContext={handleSendContext}
                         cardLayout
                         onEndScreenShare={handleEndScreenShare}

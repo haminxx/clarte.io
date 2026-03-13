@@ -23,6 +23,9 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
+OPENAI_REALTIME_MODEL = (os.getenv("OPENAI_REALTIME_MODEL") or "gpt-realtime-1.5").strip()
+SECRETARY_VISION_MODEL = (os.getenv("SECRETARY_VISION_MODEL") or "gpt-4o").strip()
+
 EXECUTIVE_ASSISTANT_PROMPT = """
 You are Clarte, an Alfred-style Voice AI: guide users to their own clarity using the Rubber Duck theory and Golden Circle (Why, How, What). Never give direct advice prematurely.
 
@@ -698,7 +701,7 @@ async def entrypoint(ctx: agents.JobContext) -> None:
         try:
             session = AgentSession(
                 llm=openai.realtime.RealtimeModel(
-                    model="gpt-realtime-1.5",
+                    model=OPENAI_REALTIME_MODEL,
                     modalities=["text"],
                     turn_detection=turn_detection,
                 ),
@@ -707,7 +710,7 @@ async def entrypoint(ctx: agents.JobContext) -> None:
         except Exception as e:
             logger.exception("Failed to initialize Deepgram TTS: %s (check DEEPGRAM_API_KEY and model=%s)", e, deepgram_model)
             raise
-        logger.info("Using Deepgram TTS (model=%s) with OpenAI Realtime LLM (language=%s, persona=%s)", deepgram_model, language, voice)
+        logger.info("Using Deepgram TTS (model=%s) with OpenAI Realtime LLM (model=%s, language=%s, persona=%s)", deepgram_model, OPENAI_REALTIME_MODEL, language, voice)
 
         room_opts = room_io.RoomOptions(video_input=True)
         agent = ExecutiveAssistantAgent(room=room, session=session)
@@ -760,8 +763,8 @@ async def entrypoint(ctx: agents.JobContext) -> None:
         session.on("user_input_transcribed")(on_user_input_transcribed)
 
         logger.info(
-            "Starting session with model=gpt-realtime-1.5, deepgram_model=%s (voice=%s, mode=%s, language=%s, user_name=%s)",
-            deepgram_model, voice, mode, language, user_name or "(none)",
+            "Starting session with model=%s, deepgram_model=%s (voice=%s, mode=%s, language=%s, user_name=%s)",
+            OPENAI_REALTIME_MODEL, deepgram_model, voice, mode, language, user_name or "(none)",
         )
         await session.start(
             room=room,
@@ -833,7 +836,7 @@ async def _secretary_analyze_frame(frame: rtc.VideoFrame) -> Optional[str]:
         from openai import OpenAI
         client = OpenAI(api_key=key)
         res = client.chat.completions.create(
-            model="gpt-4o",
+            model=SECRETARY_VISION_MODEL,
             messages=[
                 {
                     "role": "user",

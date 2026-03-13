@@ -36,8 +36,8 @@ interface VapiRoomProps {
   onRequestScreenContext?: (mode: SwitchMode) => void
   /** Legacy: when onRequestScreenContext is not set, stop Vapi and switch to full LiveKit Room. */
   onSwitchToScreenMode?: (mode: SwitchMode) => void
-  /** Called when Vapi call is active; receives sendContext fn to inject Secretary content. */
-  onVapiReady?: (sendContext: (content: string) => void) => void
+  /** Called when Vapi call is active; parent can store ref for vapi.send(). */
+  onVapiReady?: (vapi: InstanceType<typeof import("@vapi-ai/web").default>) => void
   /** Optional ref: VapiRoom assigns a function that injects context via vapi.send(add-message). */
   sendContextRef?: React.MutableRefObject<((content: string) => void) | null>
 }
@@ -89,19 +89,19 @@ export function VapiRoom({
 
       vapi.on("call-start", () => {
         setStatus("active")
-        const sendContext = (content: string) => {
-          try {
-            vapi.send?.({
-              type: "add-message",
-              message: { role: "system", content: `[Screen context from Secretary: ${content}]` },
-              triggerResponseEnabled: true,
-            })
-          } catch (e) {
-            console.warn("[VapiRoom] sendContext failed:", e)
+        onVapiReady?.(vapi)
+        if (sendContextRef) {
+          sendContextRef.current = (content: string) => {
+            try {
+              vapi.send?.({
+                type: "add-message",
+                message: { role: "system", content: `[Screen context from Secretary: ${content}]` },
+              })
+            } catch (e) {
+              console.warn("[VapiRoom] sendContext failed:", e)
+            }
           }
         }
-        onVapiReady?.(sendContext)
-        if (sendContextRef) sendContextRef.current = sendContext
       })
 
       vapi.on("call-end", () => {

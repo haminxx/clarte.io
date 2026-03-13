@@ -1,26 +1,15 @@
 "use client"
 
 /**
- * SecretaryRoom – LiveKit room with Secretary agent only (Option B parallel pipeline).
+ * SecretaryRoom – LiveKit room with Secretary agent only (Option C parallel pipeline).
  * Joins with secretary_only token, receives secretary_context via data channel,
  * and forwards to parent via onSendContext for injection into Vapi.
- * On connect: prompts user for screen share via modal.
  */
 import React, { useCallback, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Monitor, Video } from "lucide-react"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { LiveKitRoom, useLocalParticipant, useDataChannel, useRoomContext } from "@livekit/components-react"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
-
-export type SecretaryMode = "screen" | "camera" | "both"
 
 type SupportedLanguage = "en" | "ko" | "es" | "zh" | "ja" | "hi"
 
@@ -93,10 +82,8 @@ async function fetchSecretaryToken(
 interface SecretaryRoomProps {
   voice?: string
   language?: SupportedLanguage
-  mode?: SecretaryMode
   onSendContext: (content: string) => void
   onError?: (message: string) => void
-  onDisconnect?: () => void
   cardLayout?: boolean
   /** Called when user wants to end screen share only (does not end Vapi call). */
   onEndScreenShare?: () => void
@@ -106,12 +93,10 @@ function SecretaryRoomInner({
   onSendContext,
   onEndScreenShare,
   cardLayout,
-  mode,
 }: {
   onSendContext: (content: string) => void
   onEndScreenShare?: () => void
   cardLayout?: boolean
-  mode?: SecretaryMode
 }) {
   const room = useRoomContext()
   const { localParticipant } = useLocalParticipant()
@@ -119,13 +104,8 @@ function SecretaryRoomInner({
   const [cameraPending, setCameraPending] = useState(false)
   const [isScreenShareEnabled, setIsScreenShareEnabled] = useState(false)
   const [isCameraEnabled, setIsCameraEnabled] = useState(false)
-  const [showPromptModal, setShowPromptModal] = useState(true)
-  const [promptPending, setPromptPending] = useState(false)
   const { theme } = useClarteTheme()
   const isBright = theme === "bright"
-
-  const needsScreen = mode === "screen" || mode === "both"
-  const needsCamera = mode === "camera" || mode === "both"
 
   useDataChannel((msg) => {
     try {
@@ -167,56 +147,9 @@ function SecretaryRoomInner({
 
   return (
     <div className={cardLayout ? "flex flex-col items-center gap-3 py-2" : "flex flex-col items-center gap-4 py-4"}>
-      <Dialog open={showPromptModal} onOpenChange={(open) => !promptPending && setShowPromptModal(open)}>
-        <DialogContent showCloseButton={!promptPending}>
-          <DialogHeader>
-            <DialogTitle>
-              {mode === "camera"
-                ? "Turn on camera?"
-                : mode === "both"
-                  ? "Share screen and camera?"
-                  : "Share your screen?"}
-            </DialogTitle>
-            <DialogDescription>
-              {mode === "camera"
-                ? "Clarte would like to see you. Allow to turn on your camera."
-                : mode === "both"
-                  ? "Clarte would like to see your screen and camera. Allow to share."
-                  : "Clarte would like to see your screen to help you. Allow to share your display."}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowPromptModal(false)} disabled={promptPending}>
-              Not now
-            </Button>
-            <Button
-              onClick={async () => {
-                setPromptPending(true)
-                try {
-                  if (needsScreen) {
-                    await localParticipant?.setScreenShareEnabled(true)
-                    setIsScreenShareEnabled(true)
-                  }
-                  if (needsCamera) {
-                    await localParticipant?.setCameraEnabled(true)
-                    setIsCameraEnabled(true)
-                  }
-                } finally {
-                  setPromptPending(false)
-                  setShowPromptModal(false)
-                }
-              }}
-              disabled={promptPending || !localParticipant}
-            >
-              {promptPending ? "Starting…" : "Allow"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      <div className="flex items-center gap-2 rounded-full bg-emerald-500/20 px-3 py-1.5">
-        <div className="h-2 w-2 rounded-full bg-emerald-400 animate-[clarte-pulse_1.5s_ease-in-out_infinite]" />
-        <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">Screen context active</span>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Share your screen or camera so Clarte can see what you&apos;re working on.
+      </p>
       <div className="flex flex-wrap items-center justify-center gap-2">
         <Button
           variant={isScreenShareEnabled ? "default" : "outline"}
@@ -248,7 +181,7 @@ function SecretaryRoomInner({
             }}
             className="gap-2"
           >
-            Stop sharing
+            End screen share
           </Button>
         )}
       </div>
@@ -259,10 +192,8 @@ function SecretaryRoomInner({
 export function SecretaryRoom({
   voice = "marin",
   language = "en",
-  mode = "screen",
   onSendContext,
   onError,
-  onDisconnect,
   cardLayout = false,
   onEndScreenShare,
 }: SecretaryRoomProps) {
@@ -382,7 +313,6 @@ export function SecretaryRoom({
             onSendContext={onSendContext}
             onEndScreenShare={onEndScreenShare}
             cardLayout={cardLayout}
-            mode={mode}
           />
         </LiveKitRoom>
       </>

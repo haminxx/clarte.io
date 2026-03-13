@@ -259,12 +259,12 @@ export function Header() {
       </div>
 
       {mobileMenuOpen && (
-          <div
-            className={cn(
-              "border-t lg:hidden w-full backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-200",
-              theme === "dark" ? "border-white/10 bg-white/5" : "border-black/10 bg-black/5"
-            )}
-          >
+        <div
+          className={cn(
+            "border-t lg:hidden w-full backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-200",
+            theme === "dark" ? "border-white/10 bg-white/5" : "border-black/10 bg-black/5"
+          )}
+        >
           <div className="mx-auto max-w-[min(1400px,96vw)] 2xl:max-w-[min(1600px,94vw)] pl-[clamp(1.5rem,4vw,7.5rem)] pr-[clamp(1.5rem,4vw,7.5rem)] sm:pl-[clamp(2rem,5vw,8rem)] sm:pr-[clamp(2rem,5vw,8rem)] lg:pl-[clamp(4rem,8vw,120px)] lg:pr-[clamp(4rem,8vw,120px)] 2xl:pl-[min(8vw,160px)] 2xl:pr-[min(8vw,160px)] py-4 w-full">
             <nav className="flex flex-col gap-3">
               {navLinks.map((link) => {
