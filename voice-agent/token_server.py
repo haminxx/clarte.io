@@ -71,6 +71,7 @@ class TokenRequest(BaseModel):
     user_name: Optional[str] = None
     voice_profile_id: Optional[str] = None
     agent_mode: Optional[str] = None
+    secretary_only: Optional[bool] = None
 
 
 @app.get("/health")
@@ -132,25 +133,34 @@ def get_token(body: Optional[TokenRequest] = Body(None)):
         at = AccessToken(api_key=LIVEKIT_API_KEY, api_secret=LIVEKIT_API_SECRET)
         at.with_identity(identity or str(uuid.uuid4()))
         at.with_name(identity or "user")
-        room = room_name or f"clarte-{uuid.uuid4().hex[:12]}"
-        at.with_grants(VideoGrants(room_join=True, room=room))
+
         meta = {"voice": voice, "mode": mode, "language": language, "agent_mode": agent_mode}
         if user_name:
             meta["user_name"] = user_name
         if voice_profile_id:
             meta["voice_profile_id"] = voice_profile_id
 
-        agent_dispatches = []
-        agent_dispatches.append(RoomAgentDispatch(agent_name="clarte", metadata=json.dumps(meta)))
-        if ENABLE_TWO_AGENT:
-            agent_dispatches.append(RoomAgentDispatch(agent_name="secretary", metadata=json.dumps(meta)))
+        use_secretary_only = (
+            (body and getattr(body, "secretary_only", False) is True)
+            or (body and getattr(body, "agent_mode", None) == "secretary_only")
+        )
 
+        if use_secretary_only:
+            room = room_name or f"secretary-{uuid.uuid4().hex[:12]}"
+            agent_dispatches = [RoomAgentDispatch(agent_name="secretary", metadata=json.dumps(meta))]
+        else:
+            room = room_name or f"clarte-{uuid.uuid4().hex[:12]}"
+            agent_dispatches = [RoomAgentDispatch(agent_name="clarte", metadata=json.dumps(meta))]
+            if ENABLE_TWO_AGENT:
+                agent_dispatches.append(RoomAgentDispatch(agent_name="secretary", metadata=json.dumps(meta)))
+
+        at.with_grants(VideoGrants(room_join=True, room=room))
         at.with_room_config(RoomConfiguration(agents=agent_dispatches))
 
         token = at.to_jwt()
         logger.info(
-            "Token issued for room=%s voice=%s mode=%s language=%s agent_mode=%s two_agent=%s",
-            room, voice, mode, language, agent_mode, ENABLE_TWO_AGENT,
+            "Token issued for room=%s voice=%s mode=%s language=%s agent_mode=%s secretary_only=%s two_agent=%s",
+            room, voice, mode, language, agent_mode, use_secretary_only, ENABLE_TWO_AGENT,
         )
         return {"token": token, "room": room}
     except Exception as e:

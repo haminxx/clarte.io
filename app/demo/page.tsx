@@ -6,9 +6,9 @@ import { Footer } from "@/components/footer"
 import { VoiceCard } from "@/components/voice-card"
 import type { CallMode } from "@/components/voice/Room"
 import type { SwitchMode } from "@/components/voice/VapiRoom"
+import type { SecretaryMode } from "@/components/voice/SecretaryRoom"
 
 const LIVEKIT_URL_RAW = process.env.NEXT_PUBLIC_LIVEKIT_URL ?? ""
-/** Treat placeholder URLs (from CI when secrets missing) as not configured. */
 const isPlaceholderUrl = (url: string) => !url || url.includes("placeholder")
 const LIVEKIT_URL = isPlaceholderUrl(LIVEKIT_URL_RAW) ? "" : LIVEKIT_URL_RAW
 import { ParticleOrb } from "@/components/particle-orb"
@@ -28,27 +28,29 @@ export default function DemoPage() {
   const isBright = theme === "bright"
   const [inCall, setInCall] = useState(false)
   const [connectionActive, setConnectionActive] = useState(false)
-  const [callMode, setCallMode] = useState<"vapi" | "livekit">("vapi")
+  const [callMode, setCallMode] = useState<"vapi" | "livekit" | "parallel">("vapi")
+  const [showSecretaryRoom, setShowSecretaryRoom] = useState(false)
+  const [secretaryMode, setSecretaryMode] = useState<SecretaryMode>("screen")
   const [livekitMode, setLivekitMode] = useState<CallMode>("voice-with-screen")
   const [RoomComponent, setRoomComponent] = useState<ComponentType<any> | null>(null)
   const [VapiRoomComponent, setVapiRoomComponent] = useState<ComponentType<any> | null>(null)
+  const [SecretaryRoomComponent, setSecretaryRoomComponent] = useState<ComponentType<any> | null>(null)
+  const sendContextRef = useRef<((content: string) => void) | null>(null)
 
   useEffect(() => {
     if (!inCall) {
       setRoomComponent(null)
       setVapiRoomComponent(null)
+      setSecretaryRoomComponent(null)
       return
     }
-    if (callMode === "vapi") {
-      import("@/components/voice/VapiRoom").then((m) =>
-        setVapiRoomComponent(() => m.VapiRoom)
-      )
-    } else {
-      import("@/components/voice/Room").then((m) =>
-        setRoomComponent(() => m.Room)
-      )
+    import("@/components/voice/VapiRoom").then((m) => setVapiRoomComponent(() => m.VapiRoom))
+    if (callMode === "livekit") {
+      import("@/components/voice/Room").then((m) => setRoomComponent(() => m.Room))
+    } else if (callMode === "parallel" || showSecretaryRoom) {
+      import("@/components/voice/SecretaryRoom").then((m) => setSecretaryRoomComponent(() => m.SecretaryRoom))
     }
-  }, [inCall, callMode])
+  }, [inCall, callMode, showSecretaryRoom])
   const [selectedVoice, setSelectedVoice] = useState("aura-2-thalia-en")
   const [selectedLanguage, setSelectedLanguage] = useState<"en" | "ko" | "es" | "zh" | "ja" | "hi">("en")
   const [transcriptEntries, setTranscriptEntries] = useState<{ role: string; content: string }[]>([])
@@ -76,13 +78,28 @@ export default function DemoPage() {
     setInCall(false)
     setConnectionActive(false)
     setCallMode("vapi")
+    setShowSecretaryRoom(false)
     setTranscriptEntries([])
     setTranscriptPartial("")
   }
 
+  const handleRequestScreenContext = useCallback((mode: SwitchMode) => {
+    setSecretaryMode(mode)
+    setCallMode("parallel")
+    setShowSecretaryRoom(true)
+  }, [])
+
   const handleSwitchToScreenMode = useCallback((mode: SwitchMode) => {
     setLivekitMode(switchModeToCallMode(mode))
     setCallMode("livekit")
+  }, [])
+
+  const handleSendContext = useCallback((content: string) => {
+    sendContextRef.current?.(content)
+  }, [])
+
+  const handleEndScreenShare = useCallback(() => {
+    setShowSecretaryRoom(false)
   }, [])
 
   const handleTranscriptAdd = useCallback((role: string, content: string) => {
@@ -144,15 +161,28 @@ export default function DemoPage() {
             </div>
             <div className="relative z-20 w-full max-w-[min(32rem,92vw)] xl:max-w-[min(36rem,88vw)] 2xl:max-w-[min(42rem,85vw)] flex flex-col gap-4">
               <div className="w-full rounded-2xl border border-border bg-card/90 p-4 sm:p-5 md:p-6 shadow-2xl backdrop-blur-md mx-auto min-w-0">
-                {inCall && callMode === "vapi" && VapiRoomComponent ? (
-                  <VapiRoomComponent
-                    onDisconnect={handleDisconnect}
-                    autoStart
-                    cardLayout
-                    onTranscriptAdd={handleTranscriptAdd}
-                    onTranscriptPartial={handleTranscriptPartial}
-                    onSwitchToScreenMode={handleSwitchToScreenMode}
-                  />
+                {inCall && (callMode === "vapi" || callMode === "parallel") && VapiRoomComponent ? (
+                  <div className="flex flex-col gap-4">
+                    <VapiRoomComponent
+                      onDisconnect={handleDisconnect}
+                      autoStart
+                      cardLayout
+                      onTranscriptAdd={handleTranscriptAdd}
+                      onTranscriptPartial={handleTranscriptPartial}
+                      onRequestScreenContext={handleRequestScreenContext}
+                      sendContextRef={sendContextRef}
+                    />
+                    {callMode === "parallel" && showSecretaryRoom && SecretaryRoomComponent && (
+                      <SecretaryRoomComponent
+                        voice={selectedVoice}
+                        language={selectedLanguage}
+                        mode={secretaryMode}
+                        onSendContext={handleSendContext}
+                        cardLayout
+                        onEndScreenShare={handleEndScreenShare}
+                      />
+                    )}
+                  </div>
                 ) : inCall && callMode === "livekit" && RoomComponent ? (
                   <RoomComponent
                     mode={livekitMode}

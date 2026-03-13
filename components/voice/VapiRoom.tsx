@@ -32,7 +32,14 @@ interface VapiRoomProps {
   cardLayout?: boolean
   onTranscriptAdd?: (role: string, content: string) => void
   onTranscriptPartial?: (role: string, content: string) => void
+  /** When provided, triggers parallel mode: call this instead of stopping Vapi and switching to LiveKit. */
+  onRequestScreenContext?: (mode: SwitchMode) => void
+  /** Legacy: when onRequestScreenContext is not set, stop Vapi and switch to full LiveKit Room. */
   onSwitchToScreenMode?: (mode: SwitchMode) => void
+  /** Called when Vapi call is active; receives sendContext fn to inject Secretary content. */
+  onVapiReady?: (sendContext: (content: string) => void) => void
+  /** Optional ref: VapiRoom assigns a function that injects context via vapi.send(add-message). */
+  sendContextRef?: React.MutableRefObject<((content: string) => void) | null>
 }
 
 export function VapiRoom({
@@ -82,9 +89,23 @@ export function VapiRoom({
 
       vapi.on("call-start", () => {
         setStatus("active")
+        const sendContext = (content: string) => {
+          try {
+            vapi.send?.({
+              type: "add-message",
+              message: { role: "system", content: `[Screen context from Secretary: ${content}]` },
+              triggerResponseEnabled: true,
+            })
+          } catch (e) {
+            console.warn("[VapiRoom] sendContext failed:", e)
+          }
+        }
+        onVapiReady?.(sendContext)
+        if (sendContextRef) sendContextRef.current = sendContext
       })
 
       vapi.on("call-end", () => {
+        if (sendContextRef) sendContextRef.current = null
         if (!switchRequestedRef.current) {
           setStatus("idle")
           vapiRef.current = null
@@ -98,12 +119,16 @@ export function VapiRoom({
           onTranscriptAdd?.(role, message.transcript)
           onTranscriptPartial?.(role, "")
 
-          if (message.role === "user" && onSwitchToScreenMode) {
+          if (message.role === "user") {
             const mode = detectScreenCameraRequest(message.transcript)
             if (mode) {
-              switchRequestedRef.current = true
-              vapi.stop()
-              onSwitchToScreenMode(mode)
+              if (onRequestScreenContext) {
+                onRequestScreenContext(mode)
+              } else if (onSwitchToScreenMode) {
+                switchRequestedRef.current = true
+                vapi.stop()
+                onSwitchToScreenMode(mode)
+              }
             }
           }
         }
@@ -119,7 +144,7 @@ export function VapiRoom({
       setError(e instanceof Error ? e.message : "Failed to start Vapi call")
       setStatus("error")
     }
-  }, [onTranscriptAdd, onTranscriptPartial, onSwitchToScreenMode, onDisconnect])
+  }, [onTranscriptAdd, onTranscriptPartial, onRequestScreenContext, onSwitchToScreenMode, onVapiReady, sendContextRef, onDisconnect])
 
   useEffect(() => {
     if (autoStart && status === "idle" && VAPI_PUBLIC_KEY && VAPI_ASSISTANT_ID) {

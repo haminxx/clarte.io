@@ -46,7 +46,7 @@ export function LanguageSelector() {
         sideOffset={6}
         className={cn(
           "min-w-[10rem] duration-300 ease-out backdrop-blur-xl",
-          theme === "dark" ? "border-white/20 bg-white/10" : "border-black/10 bg-black/5"
+          theme === "dark" ? "border-white/20 bg-white/5" : "border-black/10 bg-black/5"
         )}
       >
         <DropdownMenuRadioGroup value={locale} onValueChange={(v) => setLocale(v as Locale)}>
