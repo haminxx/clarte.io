@@ -322,6 +322,7 @@
   html {
     @apply overflow-x-hidden;
     scrollbar-gutter: stable;
+    overflow-y: scroll; /* Force scrollbar track always visible - prevents layout shift */
     background: var(--background);
   }
   body {

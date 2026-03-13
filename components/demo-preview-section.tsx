@@ -38,18 +38,24 @@ export function DemoPreviewSection() {
   }, [])
 
   // Scroll-driven expand / collapse with hysteresis to avoid "shaking" at the threshold.
+  // Throttled to ~100ms to reduce work during fast scroll.
   useEffect(() => {
     const section = sectionRef.current
     if (!section) return
 
     let frameRequested = false
+    let lastRun = 0
+    const THROTTLE_MS = 100
 
     const handleScroll = () => {
       if (!section) return
       if (frameRequested) return
+      const now = Date.now()
+      if (now - lastRun < THROTTLE_MS) return
       frameRequested = true
       requestAnimationFrame(() => {
         frameRequested = false
+        lastRun = Date.now()
         const rect = section.getBoundingClientRect()
         const viewportHeight = window.innerHeight || 0
         if (viewportHeight <= 0 || rect.height <= 0) return
