@@ -98,7 +98,7 @@ export function Header() {
             </Avatar>
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className={cn("w-56 backdrop-blur-xl", theme === "dark" ? "border-white/20 bg-white/5" : "border-black/10 bg-black/5")}>
+        <DropdownMenuContent align="end" className={cn("w-56 backdrop-blur-2xl", theme === "dark" ? "border-white/20 bg-white/3" : "border-black/10 bg-black/3")}>
           <DropdownMenuItem asChild>
             <Link href="/profile" className={cn("cursor-pointer", theme === "dark" ? "text-white" : "text-black")}>
               <UserIcon className="mr-2 h-4 w-4" />
@@ -169,8 +169,8 @@ export function Header() {
         "fixed top-0 left-0 right-0 z-50 w-full overflow-x-hidden transition-all duration-300",
         scrolled || mobileMenuOpen
           ? theme === "dark"
-            ? "border-b border-white/10 bg-background/80 backdrop-blur-md"
-            : "border-b border-black/10 bg-white/80 backdrop-blur-md"
+            ? "border-b border-white/10 bg-background/50 backdrop-blur-2xl"
+            : "border-b border-black/10 bg-white/50 backdrop-blur-2xl"
           : "border-b border-transparent bg-transparent"
       )}
     >
@@ -261,8 +261,8 @@ export function Header() {
       {mobileMenuOpen && (
         <div
           className={cn(
-            "border-t lg:hidden w-full backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-200",
-            theme === "dark" ? "border-white/10 bg-white/5" : "border-black/10 bg-black/5"
+            "border-t lg:hidden w-full backdrop-blur-2xl animate-in fade-in slide-in-from-top-2 duration-200",
+            theme === "dark" ? "border-white/10 bg-white/3" : "border-black/10 bg-black/3"
           )}
         >
           <div className="mx-auto max-w-[min(1400px,96vw)] 2xl:max-w-[min(1600px,94vw)] pl-[clamp(1.5rem,4vw,7.5rem)] pr-[clamp(1.5rem,4vw,7.5rem)] sm:pl-[clamp(2rem,5vw,8rem)] sm:pr-[clamp(2rem,5vw,8rem)] lg:pl-[clamp(4rem,8vw,120px)] lg:pr-[clamp(4rem,8vw,120px)] 2xl:pl-[min(8vw,160px)] 2xl:pr-[min(8vw,160px)] py-4 w-full">
