@@ -79,6 +79,7 @@ export default function DemoPage() {
     setShowSecretaryRoom(false)
     setTranscriptEntries([])
     setTranscriptPartial("")
+    sendContextRef.current = null
   }
 
   const handleRequestScreenContext = useCallback((mode: SwitchMode) => {
@@ -168,6 +169,7 @@ export default function DemoPage() {
                       onTranscriptPartial={handleTranscriptPartial}
                       onRequestScreenContext={handleRequestScreenContext}
                       sendContextRef={sendContextRef}
+                      screenContextRequested={showSecretaryRoom}
                     />
                     {callMode === "parallel" && showSecretaryRoom && SecretaryRoomComponent && (
                       <SecretaryRoomComponent

@@ -40,6 +40,8 @@ interface VapiRoomProps {
   onVapiReady?: (vapi: InstanceType<typeof import("@vapi-ai/web").default>) => void
   /** Optional ref: VapiRoom assigns a function that injects context via vapi.send(add-message). */
   sendContextRef?: React.MutableRefObject<((content: string) => void) | null>
+  /** When true, screen/camera context is requested (SecretaryRoom visible). Shows contextual message. */
+  screenContextRequested?: boolean
 }
 
 export function VapiRoom({
@@ -48,7 +50,11 @@ export function VapiRoom({
   cardLayout = false,
   onTranscriptAdd,
   onTranscriptPartial,
+  onRequestScreenContext,
   onSwitchToScreenMode,
+  onVapiReady,
+  sendContextRef,
+  screenContextRequested = false,
 }: VapiRoomProps) {
   const [status, setStatus] = useState<"idle" | "connecting" | "active" | "error">("idle")
   const [error, setError] = useState<string | null>(null)
@@ -198,8 +204,10 @@ export function VapiRoom({
       <>
         {cardLayout ? cardHeader : null}
         <div className="flex flex-col items-center gap-4 py-4">
-          <p className="text-sm text-muted-foreground">
-            In call with Clarte (voice only). Say &quot;see my screen&quot; or &quot;look at me&quot; to enable screen share or camera.
+          <p className="text-sm text-muted-foreground text-center">
+            {screenContextRequested
+              ? "Share your screen or camera below so Clarte can see your context."
+              : "In call with Clarte. Say \"see my screen\" or \"look at me\" to enable screen share or camera."}
           </p>
           <Button variant="outline" size="sm" onClick={disconnect} className="gap-2">
             <PhoneOff className="h-4 w-4" />

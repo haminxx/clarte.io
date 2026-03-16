@@ -251,9 +251,16 @@ export function SecretaryRoom({
     return (
       <div className="flex flex-col items-center gap-3 py-4">
         <p className="text-sm text-destructive text-center">{error}</p>
-        <Button variant="outline" size="sm" onClick={startConnection}>
-          Retry
-        </Button>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <Button variant="outline" size="sm" onClick={startConnection}>
+            Retry
+          </Button>
+          {onEndScreenShare && (
+            <Button variant="ghost" size="sm" onClick={onEndScreenShare}>
+              Dismiss
+            </Button>
+          )}
+        </div>
       </div>
     )
   }
