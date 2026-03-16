@@ -13,17 +13,24 @@ interface Particle {
 
 type ParticleOrbVariant = "dark" | "bright"
 
+const DEFAULT_INTERACTIVE_SELECTOR = "header, footer, a, button, [role=button], [data-clarte-card]"
+
 type ParticleOrbProps = {
   variant?: ParticleOrbVariant
+  /** CSS selector for elements that trigger slow-rotate when hovered (e.g. cards, header, buttons). */
+  interactiveSelector?: string
 }
 
-export function ParticleOrb({ variant = "dark" }: ParticleOrbProps) {
+export function ParticleOrb({ variant = "dark", interactiveSelector = DEFAULT_INTERACTIVE_SELECTOR }: ParticleOrbProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationRef = useRef<number>()
   const particlesRef = useRef<Particle[]>([])
   const mouseRef = useRef({ x: 0, y: 0 })
   const rotationRef = useRef({ x: 0, y: 0 })
   const movingDotRef = useRef({ theta: 0, phi: 0 })
+  const overInteractiveRef = useRef(false)
+  const idleRef = useRef(true)
+  const idleTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -65,6 +72,18 @@ export function ParticleOrb({ variant = "dark" }: ParticleOrbProps) {
     }
 
     const handleMouseMove = (e: MouseEvent) => {
+      if (idleTimeoutRef.current) {
+        clearTimeout(idleTimeoutRef.current)
+        idleTimeoutRef.current = undefined
+      }
+      idleRef.current = false
+      idleTimeoutRef.current = setTimeout(() => {
+        idleRef.current = true
+      }, 800)
+
+      const el = document.elementFromPoint(e.clientX, e.clientY)
+      overInteractiveRef.current = el?.closest(interactiveSelector) != null
+
       const rect = canvas.getBoundingClientRect()
       const centerX = rect.left + rect.width / 2
       const centerY = rect.top + rect.height / 2
@@ -186,11 +205,12 @@ export function ParticleOrb({ variant = "dark" }: ParticleOrbProps) {
     return () => {
       window.removeEventListener("resize", resizeCanvas)
       window.removeEventListener("mousemove", handleMouseMove)
+      if (idleTimeoutRef.current) clearTimeout(idleTimeoutRef.current)
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current)
       }
     }
-  }, [variant])
+  }, [variant, interactiveSelector])
 
   return (
     <canvas

@@ -159,7 +159,7 @@ export default function DemoPage() {
               <ParticleOrb variant={isBright ? "bright" : "dark"} />
             </div>
             <div className="relative z-20 w-full max-w-[min(32rem,92vw)] xl:max-w-[min(36rem,88vw)] 2xl:max-w-[min(42rem,85vw)] flex flex-col gap-4">
-              <div className="w-full rounded-2xl border border-border bg-card/90 p-4 sm:p-5 md:p-6 shadow-2xl backdrop-blur-md mx-auto min-w-0">
+              <div data-clarte-card className="w-full rounded-2xl border border-border bg-card/90 p-4 sm:p-5 md:p-6 shadow-2xl backdrop-blur-md mx-auto min-w-0">
                 {inCall && (callMode === "vapi" || callMode === "parallel") && VapiRoomComponent ? (
                   <div className="flex flex-col gap-4">
                     <VapiRoomComponent
@@ -214,7 +214,7 @@ export default function DemoPage() {
                   />
                 )}
               </div>
-              <div className="w-full rounded-2xl border border-border bg-card/90 p-4 sm:p-5 md:p-6 shadow-xl backdrop-blur-md mx-auto min-w-0">
+              <div data-clarte-card className="w-full rounded-2xl border border-border bg-card/90 p-4 sm:p-5 md:p-6 shadow-xl backdrop-blur-md mx-auto min-w-0">
                 <p className="mb-2 text-[clamp(0.6875rem,1vw,0.75rem)] font-medium uppercase tracking-wider text-muted-foreground">
                   Live transcript (Speech to text)
                 </p>

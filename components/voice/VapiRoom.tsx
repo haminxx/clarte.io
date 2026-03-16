@@ -258,6 +258,9 @@ export function VapiRoom({
               </div>
             </div>
           </div>
+          {status === "connecting" && (
+            <p className="text-xs text-muted-foreground text-center mt-2">Connecting to Clarte…</p>
+          )}
           {!configured && (
             <p className="text-xs text-muted-foreground text-center max-w-xs mt-2">
               Vapi keys not configured. Add NEXT_PUBLIC_VAPI_PUBLIC_KEY and a tier assistant ID (e.g. NEXT_PUBLIC_VAPI_ASSISTANT_ID_Demo_EN) to your environment (Render dashboard or .env.local).
