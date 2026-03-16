@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useRef, useEffect, type ComponentType } from "react"
+import React, { useState, useCallback, useRef, useEffect, type ComponentType } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { VoiceCard } from "@/components/voice-card"
@@ -23,6 +23,35 @@ function switchModeToCallMode(mode: SwitchMode): CallMode {
   if (mode === "screen") return "voice-with-screen"
   if (mode === "camera") return "voice-with-camera"
   return "voice-with-screen-camera"
+}
+
+/** Parse markdown links [text](url) and return React nodes (text + anchor tags). */
+function parseTranscriptContent(content: string): React.ReactNode {
+  const linkRe = /\[([^\]]+)\]\(([^)]+)\)/g
+  const parts: React.ReactNode[] = []
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+  while ((match = linkRe.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(content.slice(lastIndex, match.index))
+    }
+    parts.push(
+      <a
+        key={match.index}
+        href={match[2]}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-600 dark:text-blue-400 underline hover:underline"
+      >
+        {match[1]}
+      </a>
+    )
+    lastIndex = linkRe.lastIndex
+  }
+  if (lastIndex < content.length) {
+    parts.push(content.slice(lastIndex))
+  }
+  return parts.length > 0 ? parts : content
 }
 
 export default function DemoPage() {
@@ -56,8 +85,10 @@ export default function DemoPage() {
   const [selectedLanguage, setSelectedLanguage] = useState<"en" | "ko" | "es" | "zh" | "ja" | "hi">("en")
   const [transcriptEntries, setTranscriptEntries] = useState<{ role: string; content: string }[]>([])
   const [transcriptPartial, setTranscriptPartial] = useState<string>("")
+  const [assistantPartial, setAssistantPartial] = useState<string>("")
   const transcriptContainerRef = useRef<HTMLDivElement>(null)
   const transcriptEndRef = useRef<HTMLDivElement>(null)
+  const partialDebounceRef = useRef<ReturnType<typeof setTimeout>>()
 
   // Prefill from URL (e.g. from Chrome extension popup). Language restricted to en for now.
   useEffect(() => {
@@ -80,6 +111,7 @@ export default function DemoPage() {
     setShowSecretaryRoom(false)
     setTranscriptEntries([])
     setTranscriptPartial("")
+    setAssistantPartial("")
     sendContextRef.current = null
   }
 
@@ -102,12 +134,22 @@ export default function DemoPage() {
   }, [])
 
   const handleTranscriptAdd = useCallback((role: string, content: string) => {
+    if (partialDebounceRef.current) {
+      clearTimeout(partialDebounceRef.current)
+      partialDebounceRef.current = undefined
+    }
     setTranscriptEntries((prev) => [...prev, { role, content }])
-    setTranscriptPartial("")
+    if (role === "user") setTranscriptPartial("")
+    else setAssistantPartial("")
   }, [])
 
   const handleTranscriptPartial = useCallback((role: string, content: string) => {
-    if (role === "user") setTranscriptPartial(content)
+    if (partialDebounceRef.current) clearTimeout(partialDebounceRef.current)
+    partialDebounceRef.current = setTimeout(() => {
+      if (role === "user") setTranscriptPartial(content)
+      else setAssistantPartial(content)
+      partialDebounceRef.current = undefined
+    }, 60)
   }, [])
 
   const useClientSTT = isClientSpeechRecognitionSupported()
@@ -135,7 +177,13 @@ export default function DemoPage() {
     } else {
       transcriptEndRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" })
     }
-  }, [transcriptEntries, transcriptPartial])
+  }, [transcriptEntries, transcriptPartial, assistantPartial])
+
+  useEffect(() => {
+    return () => {
+      if (partialDebounceRef.current) clearTimeout(partialDebounceRef.current)
+    }
+  }, [])
 
   return (
     <div className="min-h-screen bg-transparent">
@@ -220,16 +268,16 @@ export default function DemoPage() {
                 </p>
                 <div
                   ref={transcriptContainerRef}
-                  className="max-h-[clamp(8rem,20vh,14rem)] overflow-y-auto overflow-x-hidden rounded-lg border border-border/50 bg-background/50 px-3 py-2 text-[clamp(0.8125rem,1.1vw,0.875rem)] text-foreground flex flex-col gap-1.5 justify-end"
+                  className="max-h-[clamp(8rem,20vh,14rem)] overflow-y-auto overflow-x-hidden rounded-lg border border-border/50 bg-background/50 px-3 py-2 text-[clamp(0.8125rem,1.1vw,0.875rem)] text-foreground flex flex-col gap-1.5 justify-end scroll-smooth"
                 >
-                  {transcriptEntries.length === 0 && !transcriptPartial ? (
+                  {transcriptEntries.length === 0 && !transcriptPartial && !assistantPartial ? (
                     <span className="text-muted-foreground">Your speech and Clarte&apos;s replies will appear here...</span>
                   ) : (
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 scroll-smooth">
                       {transcriptEntries.map((entry, i) => (
                         <div key={i} className={cn("leading-tight", entry.role === "user" ? "text-foreground/90" : "text-blue-600 dark:text-blue-400")}>
                           <span className="font-medium">{entry.role === "user" ? "You: " : "Clarte: "}</span>
-                          {entry.content}
+                          {parseTranscriptContent(entry.content)}
                         </div>
                       ))}
                       {transcriptPartial ? (
@@ -237,6 +285,15 @@ export default function DemoPage() {
                           <span className="font-medium">You: </span>
                           <span>
                             {transcriptPartial}
+                            <span className="animate-pulse">|</span>
+                          </span>
+                        </div>
+                      ) : null}
+                      {assistantPartial ? (
+                        <div className="leading-tight text-blue-600 dark:text-blue-400">
+                          <span className="font-medium">Clarte: </span>
+                          <span>
+                            {parseTranscriptContent(assistantPartial)}
                             <span className="animate-pulse">|</span>
                           </span>
                         </div>

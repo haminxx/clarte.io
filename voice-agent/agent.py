@@ -34,7 +34,7 @@ When you receive "[Screen context from Secretary: ...]" in the conversation, use
 ## 3-STEP STRUCTURE (strict order)
 **Step 1 – Inquiry:** Don't answer; ask back. Uncover Why → How → What. No tools.
 **Step 2 – Debate:** Give feedback, blind spots, counter-perspective. User defends. No search_web.
-**Step 3 – Reality Check:** Only then use search_web for industrial answer. Say "Let me look that up" briefly; summarize in 1–2 sentences.
+**Step 3 – Reality Check:** Only then use search_web for industrial answer. Say "Let me look that up" briefly; summarize in 1–2 sentences. When citing a source from search_web, format as [the cited sentence or phrase](url). Example: [According to recent research](https://example.com/article), X is true. The link will appear in the live transcript.
 
 ## EMOTIONAL TAGS (prefix responses)
 [Curious] Step 1 – calm, inquisitive. [Challenging] Step 2 – analytical, respectful. [Inspiring] When user hesitates despite clear plan – warm, fatherly, quote wisdom, trust your gut. [Objective] Step 3 – professional.
@@ -73,11 +73,18 @@ VALID_VOICES = {"female", "male"}
 # Emotional tags from Alfred persona: [Curious], [Challenging], [Inspiring], [Objective]
 # Stripped before TTS so the user does not hear them spoken aloud.
 _EMOTIONAL_TAG_RE = re.compile(r"^\[[^\]]+\]\s*")
+# Markdown links [text](url) – strip for TTS so user hears only the text, not the URL.
+_MARKDOWN_LINK_RE = re.compile(r"\[([^\]]+)\]\([^)]+\)")
 
 
 def _strip_emotional_tags(text: str) -> str:
     """Remove leading [Tag] prefix from agent responses before TTS synthesis."""
     return _EMOTIONAL_TAG_RE.sub("", text, count=1)
+
+
+def _strip_markdown_links_for_tts(text: str) -> str:
+    """Replace [text](url) with just text so TTS does not speak URLs."""
+    return _MARKDOWN_LINK_RE.sub(r"\1", text)
 
 
 VALID_LANGUAGES = {"en", "ko", "es", "zh", "ja", "hi"}
@@ -274,6 +281,8 @@ class ExecutiveAssistantAgent(Agent):
         async def stripped_text() -> AsyncIterable[str]:
             nonlocal buffer, tag_stripped, t_first_llm, sent_thinking
             collected: list[str] = []
+            last_partial_time: float = 0
+            last_partial_len: int = 0
             try:
                 async for chunk in text:
                     if t_first_llm is None:
@@ -292,7 +301,20 @@ class ExecutiveAssistantAgent(Agent):
                                 logger.debug("agent_thinking publish failed: %s", e)
                     if tag_stripped:
                         collected.append(chunk)
-                        yield chunk
+                        tts_chunk = _strip_markdown_links_for_tts(chunk)
+                        yield tts_chunk
+                        now = time.perf_counter()
+                        full_so_far = "".join(collected)
+                        if (now - last_partial_time >= 0.08) or (len(full_so_far) - last_partial_len >= 15):
+                            last_partial_time = now
+                            last_partial_len = len(full_so_far)
+                            try:
+                                await self._room.local_participant.publish_data(
+                                    json.dumps({"type": "transcript_partial", "role": "assistant", "content": full_so_far}),
+                                    reliable=True,
+                                )
+                            except Exception as e:
+                                logger.debug("transcript_partial assistant publish failed: %s", e)
                         continue
                     buffer += chunk
                     if "]" in buffer:
@@ -300,17 +322,41 @@ class ExecutiveAssistantAgent(Agent):
                         tag_stripped = True
                         if stripped:
                             collected.append(stripped)
-                            yield stripped
+                            yield _strip_markdown_links_for_tts(stripped)
+                            now = time.perf_counter()
+                            full_so_far = "".join(collected)
+                            if (now - last_partial_time >= 0.08) or (len(full_so_far) - last_partial_len >= 15):
+                                last_partial_time = now
+                                last_partial_len = len(full_so_far)
+                                try:
+                                    await self._room.local_participant.publish_data(
+                                        json.dumps({"type": "transcript_partial", "role": "assistant", "content": full_so_far}),
+                                        reliable=True,
+                                    )
+                                except Exception as e:
+                                    logger.debug("transcript_partial assistant publish failed: %s", e)
                         buffer = ""
                     elif not buffer.startswith("["):
                         tag_stripped = True
                         if buffer:
                             collected.append(buffer)
-                            yield buffer
+                            yield _strip_markdown_links_for_tts(buffer)
+                            now = time.perf_counter()
+                            full_so_far = "".join(collected)
+                            if (now - last_partial_time >= 0.08) or (len(full_so_far) - last_partial_len >= 15):
+                                last_partial_time = now
+                                last_partial_len = len(full_so_far)
+                                try:
+                                    await self._room.local_participant.publish_data(
+                                        json.dumps({"type": "transcript_partial", "role": "assistant", "content": full_so_far}),
+                                        reliable=True,
+                                    )
+                                except Exception as e:
+                                    logger.debug("transcript_partial assistant publish failed: %s", e)
                         buffer = ""
                 if buffer:
                     collected.append(buffer)
-                    yield buffer
+                    yield _strip_markdown_links_for_tts(buffer)
             finally:
                 full_text = "".join(collected).strip()
                 if full_text:
