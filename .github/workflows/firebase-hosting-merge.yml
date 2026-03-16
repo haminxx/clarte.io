@@ -29,6 +29,8 @@ jobs:
         env:
           NEXT_PUBLIC_LIVEKIT_URL: ${{ secrets.NEXT_PUBLIC_LIVEKIT_URL || 'https://placeholder.livekit.cloud' }}
           NEXT_PUBLIC_VOICE_AGENT_URL: ${{ secrets.NEXT_PUBLIC_VOICE_AGENT_URL || 'https://placeholder.render.com' }}
+          NEXT_PUBLIC_VAPI_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_VAPI_PUBLIC_KEY }}
+          NEXT_PUBLIC_VAPI_ASSISTANT_ID_Demo_EN: ${{ secrets.NEXT_PUBLIC_VAPI_ASSISTANT_ID_Demo_EN }}
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY || 'AIzaSyAElfJYllj4ZTl1n08Imz5f7DLakygKhVg' }}
           NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || 'clarte-8aece.firebaseapp.com' }}
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'clarte-8aece' }}
