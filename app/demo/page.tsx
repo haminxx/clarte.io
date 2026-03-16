@@ -7,6 +7,9 @@ import { VoiceCard } from "@/components/voice-card"
 import type { CallMode } from "@/components/voice/Room"
 import type { SwitchMode } from "@/components/voice/VapiRoom"
 
+const DEMO_ASSISTANT_ID =
+  process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID_Demo_EN ?? process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID ?? ""
+
 const LIVEKIT_URL_RAW = process.env.NEXT_PUBLIC_LIVEKIT_URL ?? ""
 const isPlaceholderUrl = (url: string) => !url || url.includes("placeholder")
 const LIVEKIT_URL = isPlaceholderUrl(LIVEKIT_URL_RAW) ? "" : LIVEKIT_URL_RAW
@@ -56,15 +59,13 @@ export default function DemoPage() {
   const transcriptContainerRef = useRef<HTMLDivElement>(null)
   const transcriptEndRef = useRef<HTMLDivElement>(null)
 
-  // Prefill from URL (e.g. from Chrome extension popup)
+  // Prefill from URL (e.g. from Chrome extension popup). Language restricted to en for now.
   useEffect(() => {
     if (typeof window === "undefined") return
     const params = new URLSearchParams(window.location.search)
     const lang = params.get("language")
     const voice = params.get("voice")
-    if (lang && ["en", "ko", "es", "zh", "ja", "hi"].includes(lang)) {
-      setSelectedLanguage(lang as "en" | "ko" | "es" | "zh" | "ja" | "hi")
-    }
+    if (lang === "en") setSelectedLanguage("en")
     if (voice) setSelectedVoice(voice)
   }, [])
 
@@ -165,6 +166,7 @@ export default function DemoPage() {
                       onDisconnect={handleDisconnect}
                       autoStart
                       cardLayout
+                      assistantId={DEMO_ASSISTANT_ID}
                       onTranscriptAdd={handleTranscriptAdd}
                       onTranscriptPartial={handleTranscriptPartial}
                       onRequestScreenContext={handleRequestScreenContext}

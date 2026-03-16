@@ -38,6 +38,8 @@ interface VoiceCardProps {
   onVoiceChange?: (voiceId: string) => void
   selectedLanguage?: SupportedLanguage
   onLanguageChange?: (lang: SupportedLanguage) => void
+  /** Languages to show in the selector. Defaults to English only for demo. */
+  languagesEnabled?: SupportedLanguage[]
 }
 
 export function VoiceCard({
@@ -47,7 +49,9 @@ export function VoiceCard({
   onVoiceChange,
   selectedLanguage = "en",
   onLanguageChange,
+  languagesEnabled = ["en"],
 }: VoiceCardProps) {
+  const languageOptions = LANGUAGE_OPTIONS.filter((opt) => languagesEnabled.includes(opt.langId))
   const { theme } = useClarteTheme()
   const isBright = theme === "bright"
 
@@ -86,7 +90,7 @@ export function VoiceCard({
                 <SelectValue placeholder="Language" />
               </SelectTrigger>
               <SelectContent>
-                {LANGUAGE_OPTIONS.map((opt) => (
+                {languageOptions.map((opt) => (
                   <SelectItem key={opt.langId} value={opt.langId}>
                     {opt.name}
                   </SelectItem>

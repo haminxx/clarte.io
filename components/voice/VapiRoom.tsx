@@ -10,7 +10,8 @@ import { PhoneOff, Loader2, Phone } from "lucide-react"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 
 const VAPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY ?? ""
-const VAPI_ASSISTANT_ID = process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID ?? ""
+const VAPI_ASSISTANT_ID_DEMO = process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID_Demo_EN ?? ""
+const VAPI_ASSISTANT_ID_LEGACY = process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID ?? ""
 
 const SCREEN_KEYWORDS = /\b(screen|read my screen|see my screen|look at my screen|share my screen)\b/i
 const CAMERA_KEYWORDS = /\b(see me|look at me|camera|face|see my face|look at my face)\b/i
@@ -42,6 +43,8 @@ interface VapiRoomProps {
   sendContextRef?: React.MutableRefObject<((content: string) => void) | null>
   /** When true, screen/camera context is requested (SecretaryRoom visible). Shows contextual message. */
   screenContextRequested?: boolean
+  /** Vapi assistant ID. If not provided, uses Demo tier or legacy NEXT_PUBLIC_VAPI_ASSISTANT_ID. */
+  assistantId?: string
 }
 
 export function VapiRoom({
@@ -55,7 +58,12 @@ export function VapiRoom({
   onVapiReady,
   sendContextRef,
   screenContextRequested = false,
+  assistantId: assistantIdProp,
 }: VapiRoomProps) {
+  const resolvedAssistantId =
+    assistantIdProp?.trim() ||
+    VAPI_ASSISTANT_ID_DEMO ||
+    VAPI_ASSISTANT_ID_LEGACY
   const [status, setStatus] = useState<"idle" | "connecting" | "active" | "error">("idle")
   const [error, setError] = useState<string | null>(null)
   const vapiRef = useRef<InstanceType<typeof import("@vapi-ai/web").default> | null>(null)
@@ -79,8 +87,8 @@ export function VapiRoom({
   }, [onDisconnect])
 
   const startCall = useCallback(async () => {
-    if (!VAPI_PUBLIC_KEY || !VAPI_ASSISTANT_ID) {
-      setError("Set NEXT_PUBLIC_VAPI_PUBLIC_KEY and NEXT_PUBLIC_VAPI_ASSISTANT_ID in .env.local")
+    if (!VAPI_PUBLIC_KEY || !resolvedAssistantId) {
+      setError("Vapi keys not configured. Add NEXT_PUBLIC_VAPI_PUBLIC_KEY and a tier assistant ID (e.g. NEXT_PUBLIC_VAPI_ASSISTANT_ID_Demo_EN) to your environment (Render dashboard or .env.local).")
       setStatus("error")
       return
     }
@@ -145,18 +153,18 @@ export function VapiRoom({
         setStatus("error")
       })
 
-      vapi.start(VAPI_ASSISTANT_ID)
+      vapi.start(resolvedAssistantId)
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to start Vapi call")
       setStatus("error")
     }
-  }, [onTranscriptAdd, onTranscriptPartial, onRequestScreenContext, onSwitchToScreenMode, onVapiReady, sendContextRef, onDisconnect])
+  }, [resolvedAssistantId, onTranscriptAdd, onTranscriptPartial, onRequestScreenContext, onSwitchToScreenMode, onVapiReady, sendContextRef, onDisconnect])
 
   useEffect(() => {
-    if (autoStart && status === "idle" && VAPI_PUBLIC_KEY && VAPI_ASSISTANT_ID) {
+    if (autoStart && status === "idle" && VAPI_PUBLIC_KEY && resolvedAssistantId) {
       startCall()
     }
-  }, [autoStart, status, startCall])
+  }, [autoStart, status, startCall, resolvedAssistantId])
 
   useEffect(() => {
     return () => {
@@ -171,7 +179,7 @@ export function VapiRoom({
     }
   }, [])
 
-  const configured = Boolean(VAPI_PUBLIC_KEY && VAPI_ASSISTANT_ID)
+  const configured = Boolean(VAPI_PUBLIC_KEY && resolvedAssistantId)
 
   const cardHeader = (
     <div className="mb-6 flex items-center justify-between">
@@ -252,7 +260,7 @@ export function VapiRoom({
           </div>
           {!configured && (
             <p className="text-xs text-muted-foreground text-center max-w-xs mt-2">
-              Set NEXT_PUBLIC_VAPI_PUBLIC_KEY and NEXT_PUBLIC_VAPI_ASSISTANT_ID in .env.local
+              Vapi keys not configured. Add NEXT_PUBLIC_VAPI_PUBLIC_KEY and a tier assistant ID (e.g. NEXT_PUBLIC_VAPI_ASSISTANT_ID_Demo_EN) to your environment (Render dashboard or .env.local).
             </p>
           )}
         </div>
@@ -296,7 +304,7 @@ export function VapiRoom({
         </div>
         {!configured && (
           <p className="text-xs text-muted-foreground text-center max-w-xs">
-            Set NEXT_PUBLIC_VAPI_PUBLIC_KEY and NEXT_PUBLIC_VAPI_ASSISTANT_ID in .env.local
+            Vapi keys not configured. Add NEXT_PUBLIC_VAPI_PUBLIC_KEY and a tier assistant ID (e.g. NEXT_PUBLIC_VAPI_ASSISTANT_ID_Demo_EN) to your environment (Render dashboard or .env.local).
           </p>
         )}
       </div>
