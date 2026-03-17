@@ -21,6 +21,7 @@ import { useClientSpeechRecognition, isClientSpeechRecognitionSupported } from "
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 import { cn } from "@/lib/utils"
 import { SDHTranscript } from "@/components/voice/SDHTranscript"
+import { useASLPipeline } from "@/hooks/use-asl-pipeline"
 
 function switchModeToCallMode(mode: SwitchMode): CallMode {
   if (mode === "screen") return "voice-with-screen"
@@ -43,6 +44,7 @@ export default function DemoPage() {
   const [SecretaryRoomComponent, setSecretaryRoomComponent] = useState<ComponentType<any> | null>(null)
   const sendContextRef = useRef<((content: string) => void) | null>(null)
   const sendASLRef = useRef<((content: string) => void) | null>(null)
+  const aslPipelineRef = useRef<{ sendTest: () => void } | null>(null)
   const [aslEnabled, setAslEnabled] = useState(false)
   const [aslStatus, setAslStatus] = useState<"disconnected" | "connecting" | "ready">("disconnected")
 
@@ -184,32 +186,18 @@ export default function DemoPage() {
     }
   }, [])
 
-  // ASL WebSocket: connect when aslEnabled && inCall (Vapi path)
-  useEffect(() => {
-    if (!aslEnabled || !inCall || (callMode !== "vapi" && callMode !== "parallel")) {
-      setAslStatus("disconnected")
-      return
-    }
-    setAslStatus("connecting")
-    const ws = new WebSocket(ASL_WS_URL)
-    ws.onopen = () => setAslStatus("ready")
-    ws.onclose = () => setAslStatus("disconnected")
-    ws.onerror = () => setAslStatus("disconnected")
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data) as { type?: string; content?: string }
-        if (data?.type === "asl_text" && typeof data.content === "string") {
-          sendASLRef.current?.(data.content)
-          handleTranscriptAdd("user", data.content)
-        }
-      } catch {
-        /* ignore */
-      }
-    }
-    return () => {
-      ws.close()
-    }
-  }, [aslEnabled, inCall, callMode, handleTranscriptAdd])
+  // ASL pipeline: browser camera + WebSocket to Python inference server
+  // Run `npm run asl:server` or `python src/inference.py --browser` to start the server
+  useASLPipeline({
+    enabled: aslEnabled && inCall && (callMode === "vapi" || callMode === "parallel"),
+    wsUrl: ASL_WS_URL,
+    onStatusChange: setAslStatus,
+    onASLText: (text) => {
+      sendASLRef.current?.(text)
+      handleTranscriptAdd("user", text)
+    },
+    pipelineRef: aslPipelineRef,
+  })
 
   return (
     <div className="min-h-screen bg-transparent">
@@ -247,10 +235,20 @@ export default function DemoPage() {
                       sendContextRef={sendContextRef}
                       sendASLRef={sendASLRef}
                       screenContextRequested={showSecretaryRoom}
-                      aslEnabled={aslEnabled}
-                      onAslChange={setAslEnabled}
-                      aslStatus={aslStatus}
                     />
+                    {aslEnabled && aslStatus === "ready" && (
+                      <p className="text-xs text-muted-foreground text-center">
+                        ASL camera active.{" "}
+                        <button
+                          type="button"
+                          onClick={() => aslPipelineRef.current?.sendTest()}
+                          className="underline hover:text-foreground"
+                        >
+                          Test ASL
+                        </button>{" "}
+                        (sends &quot;test&quot; to verify pipeline)
+                      </p>
+                    )}
                     {callMode === "parallel" && showSecretaryRoom && SecretaryRoomComponent && (
                       <SecretaryRoomComponent
                         voice={selectedVoice}
@@ -307,17 +305,7 @@ export default function DemoPage() {
                 >
                   <SDHTranscript
                     entries={transcriptEntries}
-                    partial={
-                      transcriptPartial
-                        ? { role: "user", content: transcriptPartial }
-                        : assistantPartial
-                          ? {
-                              role: "assistant",
-                              content: assistantPartial,
-                              emotion: assistantPartialEmotion,
-                            }
-                          : null
-                    }
+                    partial={null}
                     emptyMessage="Your speech and Clarte's replies will appear here..."
                     className="min-h-[2rem]"
                   />

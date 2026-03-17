@@ -104,13 +104,13 @@ export function VoiceCard({
       <div className="space-y-3">
         <div className={cn("flex flex-wrap items-center gap-3 pt-2", hideAgentOptions && !showLanguage ? "justify-center" : "justify-between")}>
           {(showLanguage || showVoice) && (
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
               {showLanguage && (
                 <Select
                   value={selectedLanguage}
                   onValueChange={(value) => onLanguageChange?.(value as SupportedLanguage)}
                 >
-                  <SelectTrigger className="w-fit min-w-[5rem] max-w-[9rem] rounded-full justify-between px-3 py-1.5 text-sm" aria-label="Language">
+                  <SelectTrigger className="w-fit min-w-[5rem] max-w-[9rem] rounded-full justify-between px-3 py-1.5 text-sm shrink-0" aria-label="Language">
                     <SelectValue placeholder="Language" />
                   </SelectTrigger>
                   <SelectContent>
@@ -126,6 +126,19 @@ export function VoiceCard({
                     ))}
                   </SelectContent>
                 </Select>
+              )}
+              {onAslChange !== undefined && (
+                <div className="flex items-center gap-2 shrink-0" title={aslStatus === "ready" ? "ASL ready – camera active" : aslStatus === "connecting" ? "Connecting to ASL server..." : "Run: python src/inference.py --browser (from project root)"}>
+                  <Switch
+                    id="asl-toggle"
+                    checked={aslEnabled}
+                    onCheckedChange={onAslChange}
+                    aria-label="Enable ASL sign language input"
+                  />
+                  <Label htmlFor="asl-toggle" className="text-sm font-medium cursor-pointer whitespace-nowrap">
+                    ASL
+                  </Label>
+                </div>
               )}
               {showVoice && (
                 <Select
@@ -156,19 +169,6 @@ export function VoiceCard({
               <Play className="h-4 w-4" />
               Call Clarte
             </Button>
-            {onAslChange !== undefined && (
-              <div className="flex items-center gap-2" title={aslStatus === "ready" ? "ASL ready" : aslStatus === "connecting" ? "Connecting..." : "Start ASL server"}>
-                <Switch
-                  id="asl-toggle"
-                  checked={aslEnabled}
-                  onCheckedChange={onAslChange}
-                  aria-label="Enable ASL sign language input"
-                />
-                <Label htmlFor="asl-toggle" className="text-sm font-medium cursor-pointer">
-                  ASL
-                </Label>
-              </div>
-            )}
           </div>
         </div>
       </div>

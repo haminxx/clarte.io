@@ -1,7 +1,25 @@
 {
   "hosting": {
     "public": "out",
+    "cleanUrls": true,
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      { "source": "/demo", "destination": "/demo.html" },
+      { "source": "/about", "destination": "/about.html" },
+      { "source": "/contact", "destination": "/contact.html" },
+      { "source": "/docs", "destination": "/docs.html" },
+      { "source": "/download", "destination": "/download.html" },
+      { "source": "/privacy", "destination": "/privacy.html" },
+      { "source": "/profile", "destination": "/profile.html" },
+      { "source": "/settings", "destination": "/settings.html" },
+      { "source": "/terms", "destination": "/terms.html" },
+      { "source": "/voice", "destination": "/voice.html" },
+      { "source": "/api-reference", "destination": "/api-reference.html" },
+      { "source": "/auth/callback", "destination": "/auth/callback.html" },
+      { "source": "/auth/error", "destination": "/auth/error.html" },
+      { "source": "/auth/sign-up", "destination": "/auth/sign-up.html" },
+      { "source": "/auth/sign-up-success", "destination": "/auth/sign-up-success.html" }
+    ],
     "headers": [{
       "source": "**",
       "headers": [{
@@ -9,7 +27,7 @@
         "value": "frame-ancestors 'self' https://clarte.io https://*.clarte.io chrome-extension:;"
       }, {
         "key": "Permissions-Policy",
-        "value": "microphone=(self)"
+        "value": "microphone=(self), camera=(self)"
       }]
     }]
   }
