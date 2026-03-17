@@ -88,8 +88,8 @@ function RoomInnerKrispProvider({
   withScreen: boolean
   withCamera: boolean
   compact?: boolean
-  onTranscriptAdd?: (role: string, content: string) => void
-  onTranscriptPartial?: (role: string, content: string) => void
+  onTranscriptAdd?: (role: string, content: string, meta?: { emotion?: string }) => void
+  onTranscriptPartial?: (role: string, content: string, meta?: { emotion?: string }) => void
 }) {
   const krisp = useKrispNoiseFilter()
   return (
@@ -123,8 +123,8 @@ function RoomInnerWithKrisp(props: {
   withCamera: boolean
   useKrisp: boolean
   compact?: boolean
-  onTranscriptAdd?: (role: string, content: string) => void
-  onTranscriptPartial?: (role: string, content: string) => void
+  onTranscriptAdd?: (role: string, content: string, meta?: { emotion?: string }) => void
+  onTranscriptPartial?: (role: string, content: string, meta?: { emotion?: string }) => void
 }) {
   const { useKrisp, compact, ...innerProps } = props
   if (!useKrisp) {
@@ -152,8 +152,8 @@ function RoomInner({
   withCamera: boolean
   krisp: { setNoiseFilterEnabled: (v: boolean) => Promise<void> } | null
   compact?: boolean
-  onTranscriptAdd?: (role: string, content: string) => void
-  onTranscriptPartial?: (role: string, content: string) => void
+  onTranscriptAdd?: (role: string, content: string, meta?: { emotion?: string }) => void
+  onTranscriptPartial?: (role: string, content: string, meta?: { emotion?: string }) => void
 }) {
   const { localParticipant, isMicrophoneEnabled, microphoneTrack, isScreenShareEnabled, isCameraEnabled } =
     useLocalParticipant()
@@ -171,15 +171,22 @@ function RoomInner({
   useDataChannel((msg) => {
     try {
       const text = new TextDecoder().decode(msg.payload)
-      const data = JSON.parse(text) as { type?: string; role?: string; content?: string }
+      const data = JSON.parse(text) as {
+        type?: string
+        role?: string
+        content?: string
+        emotion?: string
+      }
       if (data?.type === "request_screen_share") setShowScreenShareRequest(true)
       if (data?.type === "request_camera") setShowCameraRequest(true)
       if (data?.type === "agent_thinking") setIsAgentThinking(true)
       if (data?.type === "transcript_add" && data.role && data.content && onTranscriptAdd) {
-        onTranscriptAdd(data.role, data.content)
+        const meta = data.emotion ? { emotion: data.emotion } : undefined
+        onTranscriptAdd(data.role, data.content, meta)
       }
       if (data?.type === "transcript_partial" && data.role && data.content !== undefined && onTranscriptPartial) {
-        onTranscriptPartial(data.role, data.content)
+        const meta = data.emotion ? { emotion: data.emotion } : undefined
+        onTranscriptPartial(data.role, data.content, meta)
       }
     } catch {
       /* ignore */
@@ -533,9 +540,9 @@ interface RoomProps {
   /** Called after conversation is saved (e.g. to refetch list). */
   onConversationSaved?: () => void
   /** Called when transcript is added (for live display, e.g. hero transcript box). */
-  onTranscriptAdd?: (role: string, content: string) => void
+  onTranscriptAdd?: (role: string, content: string, meta?: { emotion?: string }) => void
   /** Called when partial transcript is received (real-time word-by-word). */
-  onTranscriptPartial?: (role: string, content: string) => void
+  onTranscriptPartial?: (role: string, content: string, meta?: { emotion?: string }) => void
   /** Optional: Deepgram VoiceProfile ID for cloned/custom voices (dashboard/desktop/iOS, not demo). */
   voiceProfileId?: string | null
   /** Optional: agent mode for token request (silent_secretary, both_agents). */
@@ -580,16 +587,16 @@ export function Room({
   const isBright = theme === "bright"
 
   const addTranscript = useCallback(
-    (role: string, content: string) => {
+    (role: string, content: string, meta?: { emotion?: string }) => {
       transcriptRef.current.push({ role, content })
-      onTranscriptAdd?.(role, content)
+      onTranscriptAdd?.(role, content, meta)
     },
     [onTranscriptAdd]
   )
 
   const addTranscriptPartial = useCallback(
-    (role: string, content: string) => {
-      onTranscriptPartial?.(role, content)
+    (role: string, content: string, meta?: { emotion?: string }) => {
+      onTranscriptPartial?.(role, content, meta)
     },
     [onTranscriptPartial]
   )

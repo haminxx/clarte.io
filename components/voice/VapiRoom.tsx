@@ -41,6 +41,8 @@ interface VapiRoomProps {
   onVapiReady?: (vapi: InstanceType<typeof import("@vapi-ai/web").default>) => void
   /** Optional ref: VapiRoom assigns a function that injects context via vapi.send(add-message). */
   sendContextRef?: React.MutableRefObject<((content: string) => void) | null>
+  /** Optional ref: VapiRoom assigns a function that injects ASL text as user message. */
+  sendASLRef?: React.MutableRefObject<((content: string) => void) | null>
   /** When true, screen/camera context is requested (SecretaryRoom visible). Shows contextual message. */
   screenContextRequested?: boolean
   /** Vapi assistant ID. If not provided, uses Demo tier or legacy NEXT_PUBLIC_VAPI_ASSISTANT_ID. */
@@ -57,6 +59,7 @@ export function VapiRoom({
   onSwitchToScreenMode,
   onVapiReady,
   sendContextRef,
+  sendASLRef,
   screenContextRequested = false,
   assistantId: assistantIdProp,
 }: VapiRoomProps) {
@@ -116,10 +119,23 @@ export function VapiRoom({
             }
           }
         }
+        if (sendASLRef) {
+          sendASLRef.current = (content: string) => {
+            try {
+              vapi.send?.({
+                type: "add-message",
+                message: { role: "user", content },
+              })
+            } catch (e) {
+              console.warn("[VapiRoom] sendASL failed:", e)
+            }
+          }
+        }
       })
 
       vapi.on("call-end", () => {
         if (sendContextRef) sendContextRef.current = null
+        if (sendASLRef) sendASLRef.current = null
         if (!switchRequestedRef.current) {
           setStatus("idle")
           vapiRef.current = null
@@ -158,7 +174,7 @@ export function VapiRoom({
       setError(e instanceof Error ? e.message : "Failed to start Vapi call")
       setStatus("error")
     }
-  }, [resolvedAssistantId, onTranscriptAdd, onTranscriptPartial, onRequestScreenContext, onSwitchToScreenMode, onVapiReady, sendContextRef, onDisconnect])
+  }, [resolvedAssistantId, onTranscriptAdd, onTranscriptPartial, onRequestScreenContext, onSwitchToScreenMode, onVapiReady, sendContextRef, sendASLRef, onDisconnect])
 
   useEffect(() => {
     if (autoStart && status === "idle" && VAPI_PUBLIC_KEY && resolvedAssistantId) {

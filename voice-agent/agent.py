@@ -82,6 +82,17 @@ def _strip_emotional_tags(text: str) -> str:
     return _EMOTIONAL_TAG_RE.sub("", text, count=1)
 
 
+def _extract_emotional_tag(text: str) -> tuple[str | None, str]:
+    """Extract [Tag] for SDH; return (lowercase tag, stripped text)."""
+    m = _EMOTIONAL_TAG_RE.match(text)
+    if m:
+        raw = m.group(0).strip()
+        tag = raw[1:-1].strip().lower() if len(raw) >= 2 else None
+        stripped = _strip_emotional_tags(text)
+        return (tag, stripped)
+    return (None, text)
+
+
 def _strip_markdown_links_for_tts(text: str) -> str:
     """Replace [text](url) with just text so TTS does not speak URLs."""
     return _MARKDOWN_LINK_RE.sub(r"\1", text)
@@ -275,11 +286,18 @@ class ExecutiveAssistantAgent(Agent):
         buffer = ""
         tag_stripped = False
         t_first_llm: Optional[float] = None
+        current_emotion: Optional[str] = None
 
         sent_thinking = False
 
+        def _make_payload(msg_type: str, content: str) -> str:
+            payload = {"type": msg_type, "role": "assistant", "content": content}
+            if current_emotion:
+                payload["emotion"] = current_emotion
+            return json.dumps(payload)
+
         async def stripped_text() -> AsyncIterable[str]:
-            nonlocal buffer, tag_stripped, t_first_llm, sent_thinking
+            nonlocal buffer, tag_stripped, t_first_llm, sent_thinking, current_emotion
             collected: list[str] = []
             last_partial_time: float = 0
             last_partial_len: int = 0
@@ -310,7 +328,7 @@ class ExecutiveAssistantAgent(Agent):
                             last_partial_len = len(full_so_far)
                             try:
                                 await self._room.local_participant.publish_data(
-                                    json.dumps({"type": "transcript_partial", "role": "assistant", "content": full_so_far}),
+                                    _make_payload("transcript_partial", full_so_far),
                                     reliable=True,
                                 )
                             except Exception as e:
@@ -318,7 +336,9 @@ class ExecutiveAssistantAgent(Agent):
                         continue
                     buffer += chunk
                     if "]" in buffer:
-                        stripped = _strip_emotional_tags(buffer)
+                        emotion_tag, stripped = _extract_emotional_tag(buffer)
+                        if emotion_tag:
+                            current_emotion = emotion_tag
                         tag_stripped = True
                         if stripped:
                             collected.append(stripped)
@@ -330,7 +350,7 @@ class ExecutiveAssistantAgent(Agent):
                                 last_partial_len = len(full_so_far)
                                 try:
                                     await self._room.local_participant.publish_data(
-                                        json.dumps({"type": "transcript_partial", "role": "assistant", "content": full_so_far}),
+                                        _make_payload("transcript_partial", full_so_far),
                                         reliable=True,
                                     )
                                 except Exception as e:
@@ -348,7 +368,7 @@ class ExecutiveAssistantAgent(Agent):
                                 last_partial_len = len(full_so_far)
                                 try:
                                     await self._room.local_participant.publish_data(
-                                        json.dumps({"type": "transcript_partial", "role": "assistant", "content": full_so_far}),
+                                        _make_payload("transcript_partial", full_so_far),
                                         reliable=True,
                                     )
                                 except Exception as e:
@@ -362,7 +382,7 @@ class ExecutiveAssistantAgent(Agent):
                 if full_text:
                     try:
                         await self._room.local_participant.publish_data(
-                            json.dumps({"type": "transcript_add", "role": "assistant", "content": full_text}),
+                            _make_payload("transcript_add", full_text),
                             reliable=True,
                         )
                     except Exception as e:

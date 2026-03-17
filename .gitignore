@@ -49,5 +49,8 @@ DerivedData/
 __pycache__/
 *.pyc
 
+# ASL pipeline collected data
+src/data/
+
 # Cursor
 .cursor/

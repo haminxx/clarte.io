@@ -13,11 +13,16 @@ const DEMO_ASSISTANT_ID =
 const LIVEKIT_URL_RAW = process.env.NEXT_PUBLIC_LIVEKIT_URL ?? ""
 const isPlaceholderUrl = (url: string) => !url || url.includes("placeholder")
 const LIVEKIT_URL = isPlaceholderUrl(LIVEKIT_URL_RAW) ? "" : LIVEKIT_URL_RAW
+
+const ASL_WS_URL = process.env.NEXT_PUBLIC_ASL_WS_URL ?? "ws://localhost:8765"
 import { ParticleOrb } from "@/components/particle-orb"
 import { AnimateOnScroll } from "@/components/animate-on-scroll"
 import { useClientSpeechRecognition, isClientSpeechRecognitionSupported } from "@/hooks/use-client-speech-recognition"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 import { cn } from "@/lib/utils"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+import { SDHTranscript } from "@/components/voice/SDHTranscript"
 
 function switchModeToCallMode(mode: SwitchMode): CallMode {
   if (mode === "screen") return "voice-with-screen"
@@ -25,34 +30,7 @@ function switchModeToCallMode(mode: SwitchMode): CallMode {
   return "voice-with-screen-camera"
 }
 
-/** Parse markdown links [text](url) and return React nodes (text + anchor tags). */
-function parseTranscriptContent(content: string): React.ReactNode {
-  const linkRe = /\[([^\]]+)\]\(([^)]+)\)/g
-  const parts: React.ReactNode[] = []
-  let lastIndex = 0
-  let match: RegExpExecArray | null
-  while ((match = linkRe.exec(content)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(content.slice(lastIndex, match.index))
-    }
-    parts.push(
-      <a
-        key={match.index}
-        href={match[2]}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-blue-600 dark:text-blue-400 underline hover:underline"
-      >
-        {match[1]}
-      </a>
-    )
-    lastIndex = linkRe.lastIndex
-  }
-  if (lastIndex < content.length) {
-    parts.push(content.slice(lastIndex))
-  }
-  return parts.length > 0 ? parts : content
-}
+export type TranscriptEntry = { role: string; content: string; emotion?: string }
 
 export default function DemoPage() {
   const { theme } = useClarteTheme()
@@ -66,6 +44,9 @@ export default function DemoPage() {
   const [VapiRoomComponent, setVapiRoomComponent] = useState<ComponentType<any> | null>(null)
   const [SecretaryRoomComponent, setSecretaryRoomComponent] = useState<ComponentType<any> | null>(null)
   const sendContextRef = useRef<((content: string) => void) | null>(null)
+  const sendASLRef = useRef<((content: string) => void) | null>(null)
+  const [aslEnabled, setAslEnabled] = useState(false)
+  const [aslStatus, setAslStatus] = useState<"disconnected" | "connecting" | "ready">("disconnected")
 
   useEffect(() => {
     if (!inCall) {
@@ -83,9 +64,10 @@ export default function DemoPage() {
   }, [inCall, callMode, showSecretaryRoom])
   const [selectedVoice, setSelectedVoice] = useState("aura-2-thalia-en")
   const [selectedLanguage, setSelectedLanguage] = useState<"en" | "ko" | "es" | "zh" | "ja" | "hi">("en")
-  const [transcriptEntries, setTranscriptEntries] = useState<{ role: string; content: string }[]>([])
+  const [transcriptEntries, setTranscriptEntries] = useState<TranscriptEntry[]>([])
   const [transcriptPartial, setTranscriptPartial] = useState<string>("")
   const [assistantPartial, setAssistantPartial] = useState<string>("")
+  const [assistantPartialEmotion, setAssistantPartialEmotion] = useState<string | undefined>()
   const transcriptContainerRef = useRef<HTMLDivElement>(null)
   const transcriptEndRef = useRef<HTMLDivElement>(null)
   const partialDebounceRef = useRef<ReturnType<typeof setTimeout>>()
@@ -109,10 +91,13 @@ export default function DemoPage() {
     setConnectionActive(false)
     setCallMode("vapi")
     setShowSecretaryRoom(false)
+    setAslEnabled(false)
+    setAslStatus("disconnected")
     setTranscriptEntries([])
     setTranscriptPartial("")
     setAssistantPartial("")
     sendContextRef.current = null
+    sendASLRef.current = null
   }
 
   const handleRequestScreenContext = useCallback((mode: SwitchMode) => {
@@ -133,24 +118,40 @@ export default function DemoPage() {
     setShowSecretaryRoom(false)
   }, [])
 
-  const handleTranscriptAdd = useCallback((role: string, content: string) => {
-    if (partialDebounceRef.current) {
-      clearTimeout(partialDebounceRef.current)
-      partialDebounceRef.current = undefined
-    }
-    setTranscriptEntries((prev) => [...prev, { role, content }])
-    if (role === "user") setTranscriptPartial("")
-    else setAssistantPartial("")
-  }, [])
+  const handleTranscriptAdd = useCallback(
+    (role: string, content: string, meta?: { emotion?: string }) => {
+      if (partialDebounceRef.current) {
+        clearTimeout(partialDebounceRef.current)
+        partialDebounceRef.current = undefined
+      }
+      setTranscriptEntries((prev) => [
+        ...prev,
+        { role, content, emotion: meta?.emotion },
+      ])
+      if (role === "user") setTranscriptPartial("")
+      else setAssistantPartial("")
+    },
+    []
+  )
 
-  const handleTranscriptPartial = useCallback((role: string, content: string) => {
-    if (partialDebounceRef.current) clearTimeout(partialDebounceRef.current)
-    partialDebounceRef.current = setTimeout(() => {
-      if (role === "user") setTranscriptPartial(content)
-      else setAssistantPartial(content)
-      partialDebounceRef.current = undefined
-    }, 60)
-  }, [])
+  const handleTranscriptPartial = useCallback(
+    (role: string, content: string, meta?: { emotion?: string }) => {
+      if (partialDebounceRef.current) clearTimeout(partialDebounceRef.current)
+      partialDebounceRef.current = setTimeout(() => {
+        if (role === "user") {
+          setTranscriptPartial(content)
+          setAssistantPartial("")
+          setAssistantPartialEmotion(undefined)
+        } else {
+          setAssistantPartial(content)
+          setTranscriptPartial("")
+          setAssistantPartialEmotion(meta?.emotion)
+        }
+        partialDebounceRef.current = undefined
+      }, 60)
+    },
+    []
+  )
 
   const useClientSTT = isClientSpeechRecognitionSupported()
   useClientSpeechRecognition({
@@ -184,6 +185,33 @@ export default function DemoPage() {
       if (partialDebounceRef.current) clearTimeout(partialDebounceRef.current)
     }
   }, [])
+
+  // ASL WebSocket: connect when aslEnabled && inCall (Vapi path)
+  useEffect(() => {
+    if (!aslEnabled || !inCall || (callMode !== "vapi" && callMode !== "parallel")) {
+      setAslStatus("disconnected")
+      return
+    }
+    setAslStatus("connecting")
+    const ws = new WebSocket(ASL_WS_URL)
+    ws.onopen = () => setAslStatus("ready")
+    ws.onclose = () => setAslStatus("disconnected")
+    ws.onerror = () => setAslStatus("disconnected")
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data) as { type?: string; content?: string }
+        if (data?.type === "asl_text" && typeof data.content === "string") {
+          sendASLRef.current?.(data.content)
+          handleTranscriptAdd("user", data.content)
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    return () => {
+      ws.close()
+    }
+  }, [aslEnabled, inCall, callMode, handleTranscriptAdd])
 
   return (
     <div className="min-h-screen bg-transparent">
@@ -219,8 +247,28 @@ export default function DemoPage() {
                       onTranscriptPartial={handleTranscriptPartial}
                       onRequestScreenContext={handleRequestScreenContext}
                       sendContextRef={sendContextRef}
+                      sendASLRef={sendASLRef}
                       screenContextRequested={showSecretaryRoom}
                     />
+                    <div className="flex items-center justify-between gap-2 rounded-lg border border-border/50 bg-background/50 px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          id="asl-toggle"
+                          checked={aslEnabled}
+                          onCheckedChange={setAslEnabled}
+                        />
+                        <Label htmlFor="asl-toggle" className="text-sm font-medium cursor-pointer">
+                          ASL
+                        </Label>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {aslStatus === "ready"
+                          ? "ASL ready"
+                          : aslStatus === "connecting"
+                            ? "Connecting..."
+                            : "Run ASL server (python src/inference.py)"}
+                      </span>
+                    </div>
                     {callMode === "parallel" && showSecretaryRoom && SecretaryRoomComponent && (
                       <SecretaryRoomComponent
                         voice={selectedVoice}
@@ -255,6 +303,7 @@ export default function DemoPage() {
                   <VoiceCard
                     onStartCall={handleStartCall}
                     isActive={false}
+                    hideAgentOptions
                     selectedVoiceId={selectedVoice}
                     onVoiceChange={setSelectedVoice}
                     selectedLanguage={selectedLanguage}
@@ -264,42 +313,28 @@ export default function DemoPage() {
               </div>
               <div data-clarte-card className="w-full rounded-2xl border border-border bg-card/90 p-4 sm:p-5 md:p-6 shadow-xl backdrop-blur-md mx-auto min-w-0">
                 <p className="mb-2 text-[clamp(0.6875rem,1vw,0.75rem)] font-medium uppercase tracking-wider text-muted-foreground">
-                  Live transcript (Speech to text)
+                  Live transcript (SDH)
                 </p>
                 <div
                   ref={transcriptContainerRef}
-                  className="max-h-[clamp(8rem,20vh,14rem)] overflow-y-auto overflow-x-hidden rounded-lg border border-border/50 bg-background/50 px-3 py-2 text-[clamp(0.8125rem,1.1vw,0.875rem)] text-foreground flex flex-col gap-1.5 justify-end scroll-smooth"
+                  className="max-h-[clamp(8rem,20vh,14rem)] overflow-y-auto overflow-x-hidden rounded-lg border border-border/50 bg-background/50 px-3 py-2 text-[clamp(0.8125rem,1.1vw,0.875rem)] text-foreground"
                 >
-                  {transcriptEntries.length === 0 && !transcriptPartial && !assistantPartial ? (
-                    <span className="text-muted-foreground">Your speech and Clarte&apos;s replies will appear here...</span>
-                  ) : (
-                    <div className="space-y-1.5 scroll-smooth">
-                      {transcriptEntries.map((entry, i) => (
-                        <div key={i} className={cn("leading-tight", entry.role === "user" ? "text-foreground/90" : "text-blue-600 dark:text-blue-400")}>
-                          <span className="font-medium">{entry.role === "user" ? "You: " : "Clarte: "}</span>
-                          {parseTranscriptContent(entry.content)}
-                        </div>
-                      ))}
-                      {transcriptPartial ? (
-                        <div className="leading-tight text-foreground/90">
-                          <span className="font-medium">You: </span>
-                          <span>
-                            {transcriptPartial}
-                            <span className="animate-pulse">|</span>
-                          </span>
-                        </div>
-                      ) : null}
-                      {assistantPartial ? (
-                        <div className="leading-tight text-blue-600 dark:text-blue-400">
-                          <span className="font-medium">Clarte: </span>
-                          <span>
-                            {parseTranscriptContent(assistantPartial)}
-                            <span className="animate-pulse">|</span>
-                          </span>
-                        </div>
-                      ) : null}
-                    </div>
-                  )}
+                  <SDHTranscript
+                    entries={transcriptEntries}
+                    partial={
+                      transcriptPartial
+                        ? { role: "user", content: transcriptPartial }
+                        : assistantPartial
+                          ? {
+                              role: "assistant",
+                              content: assistantPartial,
+                              emotion: assistantPartialEmotion,
+                            }
+                          : null
+                    }
+                    emptyMessage="Your speech and Clarte's replies will appear here..."
+                    className="min-h-[2rem]"
+                  />
                   <div ref={transcriptEndRef} />
                 </div>
               </div>
