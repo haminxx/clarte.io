@@ -9,7 +9,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
+import { cn } from "@/lib/utils"
 
 /** Deepgram Aura-2 voice options exposed on the demo page. */
 export const VOICE_OPTIONS = [
@@ -40,6 +43,16 @@ interface VoiceCardProps {
   onLanguageChange?: (lang: SupportedLanguage) => void
   /** Languages to show in the selector. Defaults to English only for demo. */
   languagesEnabled?: SupportedLanguage[]
+  /** When true, hide voice selector. Demo uses fixed agent config. */
+  hideAgentOptions?: boolean
+  /** When true, show all languages in dropdown but only English is selectable (others greyed). */
+  showAllLanguagesGreyed?: boolean
+  /** ASL toggle: enabled state */
+  aslEnabled?: boolean
+  /** ASL toggle: change handler */
+  onAslChange?: (enabled: boolean) => void
+  /** ASL toggle: status for tooltip (e.g. "ready", "connecting") */
+  aslStatus?: "disconnected" | "connecting" | "ready"
 }
 
 export function VoiceCard({
@@ -50,10 +63,19 @@ export function VoiceCard({
   selectedLanguage = "en",
   onLanguageChange,
   languagesEnabled = ["en"],
+  hideAgentOptions = false,
+  showAllLanguagesGreyed = false,
+  aslEnabled = false,
+  onAslChange,
+  aslStatus,
 }: VoiceCardProps) {
-  const languageOptions = LANGUAGE_OPTIONS.filter((opt) => languagesEnabled.includes(opt.langId))
+  const languageOptions = showAllLanguagesGreyed
+    ? LANGUAGE_OPTIONS
+    : LANGUAGE_OPTIONS.filter((opt) => languagesEnabled.includes(opt.langId))
   const { theme } = useClarteTheme()
   const isBright = theme === "bright"
+  const showLanguage = hideAgentOptions ? showAllLanguagesGreyed : !hideAgentOptions
+  const showVoice = !hideAgentOptions
 
   return (
     <>
@@ -80,48 +102,74 @@ export function VoiceCard({
       </div>
 
       <div className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-          <div className="flex items-center gap-3 flex-wrap">
-            <Select
-              value={selectedLanguage}
-              onValueChange={(value) => onLanguageChange?.(value as SupportedLanguage)}
+        <div className={cn("flex flex-wrap items-center gap-3 pt-2", hideAgentOptions && !showLanguage ? "justify-center" : "justify-between")}>
+          {(showLanguage || showVoice) && (
+            <div className="flex items-center gap-3 flex-wrap">
+              {showLanguage && (
+                <Select
+                  value={selectedLanguage}
+                  onValueChange={(value) => onLanguageChange?.(value as SupportedLanguage)}
+                >
+                  <SelectTrigger className="w-fit min-w-[5rem] max-w-[9rem] rounded-full justify-between px-3 py-1.5 text-sm" aria-label="Language">
+                    <SelectValue placeholder="Language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {languageOptions.map((opt) => (
+                      <SelectItem
+                        key={opt.langId}
+                        value={opt.langId}
+                        disabled={showAllLanguagesGreyed && opt.langId !== "en"}
+                        className={showAllLanguagesGreyed && opt.langId !== "en" ? "opacity-50" : undefined}
+                      >
+                        {opt.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {showVoice && (
+                <Select
+                  value={selectedVoiceId}
+                  onValueChange={(value) => onVoiceChange?.(value)}
+                >
+                  <SelectTrigger className="w-fit min-w-[5rem] max-w-[9rem] rounded-full justify-between px-3 py-1.5 text-sm" aria-label="Voice">
+                    <SelectValue placeholder="Voice" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {VOICE_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.voiceId} value={opt.voiceId}>
+                        {opt.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          )}
+          <div className="flex items-center gap-2 ml-auto">
+            <Button
+              size="lg"
+              className="h-12 px-6 rounded-full gap-2"
+              onClick={() => onStartCall?.()}
+              disabled={isActive}
             >
-              <SelectTrigger className="w-fit min-w-[5rem] max-w-[9rem] rounded-full justify-between px-3 py-1.5 text-sm">
-                <SelectValue placeholder="Language" />
-              </SelectTrigger>
-              <SelectContent>
-                {languageOptions.map((opt) => (
-                  <SelectItem key={opt.langId} value={opt.langId}>
-                    {opt.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={selectedVoiceId}
-              onValueChange={(value) => onVoiceChange?.(value)}
-            >
-              <SelectTrigger className="w-fit min-w-[5rem] max-w-[9rem] rounded-full justify-between px-3 py-1.5 text-sm">
-                <SelectValue placeholder="Voice" />
-              </SelectTrigger>
-              <SelectContent>
-                {VOICE_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.voiceId} value={opt.voiceId}>
-                    {opt.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <Play className="h-4 w-4" />
+              Call Clarte
+            </Button>
+            {onAslChange !== undefined && (
+              <div className="flex items-center gap-2" title={aslStatus === "ready" ? "ASL ready" : aslStatus === "connecting" ? "Connecting..." : "Start ASL server"}>
+                <Switch
+                  id="asl-toggle"
+                  checked={aslEnabled}
+                  onCheckedChange={onAslChange}
+                  aria-label="Enable ASL sign language input"
+                />
+                <Label htmlFor="asl-toggle" className="text-sm font-medium cursor-pointer">
+                  ASL
+                </Label>
+              </div>
+            )}
           </div>
-          <Button
-            size="lg"
-            className="h-12 px-6 rounded-full gap-2 ml-auto"
-            onClick={() => onStartCall?.()}
-            disabled={isActive}
-          >
-            <Play className="h-4 w-4" />
-            Call Clarte
-          </Button>
         </div>
       </div>
     </>

@@ -20,8 +20,6 @@ import { AnimateOnScroll } from "@/components/animate-on-scroll"
 import { useClientSpeechRecognition, isClientSpeechRecognitionSupported } from "@/hooks/use-client-speech-recognition"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 import { cn } from "@/lib/utils"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
 import { SDHTranscript } from "@/components/voice/SDHTranscript"
 
 function switchModeToCallMode(mode: SwitchMode): CallMode {
@@ -249,26 +247,10 @@ export default function DemoPage() {
                       sendContextRef={sendContextRef}
                       sendASLRef={sendASLRef}
                       screenContextRequested={showSecretaryRoom}
+                      aslEnabled={aslEnabled}
+                      onAslChange={setAslEnabled}
+                      aslStatus={aslStatus}
                     />
-                    <div className="flex items-center justify-between gap-2 rounded-lg border border-border/50 bg-background/50 px-3 py-2">
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          id="asl-toggle"
-                          checked={aslEnabled}
-                          onCheckedChange={setAslEnabled}
-                        />
-                        <Label htmlFor="asl-toggle" className="text-sm font-medium cursor-pointer">
-                          ASL
-                        </Label>
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {aslStatus === "ready"
-                          ? "ASL ready"
-                          : aslStatus === "connecting"
-                            ? "Connecting..."
-                            : "Run ASL server (python src/inference.py)"}
-                      </span>
-                    </div>
                     {callMode === "parallel" && showSecretaryRoom && SecretaryRoomComponent && (
                       <SecretaryRoomComponent
                         voice={selectedVoice}
@@ -304,10 +286,14 @@ export default function DemoPage() {
                     onStartCall={handleStartCall}
                     isActive={false}
                     hideAgentOptions
+                    showAllLanguagesGreyed
                     selectedVoiceId={selectedVoice}
                     onVoiceChange={setSelectedVoice}
                     selectedLanguage={selectedLanguage}
                     onLanguageChange={setSelectedLanguage}
+                    aslEnabled={aslEnabled}
+                    onAslChange={setAslEnabled}
+                    aslStatus={aslStatus}
                   />
                 )}
               </div>

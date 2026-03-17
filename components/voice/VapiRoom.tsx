@@ -7,6 +7,8 @@
 import React, { useCallback, useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { PhoneOff, Loader2, Phone } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 
 const VAPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY ?? ""
@@ -47,6 +49,12 @@ interface VapiRoomProps {
   screenContextRequested?: boolean
   /** Vapi assistant ID. If not provided, uses Demo tier or legacy NEXT_PUBLIC_VAPI_ASSISTANT_ID. */
   assistantId?: string
+  /** ASL toggle: enabled state */
+  aslEnabled?: boolean
+  /** ASL toggle: change handler */
+  onAslChange?: (enabled: boolean) => void
+  /** ASL toggle: status */
+  aslStatus?: "disconnected" | "connecting" | "ready"
 }
 
 export function VapiRoom({
@@ -62,6 +70,9 @@ export function VapiRoom({
   sendASLRef,
   screenContextRequested = false,
   assistantId: assistantIdProp,
+  aslEnabled = false,
+  onAslChange,
+  aslStatus,
 }: VapiRoomProps) {
   const resolvedAssistantId =
     assistantIdProp?.trim() ||
@@ -233,10 +244,25 @@ export function VapiRoom({
               ? "Share your screen or camera below so Clarte can see your context."
               : "In call with Clarte. Say \"see my screen\" or \"look at me\" to enable screen share or camera."}
           </p>
-          <Button variant="outline" size="sm" onClick={disconnect} className="gap-2">
-            <PhoneOff className="h-4 w-4" />
-            End call
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={disconnect} className="gap-2">
+              <PhoneOff className="h-4 w-4" />
+              End call
+            </Button>
+            {onAslChange !== undefined && (
+              <div className="flex items-center gap-2" title={aslStatus === "ready" ? "ASL ready" : aslStatus === "connecting" ? "Connecting..." : "Start ASL server"}>
+                <Switch
+                  id="asl-toggle-vapi"
+                  checked={aslEnabled}
+                  onCheckedChange={onAslChange}
+                  aria-label="Enable ASL sign language input"
+                />
+                <Label htmlFor="asl-toggle-vapi" className="text-sm font-medium cursor-pointer">
+                  ASL
+                </Label>
+              </div>
+            )}
+          </div>
         </div>
       </>
     )
@@ -271,6 +297,19 @@ export function VapiRoom({
                   )}
                   {status === "connecting" ? "Connecting…" : "Call Clarte"}
                 </Button>
+                {onAslChange !== undefined && (
+                  <div className="flex items-center gap-2" title={aslStatus === "ready" ? "ASL ready" : aslStatus === "connecting" ? "Connecting..." : "Start ASL server"}>
+                    <Switch
+                      id="asl-toggle-vapi-idle"
+                      checked={aslEnabled}
+                      onCheckedChange={onAslChange}
+                      aria-label="Enable ASL sign language input"
+                    />
+                    <Label htmlFor="asl-toggle-vapi-idle" className="text-sm font-medium cursor-pointer">
+                      ASL
+                    </Label>
+                  </div>
+                )}
               </div>
             </div>
           </div>
