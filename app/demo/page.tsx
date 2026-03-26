@@ -136,19 +136,23 @@ export default function DemoPage() {
 
   const handleTranscriptPartial = useCallback(
     (role: string, content: string, meta?: { emotion?: string }) => {
+      if (role === "user") {
+        if (partialDebounceRef.current) {
+          clearTimeout(partialDebounceRef.current)
+          partialDebounceRef.current = undefined
+        }
+        setTranscriptPartial(content)
+        setAssistantPartial("")
+        setAssistantPartialEmotion(undefined)
+        return
+      }
       if (partialDebounceRef.current) clearTimeout(partialDebounceRef.current)
       partialDebounceRef.current = setTimeout(() => {
-        if (role === "user") {
-          setTranscriptPartial(content)
-          setAssistantPartial("")
-          setAssistantPartialEmotion(undefined)
-        } else {
-          setAssistantPartial(content)
-          setTranscriptPartial("")
-          setAssistantPartialEmotion(meta?.emotion)
-        }
+        setAssistantPartial(content)
+        setTranscriptPartial("")
+        setAssistantPartialEmotion(meta?.emotion)
         partialDebounceRef.current = undefined
-      }, 60)
+      }, 48)
     },
     []
   )
@@ -305,7 +309,12 @@ export default function DemoPage() {
                 >
                   <SDHTranscript
                     entries={transcriptEntries}
-                    partial={null}
+                    userInterim={transcriptPartial || null}
+                    assistantInterim={
+                      assistantPartial
+                        ? { content: assistantPartial, emotion: assistantPartialEmotion }
+                        : null
+                    }
                     emptyMessage="Your speech and Clarte's replies will appear here..."
                     className="min-h-[2rem]"
                   />

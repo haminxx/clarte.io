@@ -134,8 +134,18 @@ export function VoiceCard({
                     checked={aslEnabled}
                     onCheckedChange={onAslChange}
                     aria-label="Enable ASL sign language input"
+                    className={cn(
+                      isBright &&
+                        "ring-2 ring-black/15 shadow-sm data-[state=unchecked]:bg-slate-200 data-[state=unchecked]:border data-[state=unchecked]:border-slate-400/70 data-[state=checked]:bg-sky-700 data-[state=checked]:border-sky-800/50"
+                    )}
                   />
-                  <Label htmlFor="asl-toggle" className="text-sm font-medium cursor-pointer whitespace-nowrap">
+                  <Label
+                    htmlFor="asl-toggle"
+                    className={cn(
+                      "text-sm font-medium cursor-pointer whitespace-nowrap",
+                      isBright && "text-neutral-900 drop-shadow-sm"
+                    )}
+                  >
                     ASL
                   </Label>
                 </div>
@@ -162,7 +172,11 @@ export function VoiceCard({
           <div className="flex items-center gap-2 ml-auto">
             <Button
               size="lg"
-              className="h-12 px-6 rounded-full gap-2"
+              className={cn(
+                "h-12 px-6 rounded-full gap-2",
+                isBright &&
+                  "bg-neutral-900 text-white shadow-md shadow-black/25 ring-1 ring-black/20 hover:bg-neutral-800 hover:shadow-lg"
+              )}
               onClick={() => onStartCall?.()}
               disabled={isActive}
             >

@@ -3,9 +3,9 @@
 /**
  * SDH (Subtitles for the Deaf and Hard of Hearing) transcript component.
  * Netflix-style: [Speaker] [emotion] content. Supports markdown links for citations.
+ * Live interim lines use muted foreground (Web Speech–style).
  */
 import React from "react"
-import { useClarteTheme } from "@/lib/clarte-theme-context"
 import { cn } from "@/lib/utils"
 
 export interface SDHTranscriptEntry {
@@ -16,7 +16,12 @@ export interface SDHTranscriptEntry {
 
 interface SDHTranscriptProps {
   entries: SDHTranscriptEntry[]
+  /** Legacy single partial row */
   partial?: SDHTranscriptEntry | null
+  /** Live user speech (interim) — shown as gray after [You] */
+  userInterim?: string | null
+  /** Live assistant speech (interim) — shown as gray after [Clarte] */
+  assistantInterim?: { content: string; emotion?: string } | null
   emptyMessage?: string
   className?: string
 }
@@ -53,11 +58,9 @@ function parseTranscriptContent(content: string): React.ReactNode {
 function SDHEntry({
   entry,
   isPartial,
-  isBright,
 }: {
   entry: SDHTranscriptEntry
   isPartial?: boolean
-  isBright?: boolean
 }) {
   const speaker = entry.role === "user" ? "[You]" : "[Clarte]"
   const emotion = entry.emotion ? ` [${entry.emotion.toLowerCase()}]` : ""
@@ -66,8 +69,8 @@ function SDHEntry({
   return (
     <div
       className={cn(
-        "leading-tight",
-        isUser ? "text-foreground/90" : "text-blue-600 dark:text-blue-400"
+        "leading-snug",
+        isUser ? "text-foreground" : "text-blue-600 dark:text-blue-400"
       )}
     >
       <span className="font-medium text-muted-foreground">
@@ -81,16 +84,44 @@ function SDHEntry({
   )
 }
 
+function InterimLine({
+  role,
+  content,
+  emotion,
+}: {
+  role: "user" | "assistant"
+  content: string
+  emotion?: string
+}) {
+  const speaker = role === "user" ? "[You]" : "[Clarte]"
+  const emotionPart =
+    role === "assistant" && emotion ? (
+      <span className="font-medium text-muted-foreground">{` [${emotion.toLowerCase()}] `}</span>
+    ) : (
+      " "
+    )
+
+  return (
+    <div className="leading-snug">
+      <span className="font-medium text-muted-foreground">{speaker}</span>
+      {emotionPart}
+      <span className="text-muted-foreground/85">{parseTranscriptContent(content)}</span>
+    </div>
+  )
+}
+
 export function SDHTranscript({
   entries,
   partial,
+  userInterim,
+  assistantInterim,
   emptyMessage = "Your speech and Clarte's replies will appear here...",
   className,
 }: SDHTranscriptProps) {
-  const { theme } = useClarteTheme()
-  const isBright = theme === "bright"
-
-  const hasContent = entries.length > 0 || partial
+  const hasInterim = Boolean(
+    (userInterim && userInterim.trim()) || (assistantInterim && assistantInterim.content.trim())
+  )
+  const hasContent = entries.length > 0 || partial || hasInterim
 
   return (
     <div className={cn("flex flex-col gap-1.5 justify-end scroll-smooth", className)}>
@@ -99,10 +130,18 @@ export function SDHTranscript({
       ) : (
         <div className="space-y-1.5 scroll-smooth">
           {entries.map((entry, i) => (
-            <SDHEntry key={i} entry={entry} isBright={isBright} />
+            <SDHEntry key={i} entry={entry} />
           ))}
-          {partial ? (
-            <SDHEntry entry={partial} isPartial isBright={isBright} />
+          {partial ? <SDHEntry entry={partial} isPartial /> : null}
+          {userInterim?.trim() ? (
+            <InterimLine role="user" content={userInterim.trim()} />
+          ) : null}
+          {assistantInterim?.content?.trim() ? (
+            <InterimLine
+              role="assistant"
+              content={assistantInterim.content.trim()}
+              emotion={assistantInterim.emotion}
+            />
           ) : null}
         </div>
       )}

@@ -2,16 +2,26 @@
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { WordAppearText } from "@/components/ui/word-appear-text"
 import { AnimateOnScroll } from "./animate-on-scroll"
 import { ParticleOrb } from "@/components/particle-orb"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 import { useTranslation } from "@/lib/language-context"
 import { cn } from "@/lib/utils"
 
+function countWords(s: string): number {
+  return s.trim().split(/\s+/).filter(Boolean).length
+}
+
 export function HeroSection() {
   const { theme } = useClarteTheme()
   const { t } = useTranslation()
   const isBright = theme === "bright"
+  const tagBefore = t("hero.taglineBefore")
+  const tagClarity = t("hero.taglineClarity")
+  const tagAfter = t("hero.taglineAfter")
+  const nBefore = countWords(tagBefore)
+  const nClarity = countWords(tagClarity)
   return (
     <section
       className={cn(
@@ -21,8 +31,8 @@ export function HeroSection() {
     >
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {/* Large particle orb background, bigger than demo — above gradients so visible in dark mode */}
-        <div className="absolute left-1/2 top-1/2 z-[1] h-[220vmin] w-[220vmin] -translate-x-1/2 -translate-y-1/2">
-          <ParticleOrb variant={isBright ? "bright" : "dark"} />
+        <div className="absolute left-1/2 top-1/2 z-[1] h-[230vmin] w-[230vmin] -translate-x-1/2 -translate-y-1/2 opacity-[0.92]">
+          <ParticleOrb variant={isBright ? "bright" : "dark"} heroDensityBoost />
         </div>
         {isBright ? (
           <>
@@ -49,12 +59,17 @@ export function HeroSection() {
           <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[1fr_1fr] lg:grid-rows-[auto_auto] lg:items-end lg:gap-x-[clamp(2rem,5vw,80px)] lg:gap-y-4">
             {/* Left: headline - blur to clear a bit slower */}
             <AnimateOnScroll animateOnMount delay={0} animation="fade-blur-slow" className="order-1">
-              <h1 className={cn("font-bold leading-[0.82] tracking-tight text-[clamp(1.7rem,3.4vw,3.1rem)] sm:text-[clamp(1.95rem,3.6vw,3.35rem)] md:text-[clamp(2.1rem,3.8vw,3.6rem)] xl:text-[clamp(2.6rem,3.2vw,50px)]", isBright ? "text-black" : "text-white")}>
-                {t("hero.taglineBefore")}
+              <h1
+                className={cn(
+                  "font-bold leading-[1.08] tracking-tight text-[clamp(1.7rem,3.4vw,3.1rem)] sm:text-[clamp(1.95rem,3.6vw,3.35rem)] md:text-[clamp(2.1rem,3.8vw,3.6rem)] xl:text-[clamp(2.6rem,3.2vw,50px)]",
+                  isBright ? "text-black" : "text-white"
+                )}
+              >
+                <WordAppearText text={tagBefore} startWordIndex={0} initialDelayMs={400} perWordStepMs={80} />
                 <span className="group relative inline-block cursor-default rounded px-1.5 py-0.5 bg-transparent backdrop-blur-xl blur-[3px] transition-all duration-300 hover:blur-none">
-                  {t("hero.taglineClarity")}
+                  <WordAppearText text={tagClarity} startWordIndex={nBefore} initialDelayMs={400} perWordStepMs={80} />
                 </span>
-                {t("hero.taglineAfter")}
+                <WordAppearText text={tagAfter} startWordIndex={nBefore + nClarity} initialDelayMs={400} perWordStepMs={80} />
               </h1>
             </AnimateOnScroll>
             {/* Right: buttons then description - subtitle appears after headline, buttons last */}
@@ -75,7 +90,7 @@ export function HeroSection() {
                 </Link>
               </AnimateOnScroll>
               <AnimateOnScroll animateOnMount delay={500} animation="fade-blur" className="w-full max-w-[min(450px,55vw)] lg:max-w-none lg:text-right">
-                <div className={cn("leading-relaxed text-left lg:text-right space-y-1 text-[clamp(0.75rem,1.1vw,1.125rem)] sm:text-[clamp(0.8125rem,1.15vw,1rem)] md:text-[clamp(0.875rem,1.2vw,1.125rem)]", isBright ? "text-black/70" : "text-white/60")}>
+                <div className={cn("text-left lg:text-right flex flex-col gap-0.5 leading-snug text-[clamp(0.75rem,1.1vw,1.125rem)] sm:text-[clamp(0.8125rem,1.15vw,1rem)] md:text-[clamp(0.875rem,1.2vw,1.125rem)]", isBright ? "text-black/70" : "text-white/60")}>
                   <p>{t("hero.subtitle1")}</p>
                   <p>{t("hero.subtitle2")}</p>
                   <p>{t("hero.subtitle3")}</p>

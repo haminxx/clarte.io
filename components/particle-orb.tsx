@@ -19,9 +19,15 @@ type ParticleOrbProps = {
   variant?: ParticleOrbVariant
   /** CSS selector for elements that trigger slow-rotate when hovered (e.g. cards, header, buttons). */
   interactiveSelector?: string
+  /** Landing hero: slightly denser particles and stronger visibility */
+  heroDensityBoost?: boolean
 }
 
-export function ParticleOrb({ variant = "dark", interactiveSelector = DEFAULT_INTERACTIVE_SELECTOR }: ParticleOrbProps) {
+export function ParticleOrb({
+  variant = "dark",
+  interactiveSelector = DEFAULT_INTERACTIVE_SELECTOR,
+  heroDensityBoost = false,
+}: ParticleOrbProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationRef = useRef<number>()
   const particlesRef = useRef<Particle[]>([])
@@ -51,7 +57,7 @@ export function ParticleOrb({ variant = "dark", interactiveSelector = DEFAULT_IN
     window.addEventListener("resize", resizeCanvas)
 
     // Create particles on sphere surface (reduced for performance)
-    const numParticles = 1200
+    const numParticles = heroDensityBoost ? 1550 : 1200
     const radius = 180
     particlesRef.current = []
 
@@ -141,7 +147,8 @@ export function ParticleOrb({ variant = "dark", interactiveSelector = DEFAULT_IN
         } else {
           ;[r, g, b] = [255, 255, 255] // White
         }
-        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha * (isBright ? 0.95 : 0.75)})`
+        const brightMul = heroDensityBoost && isBright ? 1.08 : 1
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha * (isBright ? 0.95 : 0.75) * brightMul})`
         ctx.fill()
       })
 
@@ -210,7 +217,7 @@ export function ParticleOrb({ variant = "dark", interactiveSelector = DEFAULT_IN
         cancelAnimationFrame(animationRef.current)
       }
     }
-  }, [variant, interactiveSelector])
+  }, [variant, interactiveSelector, heroDensityBoost])
 
   return (
     <canvas

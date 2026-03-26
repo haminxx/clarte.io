@@ -315,6 +315,28 @@
   display: none; /* Chrome/Safari */
 }
 
+/* Hero headline — staggered word reveal (Digital Serenity–style) */
+@keyframes word-appear-hero {
+  0% {
+    opacity: 0;
+    transform: translateY(0.45em) scale(0.94);
+    filter: blur(8px);
+  }
+  55% {
+    opacity: 0.88;
+    transform: translateY(0.06em) scale(0.99);
+    filter: blur(1px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+.word-animate-hero {
+  will-change: transform, opacity, filter;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
