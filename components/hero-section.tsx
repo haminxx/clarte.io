@@ -4,6 +4,7 @@ import Link from "next/link"
 import dynamic from "next/dynamic"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { LineRevealBlock } from "@/components/ui/line-reveal-text"
 import { WordAppearText, estimateWordSequenceEndMs } from "@/components/ui/word-appear-text"
 import { AnimateOnScroll } from "./animate-on-scroll"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
@@ -21,7 +22,6 @@ function countWords(s: string): number {
 
 const HEADLINE_INITIAL_MS = 400
 const HEADLINE_STEP_MS = 80
-const SUBTITLE_STEP_MS = 65
 
 export function HeroSection() {
   const { theme } = useClarteTheme()
@@ -39,19 +39,15 @@ export function HeroSection() {
   const headlineWordCount = nBefore + nClarity + countWords(tagAfter)
   const headlineEndMs = estimateWordSequenceEndMs(headlineWordCount, HEADLINE_INITIAL_MS, HEADLINE_STEP_MS)
 
-  const [showSubtitle, setShowSubtitle] = useState(false)
-  const [subtitlePhase, setSubtitlePhase] = useState(1)
-  const [showButtons, setShowButtons] = useState(false)
+  const [showSecondaryColumn, setShowSecondaryColumn] = useState(false)
 
   useEffect(() => {
-    setShowSubtitle(false)
-    setSubtitlePhase(1)
-    setShowButtons(false)
+    setShowSecondaryColumn(false)
     if (headlineWordCount === 0) {
-      setShowSubtitle(true)
+      setShowSecondaryColumn(true)
       return
     }
-    const id = window.setTimeout(() => setShowSubtitle(true), headlineEndMs)
+    const id = window.setTimeout(() => setShowSecondaryColumn(true), headlineEndMs)
     return () => clearTimeout(id)
   }, [headlineEndMs, headlineWordCount])
 
@@ -82,7 +78,7 @@ export function HeroSection() {
             </>
           )}
         </div>
-        <div className="pointer-events-auto absolute left-1/2 top-1/2 z-[1] w-[min(92vmin,720px)] max-w-[90vw] -translate-x-1/2 -translate-y-1/2 opacity-90">
+        <div className="pointer-events-auto absolute left-1/2 top-1/2 z-[1] w-[min(73.6vmin,576px)] max-w-[72vw] -translate-x-1/2 -translate-y-1/2 opacity-[0.72]">
           <GlobeInteractive variant={isBright ? "bright" : "dark"} className="mx-auto w-full" speed={0.0022} />
         </div>
       </div>
@@ -120,78 +116,44 @@ export function HeroSection() {
               </h1>
             </AnimateOnScroll>
             <div className="order-2 flex flex-col items-start lg:items-end lg:justify-end gap-4">
-              <div className="w-full max-w-[min(450px,55vw)] lg:max-w-none lg:text-right min-h-[4.5rem]">
-                {showSubtitle ? (
-                  <div
-                    className={cn(
-                      "animate-in fade-in duration-500 text-left lg:text-right flex flex-col gap-0.5 leading-snug text-[clamp(0.75rem,1.1vw,1.125rem)] sm:text-[clamp(0.8125rem,1.15vw,1rem)] md:text-[clamp(0.875rem,1.2vw,1.125rem)]",
-                      isBright ? "text-black/70" : "text-white/60"
-                    )}
-                  >
-                    {subtitlePhase >= 1 ? (
-                      <p>
-                        <WordAppearText
-                          text={sub1}
-                          startWordIndex={0}
-                          initialDelayMs={0}
-                          perWordStepMs={SUBTITLE_STEP_MS}
-                          onComplete={() => setSubtitlePhase(2)}
-                        />
-                      </p>
-                    ) : null}
-                    {subtitlePhase >= 2 ? (
-                      <p>
-                        <WordAppearText
-                          text={sub2}
-                          startWordIndex={0}
-                          initialDelayMs={0}
-                          perWordStepMs={SUBTITLE_STEP_MS}
-                          onComplete={() => setSubtitlePhase(3)}
-                        />
-                      </p>
-                    ) : null}
-                    {subtitlePhase >= 3 ? (
-                      <p>
-                        <WordAppearText
-                          text={sub3}
-                          startWordIndex={0}
-                          initialDelayMs={0}
-                          perWordStepMs={SUBTITLE_STEP_MS}
-                          onComplete={() => setShowButtons(true)}
-                        />
-                      </p>
-                    ) : null}
+              {showSecondaryColumn ? (
+                <>
+                  <div className="animate-in fade-in slide-in-from-bottom-2 flex flex-wrap gap-3 duration-500 sm:gap-4">
+                    <Link href="/download">
+                      <Button
+                        className={cn(
+                          "text-[clamp(0.875rem,1.2vw,1rem)] h-[clamp(2.25rem,4vh,2.75rem)] px-[clamp(1rem,2vw,1.5rem)]",
+                          isBright ? "bg-black text-white hover:bg-black/90" : "bg-white text-black hover:bg-white/90"
+                        )}
+                      >
+                        {t("hero.download")}
+                      </Button>
+                    </Link>
+                    <Link href="/demo">
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "text-[clamp(0.875rem,1.2vw,1rem)] h-[clamp(2.25rem,4vh,2.75rem)] px-[clamp(1rem,2vw,1.5rem)]",
+                          isBright
+                            ? "border-black/30 bg-transparent text-black hover:bg-black/10"
+                            : "border-white/20 bg-transparent text-white hover:bg-white/10"
+                        )}
+                      >
+                        {t("hero.demo")}
+                      </Button>
+                    </Link>
                   </div>
-                ) : null}
-              </div>
-              {showButtons ? (
-                <div className="animate-in fade-in slide-in-from-bottom-2 flex flex-wrap gap-3 duration-500 sm:gap-4">
-                  <Link href="/download">
-                    <Button
-                      className={cn(
-                        "text-[clamp(0.875rem,1.2vw,1rem)] h-[clamp(2.25rem,4vh,2.75rem)] px-[clamp(1rem,2vw,1.5rem)]",
-                        isBright ? "bg-black text-white hover:bg-black/90" : "bg-white text-black hover:bg-white/90"
-                      )}
-                    >
-                      {t("hero.download")}
-                    </Button>
-                  </Link>
-                  <Link href="/demo">
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "text-[clamp(0.875rem,1.2vw,1rem)] h-[clamp(2.25rem,4vh,2.75rem)] px-[clamp(1rem,2vw,1.5rem)]",
-                        isBright
-                          ? "border-black/30 bg-transparent text-black hover:bg-black/10"
-                          : "border-white/20 bg-transparent text-white hover:bg-white/10"
-                      )}
-                    >
-                      {t("hero.demo")}
-                    </Button>
-                  </Link>
-                </div>
+                  <div className="w-full max-w-[min(450px,55vw)] lg:max-w-none lg:text-right min-h-[4.5rem]">
+                    <LineRevealBlock
+                      lines={[sub1, sub2, sub3]}
+                      durationMs={1200}
+                      className="text-left lg:text-right leading-snug text-[clamp(0.75rem,1.1vw,1.125rem)] sm:text-[clamp(0.8125rem,1.15vw,1rem)] md:text-[clamp(0.875rem,1.2vw,1.125rem)]"
+                      lineClassName={isBright ? "text-black/70" : "text-white/60"}
+                    />
+                  </div>
+                </>
               ) : (
-                <div className="min-h-[clamp(2.25rem,4vh,2.75rem)]" aria-hidden />
+                <div className="min-h-[clamp(6rem,12vh,8rem)] w-full max-w-[min(450px,55vw)] lg:max-w-none" aria-hidden />
               )}
             </div>
           </div>

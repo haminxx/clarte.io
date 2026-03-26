@@ -337,6 +337,24 @@
   will-change: transform, opacity, filter;
 }
 
+/* Hero subtitles — simultaneous left-to-right line reveal */
+@keyframes line-reveal-ltr {
+  from {
+    clip-path: inset(0 100% 0 0);
+    opacity: 0.75;
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+}
+.animate-line-reveal-ltr {
+  animation-name: line-reveal-ltr;
+  animation-timing-function: ease-out;
+  animation-fill-mode: forwards;
+  will-change: clip-path, opacity;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

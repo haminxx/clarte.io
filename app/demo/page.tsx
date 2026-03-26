@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useCallback, useRef, useEffect, type ComponentType } from "react"
+import React, { useState, useCallback, useRef, useEffect, useLayoutEffect, type ComponentType } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { VoiceCard } from "@/components/voice-card"
@@ -15,7 +15,6 @@ const isPlaceholderUrl = (url: string) => !url || url.includes("placeholder")
 const LIVEKIT_URL = isPlaceholderUrl(LIVEKIT_URL_RAW) ? "" : LIVEKIT_URL_RAW
 
 const ASL_WS_URL = process.env.NEXT_PUBLIC_ASL_WS_URL ?? "ws://localhost:8765"
-import { ParticleOrb } from "@/components/particle-orb"
 import { AnimateOnScroll } from "@/components/animate-on-scroll"
 import { useClientSpeechRecognition, isClientSpeechRecognitionSupported } from "@/hooks/use-client-speech-recognition"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
@@ -152,7 +151,7 @@ export default function DemoPage() {
         setTranscriptPartial("")
         setAssistantPartialEmotion(meta?.emotion)
         partialDebounceRef.current = undefined
-      }, 48)
+      }, 12)
     },
     []
   )
@@ -175,13 +174,16 @@ export default function DemoPage() {
   )
   const onTranscriptPartialFromRoom = useClientSTT ? undefined : handleTranscriptPartial
 
-  useEffect(() => {
-    const container = transcriptContainerRef.current
-    if (container) {
-      container.scrollTop = container.scrollHeight
-    } else {
-      transcriptEndRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" })
-    }
+  useLayoutEffect(() => {
+    const id = requestAnimationFrame(() => {
+      const container = transcriptContainerRef.current
+      if (container) {
+        container.scrollTop = container.scrollHeight
+      } else {
+        transcriptEndRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" })
+      }
+    })
+    return () => cancelAnimationFrame(id)
   }, [transcriptEntries, transcriptPartial, assistantPartial])
 
   useEffect(() => {
@@ -221,10 +223,7 @@ export default function DemoPage() {
 
         <AnimateOnScroll animation="fade-up" delay={200}>
           <div className="relative mt-6 flex min-h-[60vh] w-full flex-col items-center justify-start">
-            <div className="pointer-events-none absolute left-1/2 top-24 h-[150vmin] w-[150vmin] -translate-x-1/2 -translate-y-1/2 overflow-hidden sm:top-28">
-              <ParticleOrb variant={isBright ? "bright" : "dark"} />
-            </div>
-            <div className="relative z-20 w-full max-w-[min(32rem,92vw)] xl:max-w-[min(36rem,88vw)] 2xl:max-w-[min(42rem,85vw)] flex flex-col gap-4">
+            <div className="relative z-10 w-full max-w-[min(32rem,92vw)] xl:max-w-[min(36rem,88vw)] 2xl:max-w-[min(42rem,85vw)] flex flex-col gap-4">
               <div data-clarte-card className="w-full rounded-2xl border border-border bg-card/90 p-4 sm:p-5 md:p-6 shadow-2xl backdrop-blur-md mx-auto min-w-0">
                 {inCall && (callMode === "vapi" || callMode === "parallel") && VapiRoomComponent ? (
                   <div className="flex flex-col gap-4">

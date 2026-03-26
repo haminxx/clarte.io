@@ -31,8 +31,8 @@ interface VapiRoomProps {
   onDisconnect?: () => void
   autoStart?: boolean
   cardLayout?: boolean
-  onTranscriptAdd?: (role: string, content: string) => void
-  onTranscriptPartial?: (role: string, content: string) => void
+  onTranscriptAdd?: (role: string, content: string, meta?: { emotion?: string }) => void
+  onTranscriptPartial?: (role: string, content: string, meta?: { emotion?: string }) => void
   /** When provided, triggers parallel mode: call this instead of stopping Vapi and switching to LiveKit. */
   onRequestScreenContext?: (mode: SwitchMode) => void
   /** Legacy: when onRequestScreenContext is not set, stop Vapi and switch to full LiveKit Room. */
@@ -143,22 +143,35 @@ export function VapiRoom({
         }
       })
 
-      vapi.on("message", (message: { type?: string; role?: string; transcript?: string }) => {
-        if (message.type === "transcript" && message.transcript) {
-          const role = message.role === "user" ? "user" : "assistant"
-          onTranscriptAdd?.(role, message.transcript)
-          onTranscriptPartial?.(role, "")
+      vapi.on("message", (message: Record<string, unknown>) => {
+        if (message.type !== "transcript" || typeof message.transcript !== "string" || !message.transcript) return
 
-          if (message.role === "user") {
-            const mode = detectScreenCameraRequest(message.transcript)
-            if (mode) {
-              if (onRequestScreenContext) {
-                onRequestScreenContext(mode)
-              } else if (onSwitchToScreenMode) {
-                switchRequestedRef.current = true
-                vapi.stop()
-                onSwitchToScreenMode(mode)
-              }
+        const transcript = message.transcript
+        const role = message.role === "user" ? "user" : "assistant"
+        const transcriptType = message.transcriptType as string | undefined
+        const isFinal = message.isFinal as boolean | undefined
+        const isPartial =
+          transcriptType === "partial" || (transcriptType === undefined && isFinal === false)
+
+        const emotion = typeof message.emotion === "string" ? message.emotion : undefined
+
+        if (isPartial) {
+          onTranscriptPartial?.(role, transcript, emotion ? { emotion } : undefined)
+          return
+        }
+
+        onTranscriptAdd?.(role, transcript, emotion ? { emotion } : undefined)
+        onTranscriptPartial?.(role, "")
+
+        if (message.role === "user") {
+          const mode = detectScreenCameraRequest(transcript)
+          if (mode) {
+            if (onRequestScreenContext) {
+              onRequestScreenContext(mode)
+            } else if (onSwitchToScreenMode) {
+              switchRequestedRef.current = true
+              vapi.stop()
+              onSwitchToScreenMode(mode)
             }
           }
         }
