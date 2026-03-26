@@ -1,0 +1,136 @@
+﻿"use client"
+
+import { useEffect, useRef, useCallback } from "react"
+import createGlobe from "cobe"
+import { cn } from "@/lib/utils"
+
+export interface GlobeInteractiveProps {
+  className?: string
+  speed?: number
+  variant?: "bright" | "dark"
+}
+
+export function GlobeInteractive({
+  className,
+  speed = 0.0025,
+  variant = "dark",
+}: GlobeInteractiveProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const pointerInteracting = useRef<{ x: number; y: number } | null>(null)
+  const dragOffset = useRef({ phi: 0, theta: 0 })
+  const phiOffsetRef = useRef(0)
+  const thetaOffsetRef = useRef(0)
+  const isPausedRef = useRef(false)
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    pointerInteracting.current = { x: e.clientX, y: e.clientY }
+    if (canvasRef.current) canvasRef.current.style.cursor = "grabbing"
+    isPausedRef.current = true
+  }, [])
+
+  const handlePointerUp = useCallback(() => {
+    if (pointerInteracting.current !== null) {
+      phiOffsetRef.current += dragOffset.current.phi
+      thetaOffsetRef.current += dragOffset.current.theta
+      dragOffset.current = { phi: 0, theta: 0 }
+    }
+    pointerInteracting.current = null
+    if (canvasRef.current) canvasRef.current.style.cursor = "grab"
+    isPausedRef.current = false
+  }, [])
+
+  useEffect(() => {
+    const handlePointerMove = (e: PointerEvent) => {
+      if (pointerInteracting.current !== null) {
+        dragOffset.current = {
+          phi: (e.clientX - pointerInteracting.current.x) / 300,
+          theta: (e.clientY - pointerInteracting.current.y) / 1000,
+        }
+      }
+    }
+    window.addEventListener("pointermove", handlePointerMove, { passive: true })
+    window.addEventListener("pointerup", handlePointerUp, { passive: true })
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove)
+      window.removeEventListener("pointerup", handlePointerUp)
+    }
+  }, [handlePointerUp])
+
+  useEffect(() => {
+    if (!canvasRef.current) return
+    const canvas = canvasRef.current
+    let globe: ReturnType<typeof createGlobe> | null = null
+    let animationId = 0
+    let phi = 0
+    const isBright = variant === "bright"
+
+    function init() {
+      const width = canvas.offsetWidth
+      if (width === 0) return
+      if (globe) return
+
+      globe = createGlobe(canvas, {
+        devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2),
+        width,
+        height: width,
+        phi: 0,
+        theta: 0.2,
+        dark: isBright ? 0 : 1,
+        diffuse: isBright ? 1.35 : 1.5,
+        mapSamples: 10000,
+        mapBrightness: isBright ? 8 : 6,
+        baseColor: isBright ? [0.92, 0.94, 0.98] : [0.06, 0.09, 0.16],
+        markerColor: [0.15, 0.35, 0.65],
+        glowColor: isBright ? [0.75, 0.82, 0.95] : [0.2, 0.25, 0.4],
+        markerElevation: 0,
+        markers: [],
+        arcs: [],
+        arcColor: [0.15, 0.3, 0.55],
+        arcWidth: 0.5,
+        arcHeight: 0.25,
+        opacity: isBright ? 0.85 : 0.75,
+      })
+
+      function animate() {
+        if (!isPausedRef.current) phi += speed
+        globe!.update({
+          phi: phi + phiOffsetRef.current + dragOffset.current.phi,
+          theta: 0.2 + thetaOffsetRef.current + dragOffset.current.theta,
+        })
+        animationId = requestAnimationFrame(animate)
+      }
+      animate()
+      setTimeout(() => {
+        if (canvas) canvas.style.opacity = "1"
+      }, 50)
+    }
+
+    if (canvas.offsetWidth > 0) {
+      init()
+    } else {
+      const ro = new ResizeObserver((entries) => {
+        if (entries[0]?.contentRect.width > 0) {
+          ro.disconnect()
+          init()
+        }
+      })
+      ro.observe(canvas)
+    }
+
+    return () => {
+      if (animationId) cancelAnimationFrame(animationId)
+      if (globe) globe.destroy()
+    }
+  }, [variant, speed])
+
+  return (
+    <div className={cn("relative aspect-square max-h-full max-w-full select-none", className)}>
+      <canvas
+        ref={canvasRef}
+        onPointerDown={handlePointerDown}
+        className="h-full w-full touch-none rounded-full"
+        style={{ cursor: "grab", opacity: 0, transition: "opacity 1s ease" }}
+      />
+    </div>
+  )
+}
