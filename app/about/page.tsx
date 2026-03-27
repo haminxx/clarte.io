@@ -16,7 +16,7 @@ export default function AboutPage() {
       <Header />
 
       <main className="relative z-10 mx-auto max-w-4xl px-4 pt-[clamp(7rem,22vh,14rem)] pb-24">
-        <AnimateOnScroll animation="fade-up" animateOnMount delay={100}>
+        <AnimateOnScroll animation="fade-up-slow" animateOnMount delay={100}>
           <div className="mb-16">
             <h1 className={cn("text-4xl font-bold md:text-5xl", isBright ? "text-black" : "text-white")}>
               {t("about.title")}
@@ -28,7 +28,7 @@ export default function AboutPage() {
         </AnimateOnScroll>
 
         {/* Three-step thinking cards */}
-        <AnimateOnScroll animation="fade-blur" delay={80}>
+        <AnimateOnScroll animation="fade-blur-slower" delay={80}>
           <section className="mb-16 space-y-8">
             <div className={cn("space-y-4 leading-relaxed", isBright ? "text-black/80" : "text-white/80")}>
               <p>
@@ -86,7 +86,7 @@ export default function AboutPage() {
         </AnimateOnScroll>
 
         {/* Capabilities: voice + screen + camera */}
-        <AnimateOnScroll animation="fade-up" delay={140}>
+        <AnimateOnScroll animation="fade-up-slow" delay={140}>
           <section
             className={cn(
               "mt-4 rounded-2xl border p-8 md:p-10 backdrop-blur-md",

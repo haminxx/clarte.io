@@ -144,6 +144,9 @@ export function VapiRoom({
       })
 
       vapi.on("message", (message: Record<string, unknown>) => {
+        // Thinking/answering UX is driven from transcript partials/finals in the parent (demo).
+        // The web SDK may emit other `message.type` values; extend here if we get a stable
+        // "assistant started" signal without waiting for transcript text.
         if (message.type !== "transcript" || typeof message.transcript !== "string" || !message.transcript) return
 
         const transcript = message.transcript

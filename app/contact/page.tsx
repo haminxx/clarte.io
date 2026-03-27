@@ -77,7 +77,7 @@ export default function ContactPage() {
       <Header />
 
       <main className="relative z-10 mx-auto max-w-7xl px-4 pt-[clamp(7rem,22vh,14rem)] pb-24">
-        <AnimateOnScroll animation="fade-up">
+        <AnimateOnScroll animation="fade-up-slow">
           <div className="mb-12 text-center">
             <h1 className={cn("text-4xl font-bold md:text-5xl", isBright ? "text-black" : "text-white")}>
               {t("contact.title")}
@@ -88,7 +88,7 @@ export default function ContactPage() {
           </div>
         </AnimateOnScroll>
 
-        <AnimateOnScroll animation="fade-blur" delay={100}>
+        <AnimateOnScroll animation="fade-blur-slower" delay={100}>
           <div className="mx-auto max-w-2xl" id="form">
             {/* Contact Form */}
             <div

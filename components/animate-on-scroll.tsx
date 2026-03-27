@@ -3,12 +3,20 @@
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
 
-type AnimationType = "fade-up" | "fade-blur" | "fade-blur-slow" | "pop"
+type AnimationType =
+  | "fade-up"
+  | "fade-up-slow"
+  | "fade-blur"
+  | "fade-blur-slow"
+  | "fade-blur-slower"
+  | "pop"
 
 const animationClassMap: Record<AnimationType, string> = {
   "fade-up": "animate-fade-up-in",
+  "fade-up-slow": "animate-fade-up-in-slow",
   "fade-blur": "animate-blur-to-clear",
   "fade-blur-slow": "animate-blur-to-clear-slow",
+  "fade-blur-slower": "animate-blur-to-clear-slower",
   pop: "animate-pop-in",
 }
 

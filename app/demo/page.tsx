@@ -20,6 +20,7 @@ import { useClientSpeechRecognition, isClientSpeechRecognitionSupported } from "
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 import { cn } from "@/lib/utils"
 import { SDHTranscript } from "@/components/voice/SDHTranscript"
+import { ClarteThinkingBlock } from "@/components/ui/clarte-thinking-block"
 import { useASLPipeline } from "@/hooks/use-asl-pipeline"
 
 function switchModeToCallMode(mode: SwitchMode): CallMode {
@@ -67,6 +68,8 @@ export default function DemoPage() {
   const [transcriptPartial, setTranscriptPartial] = useState<string>("")
   const [assistantPartial, setAssistantPartial] = useState<string>("")
   const [assistantPartialEmotion, setAssistantPartialEmotion] = useState<string | undefined>()
+  /** After a final user line, until assistant partial/final — SDK has no dedicated “thinking” event. */
+  const [assistantThinking, setAssistantThinking] = useState(false)
   const transcriptContainerRef = useRef<HTMLDivElement>(null)
   const transcriptEndRef = useRef<HTMLDivElement>(null)
   const partialDebounceRef = useRef<ReturnType<typeof setTimeout>>()
@@ -95,6 +98,7 @@ export default function DemoPage() {
     setTranscriptEntries([])
     setTranscriptPartial("")
     setAssistantPartial("")
+    setAssistantThinking(false)
     sendContextRef.current = null
     sendASLRef.current = null
   }
@@ -127,8 +131,13 @@ export default function DemoPage() {
         ...prev,
         { role, content, emotion: meta?.emotion },
       ])
-      if (role === "user") setTranscriptPartial("")
-      else setAssistantPartial("")
+      if (role === "user") {
+        setTranscriptPartial("")
+        setAssistantThinking(true)
+      } else {
+        setAssistantPartial("")
+        setAssistantThinking(false)
+      }
     },
     []
   )
@@ -143,6 +152,7 @@ export default function DemoPage() {
         setTranscriptPartial(content)
         setAssistantPartial("")
         setAssistantPartialEmotion(undefined)
+        setAssistantThinking(false)
         return
       }
       if (partialDebounceRef.current) clearTimeout(partialDebounceRef.current)
@@ -150,6 +160,7 @@ export default function DemoPage() {
         setAssistantPartial(content)
         setTranscriptPartial("")
         setAssistantPartialEmotion(meta?.emotion)
+        if (content.trim()) setAssistantThinking(false)
         partialDebounceRef.current = undefined
       }, 12)
     },
@@ -184,7 +195,7 @@ export default function DemoPage() {
       }
     })
     return () => cancelAnimationFrame(id)
-  }, [transcriptEntries, transcriptPartial, assistantPartial])
+  }, [transcriptEntries, transcriptPartial, assistantPartial, assistantThinking])
 
   useEffect(() => {
     return () => {
@@ -210,7 +221,7 @@ export default function DemoPage() {
       <Header />
 
       <main className="relative z-10 mx-auto w-full max-w-[min(48rem,92vw)] xl:max-w-[min(56rem,88vw)] 2xl:max-w-[min(64rem,85vw)] px-4 pt-[clamp(7rem,22vh,14rem)] pb-24">
-        <AnimateOnScroll animation="fade-up" animateOnMount delay={100}>
+        <AnimateOnScroll animation="fade-up-slow" animateOnMount delay={100}>
           <div className="mb-8 text-center">
             <h1 className={cn("font-bold text-[clamp(2rem,5vw,3.5rem)] md:text-[clamp(2.25rem,5.5vw,3.75rem)]", isBright ? "text-black" : "text-white")}>
               Try Clarte
@@ -221,7 +232,7 @@ export default function DemoPage() {
           </div>
         </AnimateOnScroll>
 
-        <AnimateOnScroll animation="fade-up" delay={200}>
+        <AnimateOnScroll animation="fade-up-slow" delay={200}>
           <div className="relative mt-6 flex min-h-[60vh] w-full flex-col items-center justify-start">
             <div className="relative z-10 w-full max-w-[min(32rem,92vw)] xl:max-w-[min(36rem,88vw)] 2xl:max-w-[min(42rem,85vw)] flex flex-col gap-4">
               <div data-clarte-card className="w-full rounded-2xl border border-border bg-card/90 p-4 sm:p-5 md:p-6 shadow-2xl backdrop-blur-md mx-auto min-w-0">
@@ -302,9 +313,16 @@ export default function DemoPage() {
                 <p className="mb-2 text-[clamp(0.6875rem,1vw,0.75rem)] font-medium uppercase tracking-wider text-muted-foreground">
                   Live transcript (SDH)
                 </p>
+                {inCall &&
+                  (assistantThinking || assistantPartial.trim()) && (
+                    <ClarteThinkingBlock
+                      variant={assistantPartial.trim() ? "answering" : "thinking"}
+                      className="mb-3"
+                    />
+                  )}
                 <div
                   ref={transcriptContainerRef}
-                  className="max-h-[clamp(8rem,20vh,14rem)] overflow-y-auto overflow-x-hidden rounded-lg border border-border/50 bg-background/50 px-3 py-2 text-[clamp(0.8125rem,1.1vw,0.875rem)] text-foreground"
+                  className="transcript-scroll max-h-[clamp(8rem,20vh,14rem)] overflow-y-auto overflow-x-hidden rounded-lg border border-border/50 bg-background/50 px-3 py-2 text-[clamp(0.8125rem,1.1vw,0.875rem)] text-foreground"
                 >
                   <SDHTranscript
                     entries={transcriptEntries}

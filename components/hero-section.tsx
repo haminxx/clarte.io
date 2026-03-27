@@ -8,7 +8,8 @@ import { LineRevealBlock } from "@/components/ui/line-reveal-text"
 import { WordAppearText, estimateWordSequenceEndMs } from "@/components/ui/word-appear-text"
 import { AnimateOnScroll } from "./animate-on-scroll"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
-import { useTranslation } from "@/lib/language-context"
+import { useLanguage, useTranslation } from "@/lib/language-context"
+import { localeToFocusLongitude } from "@/lib/globe-locale"
 import { cn } from "@/lib/utils"
 
 const GlobeInteractive = dynamic(
@@ -26,6 +27,7 @@ const HEADLINE_STEP_MS = 80
 export function HeroSection() {
   const { theme } = useClarteTheme()
   const { t } = useTranslation()
+  const { locale } = useLanguage()
   const isBright = theme === "bright"
   const tagBefore = t("hero.taglineBefore")
   const tagClarity = t("hero.taglineClarity")
@@ -79,7 +81,12 @@ export function HeroSection() {
           )}
         </div>
         <div className="pointer-events-auto absolute left-1/2 top-1/2 z-[1] w-[min(73.6vmin,576px)] max-w-[72vw] -translate-x-1/2 -translate-y-1/2 opacity-[0.72]">
-          <GlobeInteractive variant={isBright ? "bright" : "dark"} className="mx-auto w-full" speed={0.0022} />
+          <GlobeInteractive
+            variant={isBright ? "bright" : "dark"}
+            className="mx-auto w-full"
+            speed={0.0022}
+            focusLongitude={localeToFocusLongitude(locale)}
+          />
         </div>
       </div>
 
@@ -89,7 +96,7 @@ export function HeroSection() {
             <AnimateOnScroll animateOnMount delay={0} animation="fade-blur-slow" className="order-1">
               <h1
                 className={cn(
-                  "font-bold leading-[0.98] tracking-tight text-[clamp(1.7rem,3.4vw,3.1rem)] sm:text-[clamp(1.95rem,3.6vw,3.35rem)] md:text-[clamp(2.1rem,3.8vw,3.6rem)] xl:text-[clamp(2.6rem,3.2vw,50px)]",
+                  "font-sans font-extrabold leading-[1.05] tracking-[-0.03em] text-[clamp(1.7rem,3.4vw,3.1rem)] sm:text-[clamp(1.95rem,3.6vw,3.35rem)] md:text-[clamp(2.1rem,3.8vw,3.6rem)] xl:text-[clamp(2.6rem,3.2vw,50px)] [font-family:system-ui,ui-sans-serif,Inter,Segoe_UI,sans-serif]",
                   isBright ? "text-black" : "text-white"
                 )}
               >

@@ -8,12 +8,15 @@ export interface GlobeInteractiveProps {
   className?: string
   speed?: number
   variant?: "bright" | "dark"
+  /** Degrees east; initial globe rotation centers this meridian. */
+  focusLongitude?: number
 }
 
 export function GlobeInteractive({
   className,
   speed = 0.0025,
   variant = "dark",
+  focusLongitude = -98,
 }: GlobeInteractiveProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const pointerInteracting = useRef<{ x: number; y: number } | null>(null)
@@ -83,10 +86,14 @@ export function GlobeInteractive({
 
   useEffect(() => {
     if (!canvasRef.current) return
+    phiOffsetRef.current = 0
+    thetaOffsetRef.current = 0
+    dragOffset.current = { phi: 0, theta: 0 }
+
     const canvas = canvasRef.current
     let globe: ReturnType<typeof createGlobe> | null = null
     let animationId = 0
-    let phi = 0
+    let phi = (-focusLongitude * Math.PI) / 180
     const isBright = variant === "bright"
 
     function init() {
@@ -146,7 +153,7 @@ export function GlobeInteractive({
       if (animationId) cancelAnimationFrame(animationId)
       if (globe) globe.destroy()
     }
-  }, [variant, speed])
+  }, [variant, speed, focusLongitude])
 
   return (
     <div className={cn("relative aspect-square max-h-full max-w-full select-none", className)}>

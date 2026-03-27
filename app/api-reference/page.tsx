@@ -68,7 +68,7 @@ export default function APIReferencePage() {
       <Header />
 
       <main className="relative z-10 mx-auto max-w-7xl px-4 pt-[clamp(7rem,22vh,14rem)] pb-24">
-        <AnimateOnScroll animation="fade-up" animateOnMount delay={100}>
+        <AnimateOnScroll animation="fade-up-slow" animateOnMount delay={100}>
           <div className="mb-12 text-center">
             <h1 className={cn("text-4xl font-bold md:text-5xl", isBright ? "text-black" : "text-white")}>API Reference</h1>
             <p className={cn("mx-auto mt-4 max-w-2xl text-lg", isBright ? "text-black/60" : "text-white/60")}>
@@ -77,7 +77,7 @@ export default function APIReferencePage() {
           </div>
         </AnimateOnScroll>
 
-        <AnimateOnScroll animation="fade-up" delay={100}>
+        <AnimateOnScroll animation="fade-up-slow" delay={100}>
         {/* Features */}
         <div className="mb-16 grid gap-6 md:grid-cols-3">
           <div className={cn("rounded-xl border p-6 backdrop-blur-md", isBright ? "border-black/10 bg-white/70" : "border-white/10 bg-[#1a1a2e]/50")}>
@@ -98,7 +98,7 @@ export default function APIReferencePage() {
         </div>
         </AnimateOnScroll>
 
-        <AnimateOnScroll animation="fade-blur" delay={150}>
+        <AnimateOnScroll animation="fade-blur-slower" delay={150}>
         {/* Code Example */}
         <div className="mb-16">
           <div className="flex items-center justify-between mb-4">
@@ -123,7 +123,7 @@ export default function APIReferencePage() {
         </div>
         </AnimateOnScroll>
 
-        <AnimateOnScroll animation="fade-up" delay={200}>
+        <AnimateOnScroll animation="fade-up-slow" delay={200}>
         {/* Endpoints */}
         <div>
           <div className="flex items-center gap-2 mb-6">
@@ -154,7 +154,7 @@ export default function APIReferencePage() {
         </div>
         </AnimateOnScroll>
 
-        <AnimateOnScroll animation="fade-up" delay={250}>
+        <AnimateOnScroll animation="fade-up-slow" delay={250}>
         {/* CTA */}
         <div className={cn("mt-16 rounded-2xl border p-8 text-center backdrop-blur-md", isBright ? "border-black/10 bg-white/70" : "border-white/10 bg-[#1a1a2e]/50")}>
           <h2 className={cn("text-2xl font-bold", isBright ? "text-black" : "text-white")}>Ready to Build?</h2>

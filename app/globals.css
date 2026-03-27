@@ -245,6 +245,75 @@
   }
 }
 
+/* Marketing / demo — softer scroll-in */
+@keyframes fade-up-in-slow {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes blur-to-clear-slower {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+@keyframes clarte-shimmer {
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: -200% center;
+  }
+}
+
+.clarte-shimmer-text {
+  background: linear-gradient(
+    90deg,
+    var(--muted-foreground) 0%,
+    var(--foreground) 50%,
+    var(--muted-foreground) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: clarte-shimmer 2.8s ease-in-out infinite;
+}
+
+@keyframes transcript-token-pop {
+  0% {
+    opacity: 0.4;
+    transform: translateY(0.1em);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-transcript-token-pop {
+  animation: transcript-token-pop 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-fade-up-in-slow {
+  animation: fade-up-in-slow 0.95s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-blur-to-clear-slower {
+  animation: blur-to-clear-slower 1.05s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 @keyframes logo-marquee {
   0% {
     transform: translateX(0);
@@ -302,6 +371,21 @@
   .animate-blur-to-clear-slow {
     animation: blur-to-clear 0.25s ease-out both;
   }
+  .animate-fade-up-in-slow {
+    animation: fade-up-in-slow 0.35s ease-out both;
+  }
+  .animate-blur-to-clear-slower {
+    animation: blur-to-clear-slower 0.35s ease-out both;
+  }
+  .clarte-shimmer-text {
+    animation: none;
+    background: none;
+    -webkit-text-fill-color: unset;
+    color: var(--foreground);
+  }
+  .animate-transcript-token-pop {
+    animation: none;
+  }
   .animate-pop-in {
     animation: pop-in 0.25s ease-out both;
   }
@@ -313,6 +397,14 @@
 }
 .scroll-picker-scroll::-webkit-scrollbar {
   display: none; /* Chrome/Safari */
+}
+
+/* Demo transcript panel — same as scroll-picker (hidden bar, still scrollable) */
+.transcript-scroll {
+  scrollbar-width: none;
+}
+.transcript-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 /* Hero headline — staggered word reveal (Digital Serenity–style) */

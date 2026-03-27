@@ -26,7 +26,7 @@ export default function DownloadPage() {
       <Header />
 
       <main className="relative z-10 mx-auto max-w-4xl px-4 pt-[clamp(7rem,22vh,14rem)] pb-24">
-        <AnimateOnScroll animation="fade-up" animateOnMount delay={100}>
+        <AnimateOnScroll animation="fade-up-slow" animateOnMount delay={100}>
           <div className="mb-16 text-center">
             <h1 className={cn("text-4xl font-bold md:text-5xl lg:text-6xl", isBright ? "text-black" : "text-white")}>
               {t("download.title")}{" "}
@@ -41,7 +41,7 @@ export default function DownloadPage() {
         </AnimateOnScroll>
 
         <div className="grid gap-6 md:grid-cols-3">
-          <AnimateOnScroll animation="fade-up" delay={0}>
+          <AnimateOnScroll animation="fade-up-slow" delay={0}>
             {/* Desktop — Coming soon */}
             <div className={cn(cardBase(isBright), "opacity-95")}>
               <div className="mb-4 flex items-center justify-between">
@@ -65,7 +65,7 @@ export default function DownloadPage() {
             </div>
           </AnimateOnScroll>
 
-          <AnimateOnScroll animation="fade-up" delay={50}>
+          <AnimateOnScroll animation="fade-up-slow" delay={50}>
             {/* iOS App — Coming soon */}
             <div className={cn(cardBase(isBright), "opacity-95")}>
               <div className="mb-4 flex items-center justify-between">
@@ -87,7 +87,7 @@ export default function DownloadPage() {
             </div>
           </AnimateOnScroll>
 
-          <AnimateOnScroll animation="fade-up" delay={100}>
+          <AnimateOnScroll animation="fade-up-slow" delay={100}>
             {/* Chrome Extension — Live */}
             <a
               href={CHROME_WEB_STORE_URL}
@@ -117,7 +117,7 @@ export default function DownloadPage() {
           </AnimateOnScroll>
         </div>
 
-        <AnimateOnScroll animation="fade-up" delay={200}>
+        <AnimateOnScroll animation="fade-up-slow" delay={200}>
           <div className={cn("mt-12 rounded-2xl border p-6 text-center backdrop-blur-md", isBright ? "border-black/10 bg-white/60" : "border-white/10 bg-[#1a1a2e]/30")}>
             <p className={cn("text-sm", isBright ? "text-black/60" : "text-white/60")}>
               {t("download.preferWeb")}{" "}
