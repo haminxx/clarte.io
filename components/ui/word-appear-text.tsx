@@ -83,7 +83,7 @@ export function WordAppearText({
             data-delay={delay}
             className={cn(
               "word-animate-hero inline-block opacity-0 align-baseline",
-              "mx-[0.08em] first:ml-0",
+              "mx-[0.06em] first:ml-0",
               wordClassName
             )}
           >

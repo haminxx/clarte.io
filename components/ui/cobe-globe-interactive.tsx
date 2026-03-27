@@ -102,7 +102,7 @@ export function GlobeInteractive({
         theta: 0.2,
         dark: isBright ? 0 : 1,
         diffuse: isBright ? 1.25 : 1.5,
-        mapSamples: 10000,
+        mapSamples: 8000,
         mapBrightness: isBright ? 5.5 : 6,
         baseColor: isBright ? [0.78, 0.82, 0.9] : [0.06, 0.09, 0.16],
         markerColor: [0.15, 0.35, 0.65],
@@ -156,7 +156,12 @@ export function GlobeInteractive({
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
         className="h-full w-full touch-none rounded-full"
-        style={{ cursor: "grab", opacity: 0, transition: "opacity 1s ease" }}
+        style={{
+          cursor: "grab",
+          opacity: 0,
+          transition: "opacity 1s ease",
+          touchAction: "none",
+        }}
       />
     </div>
   )

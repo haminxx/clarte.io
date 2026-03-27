@@ -84,12 +84,12 @@ export function HeroSection() {
       </div>
 
       <div className="relative z-10 flex min-h-screen flex-col justify-center pt-[120px] pb-24">
-        <div className="mx-auto w-full max-w-[min(1400px,96vw)] 2xl:max-w-[min(1600px,94vw)] pl-[clamp(1.5rem,4vw,7.5rem)] pr-[clamp(1.5rem,4vw,7.5rem)] sm:pl-[clamp(2rem,5vw,8rem)] sm:pr-[clamp(2rem,5vw,8rem)] lg:pl-[clamp(4rem,8vw,120px)] lg:pr-[clamp(4rem,8vw,120px)] 2xl:pl-[min(8vw,160px)] 2xl:pr-[min(8vw,160px)]">
-          <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[1fr_1fr] lg:grid-rows-[auto_auto] lg:items-end lg:gap-x-[clamp(2rem,5vw,80px)] lg:gap-y-4">
+        <div className="mx-auto w-full max-w-[min(1400px,96vw)] 2xl:max-w-[min(1600px,94vw)] pl-[clamp(1.5rem,4vw,7.5rem)] pr-[clamp(1.5rem,4vw,7.5rem)] sm:pl-[clamp(2rem,5vw,8rem)] sm:pr-[clamp(2rem,5vw,8rem)] lg:pl-[clamp(4rem,8vw,120px)] lg:pr-[clamp(4rem,8vw,120px)] 2xl:pl-[min(8vw,160px)] 2xl:pr-[min(8vw,160px)] select-none" onCopy={(e) => e.preventDefault()}>
+          <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[1fr_1fr] lg:grid-rows-[auto_auto] lg:items-end lg:gap-x-[clamp(2rem,5vw,80px)] lg:gap-y-3">
             <AnimateOnScroll animateOnMount delay={0} animation="fade-blur-slow" className="order-1">
               <h1
                 className={cn(
-                  "font-bold leading-[1.08] tracking-tight text-[clamp(1.7rem,3.4vw,3.1rem)] sm:text-[clamp(1.95rem,3.6vw,3.35rem)] md:text-[clamp(2.1rem,3.8vw,3.6rem)] xl:text-[clamp(2.6rem,3.2vw,50px)]",
+                  "font-bold leading-[0.98] tracking-tight text-[clamp(1.7rem,3.4vw,3.1rem)] sm:text-[clamp(1.95rem,3.6vw,3.35rem)] md:text-[clamp(2.1rem,3.8vw,3.6rem)] xl:text-[clamp(2.6rem,3.2vw,50px)]",
                   isBright ? "text-black" : "text-white"
                 )}
               >
@@ -99,7 +99,7 @@ export function HeroSection() {
                   initialDelayMs={HEADLINE_INITIAL_MS}
                   perWordStepMs={HEADLINE_STEP_MS}
                 />
-                <span className="group relative inline-block cursor-default rounded px-1.5 py-0.5 bg-transparent backdrop-blur-xl blur-[3px] transition-all duration-300 hover:blur-none">
+                <span className="group relative inline-block cursor-default rounded px-1 py-0 bg-transparent backdrop-blur-xl blur-[3px] transition-all duration-300 hover:blur-none">
                   <WordAppearText
                     text={tagClarity}
                     startWordIndex={nBefore}
