@@ -6,6 +6,7 @@ import { AnimateOnScroll } from "@/components/animate-on-scroll"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 import { useTranslation } from "@/lib/language-context"
 import { cn } from "@/lib/utils"
+import AboutSection2 from "@/components/ui/about-section-2"
 
 export default function AboutPage() {
   const { theme } = useClarteTheme()
@@ -15,30 +16,12 @@ export default function AboutPage() {
     <div className="min-h-screen bg-transparent">
       <Header />
 
-      <main className="relative z-10 mx-auto max-w-4xl px-4 pt-[clamp(7rem,22vh,14rem)] pb-24">
-        <AnimateOnScroll animation="fade-up-slow" animateOnMount delay={100}>
-          <div className="mb-16">
-            <h1 className={cn("text-4xl font-bold md:text-5xl", isBright ? "text-black" : "text-white")}>
-              {t("about.title")}
-            </h1>
-            <p className={cn("mt-4 text-lg", isBright ? "text-black/60" : "text-white/60")}>
-              {t("about.subtitle")}
-            </p>
-          </div>
-        </AnimateOnScroll>
+      <main className="relative z-10 mx-auto max-w-6xl px-4 pt-[clamp(7rem,22vh,14rem)] pb-24">
+        <AboutSection2 />
 
         {/* Three-step thinking cards */}
         <AnimateOnScroll animation="fade-blur-slower" delay={80}>
           <section className="mb-16 space-y-8">
-            <div className={cn("space-y-4 leading-relaxed", isBright ? "text-black/80" : "text-white/80")}>
-              <p>
-                {t("about.intro1")}
-              </p>
-              <p>
-                {t("about.intro2")}
-              </p>
-            </div>
-
             <div className="grid gap-6 md:grid-cols-3">
               <div
                 className={cn(
