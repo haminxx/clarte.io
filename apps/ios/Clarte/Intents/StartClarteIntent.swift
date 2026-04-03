@@ -2,21 +2,33 @@
 //  StartClarteIntent.swift
 //  Clarte
 //
-//  App Intent for Siri: "Hey Siri, start Clarte" or "Hey Siri, talk to Clarte"
-//  Requires iOS 16+.
+//  App Intent: Shortcuts, Siri, Action Button. Presents a snippet; does not open the main UI.
+//  Requires iOS 18+ for SnippetIntent / ShowsSnippetView.
 //
 
 import AppIntents
 import SwiftUI
 
-struct StartClarteIntent: AppIntent {
+struct StartClarteIntent: SnippetIntent {
     static var title: LocalizedStringResource = "Start Clarte"
-    static var description = IntentDescription("Start a voice call with Clarte, your AI assistant.")
+    static var description = IntentDescription("Start a voice session with Clarte, your AI assistant.")
 
-    func perform() async throws -> some IntentResult {
-        // Post notification to open the app and start the call
-        NotificationCenter.default.post(name: .startClarteFromSiri, object: nil)
-        return .result()
+    /// Avoid foregrounding the SwiftUI app when run from Shortcuts or the Action Button.
+    static var openAppWhenRun: Bool { false }
+
+    func perform() async throws -> some IntentResult & ShowsSnippetView {
+        let granted = await ClarteAudioSession.requestMicrophonePermissionIfNeeded()
+        if !granted {
+            return .result(view: ClarteVoiceSnippetView(phase: .microphoneDenied))
+        }
+
+        do {
+            try ClarteAudioSession.configureForVoiceIO()
+        } catch {
+            return .result(view: ClarteVoiceSnippetView(phase: .audioUnavailable))
+        }
+
+        return .result(view: ClarteVoiceSnippetView(phase: .listening))
     }
 }
 
@@ -33,8 +45,4 @@ struct StartClarteShortcutsProvider: AppShortcutsProvider {
             systemImageName: "mic.fill"
         )
     }
-}
-
-extension Notification.Name {
-    static let startClarteFromSiri = Notification.Name("startClarteFromSiri")
 }

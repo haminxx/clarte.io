@@ -4,7 +4,6 @@ import Link from "next/link"
 import dynamic from "next/dynamic"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { LineRevealBlock } from "@/components/ui/line-reveal-text"
 import { WordAppearText, estimateWordSequenceEndMs } from "@/components/ui/word-appear-text"
 import { AnimateOnScroll } from "./animate-on-scroll"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
@@ -23,6 +22,9 @@ function countWords(s: string): number {
 
 const HEADLINE_INITIAL_MS = 400
 const HEADLINE_STEP_MS = 80
+/** Time for subtitle fade+slide animation to read as complete before CTAs appear */
+const SUBTITLE_ANIM_MS = 800
+const CTA_AFTER_SUBTITLE_BUFFER_MS = 80
 
 export function HeroSection() {
   const { theme } = useClarteTheme()
@@ -41,16 +43,22 @@ export function HeroSection() {
   const headlineWordCount = nBefore + nClarity + countWords(tagAfter)
   const headlineEndMs = estimateWordSequenceEndMs(headlineWordCount, HEADLINE_INITIAL_MS, HEADLINE_STEP_MS)
 
-  const [showSecondaryColumn, setShowSecondaryColumn] = useState(false)
+  const [showSubtitleBlock, setShowSubtitleBlock] = useState(false)
+  const [showHeroCtas, setShowHeroCtas] = useState(false)
 
   useEffect(() => {
-    setShowSecondaryColumn(false)
-    if (headlineWordCount === 0) {
-      setShowSecondaryColumn(true)
-      return
+    setShowSubtitleBlock(false)
+    setShowHeroCtas(false)
+    const startMs = headlineWordCount === 0 ? 0 : headlineEndMs
+    const tSubtitle = window.setTimeout(() => setShowSubtitleBlock(true), startMs)
+    const tCtas = window.setTimeout(
+      () => setShowHeroCtas(true),
+      startMs + SUBTITLE_ANIM_MS + CTA_AFTER_SUBTITLE_BUFFER_MS
+    )
+    return () => {
+      clearTimeout(tSubtitle)
+      clearTimeout(tCtas)
     }
-    const id = window.setTimeout(() => setShowSecondaryColumn(true), headlineEndMs)
-    return () => clearTimeout(id)
   }, [headlineEndMs, headlineWordCount])
 
   return (
@@ -123,41 +131,51 @@ export function HeroSection() {
               </h1>
             </AnimateOnScroll>
             <div className="order-2 flex flex-col items-start lg:items-end lg:justify-end gap-4">
-              {showSecondaryColumn ? (
+              {showSubtitleBlock ? (
                 <>
-                  <div className="animate-in fade-in slide-in-from-bottom-2 flex flex-wrap gap-3 duration-500 sm:gap-4">
-                    <Link href="/download">
-                      <Button
-                        className={cn(
-                          "text-[clamp(0.875rem,1.2vw,1rem)] h-[clamp(2.25rem,4vh,2.75rem)] px-[clamp(1rem,2vw,1.5rem)]",
-                          isBright ? "bg-black text-white hover:bg-black/90" : "bg-white text-black hover:bg-white/90"
-                        )}
-                      >
-                        {t("hero.download")}
-                      </Button>
-                    </Link>
-                    <Link href="/demo">
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "text-[clamp(0.875rem,1.2vw,1rem)] h-[clamp(2.25rem,4vh,2.75rem)] px-[clamp(1rem,2vw,1.5rem)]",
-                          isBright
-                            ? "border-black/30 bg-transparent text-black hover:bg-black/10"
-                            : "border-white/20 bg-transparent text-white hover:bg-white/10"
-                        )}
-                      >
-                        {t("hero.demo")}
-                      </Button>
-                    </Link>
+                  <div
+                    className={cn(
+                      "w-full max-w-[min(450px,55vw)] lg:max-w-none lg:text-right min-h-[4.5rem] flex flex-col gap-0.5 text-left lg:text-right leading-snug text-[clamp(0.75rem,1.1vw,1.125rem)] sm:text-[clamp(0.8125rem,1.15vw,1rem)] md:text-[clamp(0.875rem,1.2vw,1.125rem)]",
+                      "animate-in fade-in slide-in-from-bottom-4 duration-700",
+                      isBright ? "text-black/70" : "text-white/60"
+                    )}
+                  >
+                    <p>{sub1}</p>
+                    <p>{sub2}</p>
+                    <p>{sub3}</p>
                   </div>
-                  <div className="w-full max-w-[min(450px,55vw)] lg:max-w-none lg:text-right min-h-[4.5rem]">
-                    <LineRevealBlock
-                      lines={[sub1, sub2, sub3]}
-                      durationMs={1200}
-                      className="text-left lg:text-right leading-snug text-[clamp(0.75rem,1.1vw,1.125rem)] sm:text-[clamp(0.8125rem,1.15vw,1rem)] md:text-[clamp(0.875rem,1.2vw,1.125rem)]"
-                      lineClassName={isBright ? "text-black/70" : "text-white/60"}
+                  {showHeroCtas ? (
+                    <div className="animate-in fade-in slide-in-from-bottom-1 flex flex-wrap gap-3 duration-[1200ms] sm:gap-4">
+                      <Link href="/download">
+                        <Button
+                          className={cn(
+                            "text-[clamp(0.875rem,1.2vw,1rem)] h-[clamp(2.25rem,4vh,2.75rem)] px-[clamp(1rem,2vw,1.5rem)]",
+                            isBright ? "bg-black text-white hover:bg-black/90" : "bg-white text-black hover:bg-white/90"
+                          )}
+                        >
+                          {t("hero.download")}
+                        </Button>
+                      </Link>
+                      <Link href="/demo">
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "text-[clamp(0.875rem,1.2vw,1rem)] h-[clamp(2.25rem,4vh,2.75rem)] px-[clamp(1rem,2vw,1.5rem)]",
+                            isBright
+                              ? "border-black/30 bg-transparent text-black hover:bg-black/10"
+                              : "border-white/20 bg-transparent text-white hover:bg-white/10"
+                          )}
+                        >
+                          {t("hero.demo")}
+                        </Button>
+                      </Link>
+                    </div>
+                  ) : (
+                    <div
+                      className="min-h-[clamp(2.75rem,5vh,3.25rem)] w-full max-w-[min(450px,55vw)] lg:max-w-none"
+                      aria-hidden
                     />
-                  </div>
+                  )}
                 </>
               ) : (
                 <div className="min-h-[clamp(6rem,12vh,8rem)] w-full max-w-[min(450px,55vw)] lg:max-w-none" aria-hidden />

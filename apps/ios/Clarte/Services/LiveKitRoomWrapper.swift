@@ -2,24 +2,27 @@
 //  LiveKitRoomWrapper.swift
 //  Clarte
 //
-//  Wraps LiveKit Room. Add LiveKit Swift SDK via SPM:
-//  https://github.com/livekit/client-sdk-swift
+//  Tier 2 (LiveKit + token server). Add livekit-client-sdk-swift via SPM, then implement connect.
 //
 
 import Foundation
 
-/// Placeholder until LiveKit Swift SDK is added.
-/// Replace with actual Room from livekit-client-sdk-swift.
-class LiveKitRoomWrapper {
+enum LiveKitTier2Error: LocalizedError {
+    case notImplemented
+
+    var errorDescription: String? {
+        switch self {
+        case .notImplemented:
+            return "LiveKit is not wired in this build. The app uses Vapi (Tier 1) by default. Add the LiveKit Swift SDK and implement Room.connect in LiveKitRoomWrapper."
+        }
+    }
+}
+
+/// Placeholder until LiveKit Swift SDK is fully integrated.
+final class LiveKitRoomWrapper {
     func connect(url: String, token: String) async throws {
-        // TODO: Add LiveKit Swift SDK and implement:
-        // let room = Room()
-        // try await room.connect(url: url, token: token, options: ConnectOptions(enableMicrophone: true))
-        // Keep room reference for disconnect()
-        fatalError("Add LiveKit Swift SDK. See README.")
+        throw LiveKitTier2Error.notImplemented
     }
 
-    func disconnect() {
-        // TODO: room.disconnect()
-    }
+    func disconnect() {}
 }

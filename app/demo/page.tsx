@@ -22,6 +22,8 @@ import { cn } from "@/lib/utils"
 import { SDHTranscript } from "@/components/voice/SDHTranscript"
 import { ClarteThinkingBlock } from "@/components/ui/clarte-thinking-block"
 import { useASLPipeline } from "@/hooks/use-asl-pipeline"
+import { AslCallCard, type AslCallCardHandle } from "@/components/asl/AslCallCard"
+import { mapAssistantTextToIntent } from "@/components/asl/asl-intent-map"
 
 function switchModeToCallMode(mode: SwitchMode): CallMode {
   if (mode === "screen") return "voice-with-screen"
@@ -47,6 +49,8 @@ export default function DemoPage() {
   const aslPipelineRef = useRef<{ sendTest: () => void } | null>(null)
   const [aslEnabled, setAslEnabled] = useState(false)
   const [aslStatus, setAslStatus] = useState<"disconnected" | "connecting" | "ready">("disconnected")
+  const aslCallCardRef = useRef<AslCallCardHandle | null>(null)
+  const [vapiCallStatus, setVapiCallStatus] = useState<"idle" | "connecting" | "active" | "error">("idle")
 
   useEffect(() => {
     if (!inCall) {
@@ -72,7 +76,7 @@ export default function DemoPage() {
   const [assistantThinking, setAssistantThinking] = useState(false)
   const transcriptContainerRef = useRef<HTMLDivElement>(null)
   const transcriptEndRef = useRef<HTMLDivElement>(null)
-  const partialDebounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const partialDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   // Prefill from URL (e.g. from Chrome extension popup). Language restricted to en for now.
   useEffect(() => {
@@ -101,6 +105,7 @@ export default function DemoPage() {
     setAssistantThinking(false)
     sendContextRef.current = null
     sendASLRef.current = null
+    setVapiCallStatus("idle")
   }
 
   const handleRequestScreenContext = useCallback((mode: SwitchMode) => {
@@ -137,9 +142,15 @@ export default function DemoPage() {
       } else {
         setAssistantPartial("")
         setAssistantThinking(false)
+        if (aslEnabled) {
+          const intent = mapAssistantTextToIntent(content)
+          if (intent) {
+            queueMicrotask(() => aslCallCardRef.current?.triggerAslAnimation(intent))
+          }
+        }
       }
     },
-    []
+    [aslEnabled]
   )
 
   const handleTranscriptPartial = useCallback(
@@ -238,30 +249,54 @@ export default function DemoPage() {
               <div data-clarte-card className="w-full rounded-2xl border border-border bg-card/90 p-4 sm:p-5 md:p-6 shadow-2xl backdrop-blur-md mx-auto min-w-0">
                 {inCall && (callMode === "vapi" || callMode === "parallel") && VapiRoomComponent ? (
                   <div className="flex flex-col gap-4">
-                    <VapiRoomComponent
-                      onDisconnect={handleDisconnect}
-                      autoStart
-                      cardLayout
-                      assistantId={DEMO_ASSISTANT_ID}
-                      onTranscriptAdd={handleTranscriptAdd}
-                      onTranscriptPartial={handleTranscriptPartial}
-                      onRequestScreenContext={handleRequestScreenContext}
-                      sendContextRef={sendContextRef}
-                      sendASLRef={sendASLRef}
-                      screenContextRequested={showSecretaryRoom}
-                    />
-                    {aslEnabled && aslStatus === "ready" && (
-                      <p className="text-xs text-muted-foreground text-center">
-                        ASL camera active.{" "}
-                        <button
-                          type="button"
-                          onClick={() => aslPipelineRef.current?.sendTest()}
-                          className="underline hover:text-foreground"
-                        >
-                          Test ASL
-                        </button>{" "}
-                        (sends &quot;test&quot; to verify pipeline)
-                      </p>
+                    {aslEnabled ? (
+                      <>
+                        <AslCallCard
+                          ref={aslCallCardRef}
+                          onEndCall={handleDisconnect}
+                          vapiStatus={vapiCallStatus}
+                        />
+                        <VapiRoomComponent
+                          onDisconnect={handleDisconnect}
+                          autoStart
+                          cardLayout
+                          minimalUI
+                          onCallStatusChange={setVapiCallStatus}
+                          assistantId={DEMO_ASSISTANT_ID}
+                          onTranscriptAdd={handleTranscriptAdd}
+                          onTranscriptPartial={handleTranscriptPartial}
+                          onRequestScreenContext={handleRequestScreenContext}
+                          sendContextRef={sendContextRef}
+                          sendASLRef={sendASLRef}
+                          screenContextRequested={showSecretaryRoom}
+                        />
+                        {aslStatus === "ready" && (
+                          <p className="text-xs text-muted-foreground text-center">
+                            ASL camera active.{" "}
+                            <button
+                              type="button"
+                              onClick={() => aslPipelineRef.current?.sendTest()}
+                              className="underline hover:text-foreground"
+                            >
+                              Test ASL
+                            </button>{" "}
+                            (sends &quot;test&quot; to verify pipeline)
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <VapiRoomComponent
+                        onDisconnect={handleDisconnect}
+                        autoStart
+                        cardLayout
+                        assistantId={DEMO_ASSISTANT_ID}
+                        onTranscriptAdd={handleTranscriptAdd}
+                        onTranscriptPartial={handleTranscriptPartial}
+                        onRequestScreenContext={handleRequestScreenContext}
+                        sendContextRef={sendContextRef}
+                        sendASLRef={sendASLRef}
+                        screenContextRequested={showSecretaryRoom}
+                      />
                     )}
                     {callMode === "parallel" && showSecretaryRoom && SecretaryRoomComponent && (
                       <SecretaryRoomComponent

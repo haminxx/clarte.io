@@ -1,6 +1,6 @@
 {
   "nav": { "about": "Acerca de", "download": "Descargar", "api": "API", "demo": "Demo" },
-  "header": { "requestAccess": "Solicitar acceso", "signOut": "Cerrar sesión", "profile": "Perfil", "settings": "Ajustes", "themeSwitchToBright": "Cambiar a tema claro", "themeSwitchToDark": "Cambiar a tema oscuro" },
+  "header": { "signIn": "Iniciar sesión", "requestAccess": "Solicitar acceso", "signOut": "Cerrar sesión", "profile": "Perfil", "settings": "Ajustes", "themeSwitchToBright": "Cambiar a tema claro", "themeSwitchToDark": "Cambiar a tema oscuro" },
   "hero": {
     "taglineBefore": "Encuentra una ",
     "taglineClarity": "claridad",

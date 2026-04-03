@@ -1,6 +1,6 @@
 {
   "nav": { "about": "关于", "download": "下载", "api": "API", "demo": "演示" },
-  "header": { "requestAccess": "申请访问", "signOut": "退出登录", "profile": "个人资料", "settings": "设置", "themeSwitchToBright": "切换到浅色主题", "themeSwitchToDark": "切换到深色主题" },
+  "header": { "signIn": "登录", "requestAccess": "申请访问", "signOut": "退出登录", "profile": "个人资料", "settings": "设置", "themeSwitchToBright": "切换到浅色主题", "themeSwitchToDark": "切换到深色主题" },
   "hero": {
     "taglineBefore": "与一个会质疑、辩论和验证的语音AI一起，找到绝对的",
     "taglineClarity": "清晰",

@@ -1,6 +1,6 @@
 {
   "nav": { "about": "概要", "download": "ダウンロード", "api": "API", "demo": "デモ" },
-  "header": { "requestAccess": "アクセスをリクエスト", "signOut": "ログアウト", "profile": "プロフィール", "settings": "設定", "themeSwitchToBright": "ライトテーマに切り替え", "themeSwitchToDark": "ダークテーマに切り替え" },
+  "header": { "signIn": "ログイン", "requestAccess": "アクセスをリクエスト", "signOut": "ログアウト", "profile": "プロフィール", "settings": "設定", "themeSwitchToBright": "ライトテーマに切り替え", "themeSwitchToDark": "ダークテーマに切り替え" },
   "hero": {
     "taglineBefore": "問いかけ、議論し、検証する音声AIで、真の",
     "taglineClarity": "明確さ",

@@ -2,7 +2,7 @@
 //  VoiceCallView.swift
 //  Clarte
 //
-//  LiveKit voice call UI. Requires LiveKit Swift SDK.
+//  Optional Tier 2 (LiveKit) full-screen call. Primary flow is Vapi from HomeView.
 //
 
 import SwiftUI
@@ -47,11 +47,10 @@ struct VoiceCallView: View {
     }
 
     private func connect() async {
-        // Token and LiveKit URL should come from Config/Environment
         guard let token = await TokenService.shared.fetchToken(voice: voice),
               let url = Config.liveKitURL else {
             status = .error
-            errorMessage = "Missing token or LiveKit URL. Set Config values."
+            errorMessage = "Missing token or LiveKit URL. Tier 1 voice uses Vapi from the home screen."
             return
         }
 

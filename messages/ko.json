@@ -1,6 +1,6 @@
 {
   "nav": { "about": "소개", "download": "다운로드", "api": "API", "demo": "데모" },
-  "header": { "requestAccess": "액세스 요청", "signOut": "로그아웃", "profile": "프로필", "settings": "설정", "themeSwitchToBright": "밝은 테마로 전환", "themeSwitchToDark": "어두운 테마로 전환" },
+  "header": { "signIn": "로그인", "requestAccess": "액세스 요청", "signOut": "로그아웃", "profile": "프로필", "settings": "설정", "themeSwitchToBright": "밝은 테마로 전환", "themeSwitchToDark": "어두운 테마로 전환" },
   "hero": {
     "taglineBefore": "완전한 ",
     "taglineClarity": "명확함",

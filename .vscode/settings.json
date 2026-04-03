@@ -1,8 +1,3 @@
 {
-    "python.terminal.activateEnvironment": true,
-    "python.analysis.autoImportCompletions": true,
-    "python.analysis.typeCheckingMode": "basic",
-    "files.associations": {
-        "*.py": "python"
-    }
+  "terminal.integrated.defaultProfile.windows": "Command Prompt"
 }

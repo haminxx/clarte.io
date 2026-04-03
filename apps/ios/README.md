@@ -1,52 +1,58 @@
 # Clarte iOS
 
-Swift/SwiftUI iPhone app for Clarte voice AI.
+Swift/SwiftUI iPhone app for Clarte: welcome flow, Firebase auth (Apple / Google / email), glass-style home, and **Vapi.ai** voice (Tier 1, same idea as the web demo’s default).
 
-## Setup
+## Swift Package Manager (Xcode)
 
-1. Open Xcode and create a new **iOS App** project:
-   - Product Name: Clarte
-   - Team: Your Apple Developer team
-   - Organization Identifier: io.clarte
-   - Interface: SwiftUI
-   - Language: Swift
-   - Minimum Deployments: iOS 16.0
+Add these packages (**File → Add Package Dependencies**):
 
-2. Add the Swift files from this folder to your Xcode project:
-   - `ClarteApp.swift` (replace the default App file)
-   - `ContentView.swift`
-   - `Views/VoiceCardView.swift`
-   - `Views/VoiceCallView.swift`
-   - `Services/TokenService.swift`
-   - `Services/Config.swift`
-   - `Services/LiveKitRoomWrapper.swift`
-   - `Intents/StartClarteIntent.swift`
+| Package | URL | Products to add |
+|--------|-----|-------------------|
+| Firebase | `https://github.com/firebase/firebase-ios-sdk` | `FirebaseAuth`, `FirebaseCore` |
+| Google Sign-In | `https://github.com/google/GoogleSignIn-iOS` | `GoogleSignIn` |
+| Vapi | `https://github.com/VapiAI/client-sdk-ios` | `Vapi` (pulls **Daily** SDK) |
+| LiveKit (optional Tier 2) | `https://github.com/livekit/client-sdk-swift` | When you implement `LiveKitRoomWrapper` |
 
-3. Add LiveKit Swift SDK via Swift Package Manager:
-   - File > Add Package Dependencies
-   - URL: `https://github.com/livekit/client-sdk-swift`
-   - Add to your app target
+Minimum deployment: **iOS 18.0** (for Siri / snippet intents).
 
-4. Replace `LiveKitRoomWrapper` with actual LiveKit `Room` usage. See [LiveKit Swift docs](https://docs.livekit.io/client-sdk-swift/).
+## Firebase setup
 
-5. Copy `Info.plist` keys into your project's Info tab (or merge with existing Info.plist):
-   - NSMicrophoneUsageDescription
-   - NSCameraUsageDescription
-   - UIBackgroundModes: audio
+1. In [Firebase Console](https://console.firebase.google.com), add an **iOS** app with bundle ID `io.clarte.Clarte` (or your bundle ID).
+2. Download **GoogleService-Info.plist** and add it to the **Clarte** target. Do not commit secrets if your policy forbids it.
+3. Enable **Sign in with Apple** and **Google** in Authentication → Sign-in method.
+4. For **Google** on iOS: copy **REVERSED_CLIENT_ID** from `GoogleService-Info.plist` into **URL Types** (Xcode → Target → Info → URL Types) as a URL scheme so Google Sign-In can return to your app.
 
-6. Add environment variables for development:
-   - Edit Scheme > Run > Arguments > Environment Variables
-   - LIVEKIT_URL = wss://your-project.livekit.cloud
-   - VOICE_AGENT_URL = https://your-render-app.onrender.com
+## Sign in with Apple
 
-7. For Siri: Enable "Siri" capability in Signing & Capabilities. The `Clarte.entitlements` includes the Siri entitlement.
+- Add capability **Sign In with Apple** in Xcode (Signing & Capabilities). The repo includes `com.apple.developer.applesignin` in `Clarte.entitlements` for the same.
 
-## Siri
+## Vapi (voice)
 
-After setup, users can say:
-- "Hey Siri, start Clarte"
-- "Hey Siri, talk to Clarte"
+Set **Run** scheme environment variables (Product → Scheme → Edit Scheme → Run → Arguments → Environment Variables):
 
-## Background
+| Name | Example |
+|------|---------|
+| `VAPI_PUBLIC_KEY` | Same as web `NEXT_PUBLIC_VAPI_PUBLIC_KEY` |
+| `VAPI_ASSISTANT_ID` | Same as your web demo assistant ID |
 
-The app uses `UIBackgroundModes: audio` so voice calls continue when the app is in the background.
+You can also add `VAPI_PUBLIC_KEY` / `VAPI_ASSISTANT_ID` to **Info.plist** for local dev (not recommended for production).
+
+Tier 2 (**LiveKit** + token server) remains optional; see `Config.swift`, `TokenService.swift`, and `VoiceCallView.swift`.
+
+## Source files (add to Xcode target)
+
+- `ClarteApp.swift`, `AppRootView.swift`, `ContentView.swift` (preview helper)
+- `Views/`: `WelcomeAnimatedView.swift`, `AuthView.swift`, `HomeView.swift`, `MainTabShell.swift`, `VoiceOrbView.swift`, `VoiceCardView.swift`, `VoiceCallView.swift`, `ClarteVoiceSnippetView.swift`
+- `Services/`: `Config.swift`, `SessionManager.swift`, `AuthUtilities.swift`, `VapiCallCoordinator.swift`, `MicrophoneLevelMonitor.swift`, `TokenService.swift`, `LiveKitRoomWrapper.swift`, `ClarteAudioSession.swift`
+- `Intents/StartClarteIntent.swift`
+- `Info.plist`, `Clarte.entitlements`, `GoogleService-Info.plist` (from Firebase)
+
+## Flow
+
+1. **Welcome** — animated blue gradient + film-grain noise; Continue.
+2. **Auth** — Apple, Google, or email (Firebase).
+3. **Home** — photo background, glass “Now for you” cards, floating glass tab bar, **orb** to start/stop a **Vapi** call.
+
+## Siri / Action Button
+
+Unchanged: see existing `StartClarteIntent` and `ClarteVoiceSnippetView`.

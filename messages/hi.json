@@ -1,6 +1,6 @@
 {
   "nav": { "about": "अबाउट", "download": "डाउनलोड", "api": "API", "demo": "डेमो" },
-  "header": { "requestAccess": "एक्सेस का अनुरोध", "signOut": "साइन आउट", "profile": "प्रोफ़ाइल", "settings": "सेटिंग्स", "themeSwitchToBright": "हल्की थीम पर जाएं", "themeSwitchToDark": "डार्क थीम पर जाएं" },
+  "header": { "signIn": "साइन इन", "requestAccess": "एक्सेस का अनुरोध", "signOut": "साइन आउट", "profile": "प्रोफ़ाइल", "settings": "सेटिंग्स", "themeSwitchToBright": "हल्की थीम पर जाएं", "themeSwitchToDark": "डार्क थीम पर जाएं" },
   "hero": {
     "taglineBefore": "सवाल करने, बहस करने और मान्य करने वाले वॉयस AI के साथ पूर्ण ",
     "taglineClarity": "स्पष्टता",

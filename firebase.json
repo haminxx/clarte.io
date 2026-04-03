@@ -18,7 +18,9 @@
       { "source": "/auth/callback", "destination": "/auth/callback.html" },
       { "source": "/auth/error", "destination": "/auth/error.html" },
       { "source": "/auth/sign-up", "destination": "/auth/sign-up.html" },
-      { "source": "/auth/sign-up-success", "destination": "/auth/sign-up-success.html" }
+      { "source": "/auth/sign-up-success", "destination": "/auth/sign-up-success.html" },
+      { "source": "/auth/login", "destination": "/auth/login.html" },
+      { "source": "/dashboard", "destination": "/dashboard.html" }
     ],
     "headers": [{
       "source": "**",

@@ -6,6 +6,7 @@
     "demo": "Demo"
   },
   "header": {
+    "signIn": "Sign in",
     "requestAccess": "Request Access",
     "signOut": "Sign Out",
     "profile": "Profile",

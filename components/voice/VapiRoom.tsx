@@ -47,6 +47,10 @@ interface VapiRoomProps {
   screenContextRequested?: boolean
   /** Vapi assistant ID. If not provided, uses Demo tier or legacy NEXT_PUBLIC_VAPI_ASSISTANT_ID. */
   assistantId?: string
+  /** When true with cardLayout, render no visible UI but keep the call, transcripts, and refs active (e.g. ASL 3D card). */
+  minimalUI?: boolean
+  /** Fired whenever connection status changes (for parent loading states when minimalUI). */
+  onCallStatusChange?: (status: "idle" | "connecting" | "active" | "error") => void
 }
 
 export function VapiRoom({
@@ -62,6 +66,8 @@ export function VapiRoom({
   sendASLRef,
   screenContextRequested = false,
   assistantId: assistantIdProp,
+  minimalUI = false,
+  onCallStatusChange,
 }: VapiRoomProps) {
   const resolvedAssistantId =
     assistantIdProp?.trim() ||
@@ -211,7 +217,22 @@ export function VapiRoom({
     }
   }, [])
 
+  useEffect(() => {
+    onCallStatusChange?.(status)
+  }, [status, onCallStatusChange])
+
   const configured = Boolean(VAPI_PUBLIC_KEY && resolvedAssistantId)
+
+  if (minimalUI) {
+    if (status === "error" && error) {
+      return (
+        <p className="sr-only" role="status">
+          {error}
+        </p>
+      )
+    }
+    return null
+  }
 
   const cardHeader = (
     <div className="mb-6 flex items-center justify-between">

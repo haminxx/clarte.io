@@ -174,8 +174,8 @@ export function Header() {
           : "border-b border-transparent bg-transparent"
       )}
     >
-      <div className="mx-auto flex h-20 w-full max-w-[min(1400px,96vw)] 2xl:max-w-[min(1600px,94vw)] items-center justify-between pl-[clamp(1.5rem,4vw,7.5rem)] pr-[clamp(1.5rem,4vw,7.5rem)] sm:pl-[clamp(2rem,5vw,8rem)] sm:pr-[clamp(2rem,5vw,8rem)] lg:pl-[clamp(4rem,8vw,120px)] lg:pr-[clamp(4rem,8vw,120px)] 2xl:pl-[min(8vw,160px)] 2xl:pr-[min(8vw,160px)]">
-        <div className="flex items-center gap-2">
+      <div className="relative mx-auto flex h-20 w-full max-w-[min(1400px,96vw)] 2xl:max-w-[min(1600px,94vw)] items-center justify-between pl-[clamp(1.5rem,4vw,7.5rem)] pr-[clamp(1.5rem,4vw,7.5rem)] sm:pl-[clamp(2rem,5vw,8rem)] sm:pr-[clamp(2rem,5vw,8rem)] lg:pl-[clamp(4rem,8vw,120px)] lg:pr-[clamp(4rem,8vw,120px)] 2xl:pl-[min(8vw,160px)] 2xl:pr-[min(8vw,160px)]">
+        <div className="z-10 flex min-w-0 flex-shrink-0 items-center gap-2 lg:gap-4">
           <Link href="/" className={cn("text-2xl font-bold", theme === "dark" ? "text-white" : "text-black")}>
             Clarte
           </Link>
@@ -200,10 +200,24 @@ export function Header() {
               />
             </span>
           </button>
+          {authChecked && !user ? (
+            <Link
+              href="/auth/login"
+              className={cn(
+                "hidden text-sm font-medium transition-colors lg:inline-flex",
+                theme === "dark" ? "text-white/85 hover:text-white" : "text-black/85 hover:text-black"
+              )}
+            >
+              {t("header.signIn")}
+            </Link>
+          ) : null}
         </div>
 
-        <div className="flex items-center gap-3">
-          <nav className="hidden items-center gap-3 lg:flex">
+        <nav
+          className="pointer-events-none absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 lg:block"
+          aria-label="Main"
+        >
+          <div className="pointer-events-auto flex items-center gap-3">
             {navLinks.map((link) => {
               const isActive =
                 pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href))
@@ -221,16 +235,21 @@ export function Header() {
                 </Link>
               )
             })}
-          </nav>
-          <Link
-            href="/contact"
-            className={cn(
-              "hidden md:inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium transition-all",
-              theme === "bright" ? "bg-black text-white hover:bg-black/90" : "text-black bg-gradient-to-r from-white to-white/90 hover:from-white/95 hover:to-white/80 shadow-sm"
-            )}
-          >
-            {t("header.requestAccess")}
-          </Link>
+          </div>
+        </nav>
+
+        <div className="z-10 flex min-w-0 flex-shrink-0 items-center justify-end gap-3">
+          {authChecked && !user ? (
+            <Link
+              href="/auth/login"
+              className={cn(
+                "hidden items-center justify-center rounded-full px-4 py-2 text-sm font-medium transition-all md:inline-flex",
+                theme === "bright" ? "bg-black text-white hover:bg-black/90" : "text-black bg-gradient-to-r from-white to-white/90 hover:from-white/95 hover:to-white/80 shadow-sm"
+              )}
+            >
+              {t("header.signIn")}
+            </Link>
+          ) : null}
           <LanguageSelector />
           <AuthButtons />
 
@@ -285,16 +304,18 @@ export function Header() {
                   </Link>
                 )
               })}
-              <Link
-                href="/contact"
-                className={cn(
-                  "rounded-full px-4 py-2.5 text-sm font-medium transition-all",
-                  theme === "dark" ? "text-black bg-gradient-to-r from-white to-white/90 hover:from-white/95 hover:to-white/80" : "bg-black text-white hover:bg-black/90"
-                )}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {t("header.requestAccess")}
-              </Link>
+              {authChecked && !user ? (
+                <Link
+                  href="/auth/login"
+                  className={cn(
+                    "rounded-full px-4 py-2.5 text-sm font-medium transition-all text-center",
+                    theme === "dark" ? "text-black bg-gradient-to-r from-white to-white/90 hover:from-white/95 hover:to-white/80" : "bg-black text-white hover:bg-black/90"
+                  )}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {t("header.signIn")}
+                </Link>
+              ) : null}
               <MobileAuthButtons />
             </nav>
           </div>
