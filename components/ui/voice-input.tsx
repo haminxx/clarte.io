@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Mic, MicOff, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useClarteTheme } from "@/lib/clarte-theme-context"
 
 export type VoiceInputStatus = "idle" | "connecting" | "active" | "ending"
 
@@ -26,6 +27,8 @@ export function VoiceInput({
   className,
   caption,
 }: VoiceInputProps) {
+  const { theme } = useClarteTheme()
+  const isBright = theme === "bright"
   const isActive = status === "active"
   const isConnecting = status === "connecting"
   const isEnding = status === "ending"
@@ -80,6 +83,7 @@ export function VoiceInput({
           className={cn(
             "relative z-10 flex h-36 w-36 sm:h-44 sm:w-44 items-center justify-center rounded-full",
             "border border-white/20 bg-gradient-to-br from-violet-600/40 via-indigo-600/30 to-purple-900/50",
+            isBright && "from-violet-500/50 via-indigo-400/40 to-purple-700/40 border-violet-300/30",
             "shadow-[0_0_60px_-12px_rgba(139,92,246,0.55)] backdrop-blur-xl",
             "transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]",
             "disabled:cursor-not-allowed disabled:opacity-60",
@@ -101,7 +105,7 @@ export function VoiceInput({
       </div>
 
       {isActive && remainingSeconds != null && (
-        <p className="text-sm font-medium tabular-nums text-violet-300/90">
+        <p className={cn("text-sm font-medium tabular-nums", isBright ? "text-violet-700" : "text-violet-300/90")}>
           {mins}:{secs.toString().padStart(2, "0")} remaining
         </p>
       )}
@@ -111,7 +115,10 @@ export function VoiceInput({
           ? Array.from({ length: 12 }).map((_, i) => (
               <span
                 key={i}
-                className="w-1 rounded-full bg-violet-400/80 animate-pulse"
+                className={cn(
+                  "w-1 rounded-full animate-pulse",
+                  isBright ? "bg-violet-600/80" : "bg-violet-400/80"
+                )}
                 style={{
                   height: `${12 + Math.sin(i * 0.8) * 8 + 8}px`,
                   animationDelay: `${i * 0.08}s`,
@@ -120,7 +127,7 @@ export function VoiceInput({
               />
             ))
           : Array.from({ length: 12 }).map((_, i) => (
-              <span key={i} className="h-2 w-1 rounded-full bg-white/15" />
+              <span key={i} className={cn("h-2 w-1 rounded-full", isBright ? "bg-black/15" : "bg-white/15")} />
             ))}
       </div>
 

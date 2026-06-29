@@ -29,7 +29,7 @@ export const LANGUAGE_OPTIONS = [
   { name: "हिन्दी", langId: "hi" as const },
 ] as const
 
-type SupportedLanguage = "en" | "ko" | "es" | "zh" | "ja" | "hi"
+export type SupportedLanguage = (typeof LANGUAGE_OPTIONS)[number]["langId"]
 
 interface VoiceCardProps {
   onStartCall?: () => void

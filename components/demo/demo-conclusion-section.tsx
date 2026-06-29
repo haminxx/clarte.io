@@ -5,13 +5,13 @@ import { motion } from "framer-motion"
 import { ExternalLink, GitBranch, Lightbulb, BookOpen, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import type { DemoConclusionData } from "@/hooks/use-demo-session"
+import type { DemoConclusionData, DemoEndReason } from "@/hooks/use-demo-session"
 
 interface DemoConclusionSectionProps {
   visible: boolean
   loading: boolean
   data: DemoConclusionData | null
-  endReason?: "timer" | "natural" | "manual" | null
+  endReason?: DemoEndReason | null
   onStartNew: () => void
   isBright?: boolean
 }

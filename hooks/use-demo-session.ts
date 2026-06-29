@@ -6,6 +6,7 @@ export const DEMO_LIMIT_MS = 5 * 60 * 1000
 export const DEMO_LIMIT_SECONDS = DEMO_LIMIT_MS / 1000
 
 export type DemoSessionPhase = "idle" | "active" | "ending" | "concluded"
+export type DemoEndReason = "timer" | "natural" | "manual"
 
 export interface TranscriptEntry {
   role: string
@@ -19,7 +20,17 @@ export interface DemoConclusionData {
   research: { title: string; url: string; snippet: string }[]
 }
 
-const VOICE_AGENT_URL = process.env.NEXT_PUBLIC_VOICE_AGENT_URL ?? ""
+const EMPTY_CONCLUSION: DemoConclusionData = {
+  summary: "",
+  mindmap: { nodes: [], edges: [] },
+  action_items: [],
+  research: [],
+}
+
+function getConcludeUrl(): string | null {
+  const base = (process.env.NEXT_PUBLIC_VOICE_AGENT_URL ?? "").replace(/\/$/, "")
+  return base ? `${base}/demo/conclude` : null
+}
 
 export function useDemoSession() {
   const [phase, setPhase] = useState<DemoSessionPhase>("idle")
@@ -28,12 +39,17 @@ export function useDemoSession() {
   const [partialCaption, setPartialCaption] = useState("")
   const [conclusion, setConclusion] = useState<DemoConclusionData | null>(null)
   const [conclusionLoading, setConclusionLoading] = useState(false)
-  const [endReason, setEndReason] = useState<"timer" | "natural" | "manual" | null>(null)
+  const [endReason, setEndReason] = useState<DemoEndReason | null>(null)
 
+  const phaseRef = useRef<DemoSessionPhase>("idle")
   const startedAtRef = useRef<number | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const disconnectRef = useRef<(() => void) | null>(null)
   const transcriptRef = useRef<TranscriptEntry[]>([])
+
+  useEffect(() => {
+    phaseRef.current = phase
+  }, [phase])
 
   useEffect(() => {
     transcriptRef.current = transcript
@@ -44,7 +60,9 @@ export function useDemoSession() {
   }, [])
 
   const addTranscript = useCallback((role: string, content: string) => {
-    setTranscript((prev) => [...prev, { role, content }])
+    const trimmed = content.trim()
+    if (!trimmed) return
+    setTranscript((prev) => [...prev, { role, content: trimmed }])
     setPartialCaption("")
   }, [])
 
@@ -54,15 +72,12 @@ export function useDemoSession() {
 
   const fetchConclusion = useCallback(async (entries: TranscriptEntry[]) => {
     setConclusionLoading(true)
-    const baseUrl = VOICE_AGENT_URL.replace(/\/$/, "")
-    const url = baseUrl ? `${baseUrl}/demo/conclude` : null
+    const url = getConcludeUrl()
 
     if (!url) {
       setConclusion({
-        summary: "Thanks for trying Clarte. Start a new demo anytime.",
-        mindmap: { nodes: [], edges: [] },
-        action_items: [],
-        research: [],
+        ...EMPTY_CONCLUSION,
+        summary: "Thanks for trying Clarte. Configure NEXT_PUBLIC_VOICE_AGENT_URL to enable full session summaries.",
       })
       setConclusionLoading(false)
       return
@@ -76,14 +91,20 @@ export function useDemoSession() {
       })
       if (!res.ok) throw new Error(`Conclude failed: ${res.status}`)
       const data = (await res.json()) as DemoConclusionData
-      setConclusion(data)
+      setConclusion({
+        summary: data.summary ?? "",
+        mindmap: data.mindmap ?? { nodes: [], edges: [] },
+        action_items: data.action_items ?? [],
+        research: data.research ?? [],
+      })
     } catch (e) {
       console.warn("[Clarte Demo] Conclude failed:", e)
       setConclusion({
-        summary: "Your demo session has ended. We couldn't generate a full summary — try again with a longer conversation.",
-        mindmap: { nodes: [], edges: [] },
-        action_items: [],
-        research: [],
+        ...EMPTY_CONCLUSION,
+        summary:
+          entries.length > 0
+            ? "Your demo session has ended. We couldn't generate a full summary right now — try again in a moment."
+            : "Your demo ended before any conversation was captured. Start a new session and say hello to Clarte.",
       })
     } finally {
       setConclusionLoading(false)
@@ -91,8 +112,10 @@ export function useDemoSession() {
   }, [])
 
   const endSession = useCallback(
-    async (reason: "timer" | "natural" | "manual") => {
-      if (phase === "ending" || phase === "concluded") return
+    async (reason: DemoEndReason) => {
+      if (phaseRef.current === "ending" || phaseRef.current === "concluded") return
+
+      phaseRef.current = "ending"
       setEndReason(reason)
       setPhase("ending")
 
@@ -104,34 +127,37 @@ export function useDemoSession() {
       disconnectRef.current?.()
       disconnectRef.current = null
 
-      const entries = [...transcriptRef.current]
-      await fetchConclusion(entries)
+      await fetchConclusion([...transcriptRef.current])
 
       setTranscript([])
       setPartialCaption("")
       setRemainingSeconds(DEMO_LIMIT_SECONDS)
       startedAtRef.current = null
+      phaseRef.current = "concluded"
       setPhase("concluded")
     },
-    [phase, fetchConclusion]
+    [fetchConclusion]
   )
 
   const startSession = useCallback(() => {
-    if (phase !== "idle" && phase !== "concluded") return
+    if (phaseRef.current !== "idle" && phaseRef.current !== "concluded") return
+
     setConclusion(null)
     setEndReason(null)
     setTranscript([])
     setPartialCaption("")
     setRemainingSeconds(DEMO_LIMIT_SECONDS)
     startedAtRef.current = Date.now()
+    phaseRef.current = "active"
     setPhase("active")
-  }, [phase])
+  }, [])
 
   const resetDemo = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current)
     timerRef.current = null
     disconnectRef.current = null
     startedAtRef.current = null
+    phaseRef.current = "idle"
     setPhase("idle")
     setTranscript([])
     setPartialCaption("")
@@ -149,9 +175,7 @@ export function useDemoSession() {
       const elapsed = Date.now() - startedAtRef.current
       const left = Math.max(0, Math.ceil((DEMO_LIMIT_MS - elapsed) / 1000))
       setRemainingSeconds(left)
-      if (left <= 0) {
-        void endSession("timer")
-      }
+      if (left <= 0) void endSession("timer")
     }, 1000)
 
     return () => {

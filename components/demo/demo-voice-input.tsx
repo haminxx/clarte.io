@@ -9,14 +9,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { LANGUAGE_OPTIONS, VOICE_OPTIONS } from "@/components/voice-card"
+import { LANGUAGE_OPTIONS, VOICE_OPTIONS, type SupportedLanguage } from "@/components/voice-card"
 import { cn } from "@/lib/utils"
 
 const Room = dynamic(() => import("@/components/voice/Room").then((m) => ({ default: m.Room })), {
   ssr: false,
 })
-
-type SupportedLanguage = "en" | "ko" | "es" | "zh" | "ja" | "hi"
 
 interface DemoVoiceInputProps {
   voiceStatus: VoiceInputStatus

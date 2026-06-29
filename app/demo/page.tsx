@@ -3,7 +3,6 @@
 import { useCallback, useMemo, useState } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { PageThemeBg } from "@/components/page-theme-bg"
 import { ParticleOrb } from "@/components/particle-orb"
 import { AnimateOnScroll } from "@/components/animate-on-scroll"
 import { DemoVoiceInput } from "@/components/demo/demo-voice-input"
@@ -11,6 +10,7 @@ import { DemoConclusionSection } from "@/components/demo/demo-conclusion-section
 import { useDemoSession } from "@/hooks/use-demo-session"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
 import { cn } from "@/lib/utils"
+import type { SupportedLanguage } from "@/components/voice-card"
 import type { VoiceInputStatus } from "@/components/ui/voice-input"
 
 if (typeof window !== "undefined" && !process.env.NEXT_PUBLIC_LIVEKIT_URL) {
@@ -23,7 +23,7 @@ export default function DemoPage() {
   const [connectionActive, setConnectionActive] = useState(false)
 
   const [selectedVoice, setSelectedVoice] = useState("aura-2-thalia-en")
-  const [selectedLanguage, setSelectedLanguage] = useState<"en" | "ko" | "es" | "zh" | "ja" | "hi">("en")
+  const [selectedLanguage, setSelectedLanguage] = useState<SupportedLanguage>("en")
 
   const {
     phase,
@@ -75,16 +75,10 @@ export default function DemoPage() {
     window.scrollTo({ top: 0, behavior: "smooth" })
   }, [resetDemo])
 
-  const pickerDisabled = phase === "active" || phase === "ending"
-
-  const latestCaption = partialCaption
-    ? partialCaption
-    : undefined
+  const pickerDisabled = sessionLive
 
   return (
     <div className="min-h-screen bg-transparent">
-      <PageThemeBg />
-
       <Header />
 
       <main className="relative z-10 mx-auto w-full max-w-[min(52rem,94vw)] px-4 pt-[clamp(6rem,18vh,12rem)] pb-24">
@@ -106,26 +100,24 @@ export default function DemoPage() {
             </div>
 
             <div className="relative z-20 flex w-full justify-center py-8">
-              {(phase === "idle" || phase === "active" || phase === "ending" || phase === "concluded") && (
-                <DemoVoiceInput
-                  voiceStatus={voiceStatus}
-                  onToggle={handleToggle}
-                  remainingSeconds={phase === "active" ? remainingSeconds : null}
-                  caption={latestCaption}
-                  selectedVoice={selectedVoice}
-                  onVoiceChange={setSelectedVoice}
-                  selectedLanguage={selectedLanguage}
-                  onLanguageChange={setSelectedLanguage}
-                  pickerDisabled={pickerDisabled}
-                  isBright={isBright}
-                  inCall={sessionLive}
-                  onRegisterDisconnect={registerDisconnect}
-                  onSessionConcluded={handleSessionConcluded}
-                  onTranscriptAdd={addTranscript}
-                  onTranscriptPartial={addPartial}
-                  onConnectionActive={() => setConnectionActive(true)}
-                />
-              )}
+              <DemoVoiceInput
+                voiceStatus={voiceStatus}
+                onToggle={handleToggle}
+                remainingSeconds={phase === "active" ? remainingSeconds : null}
+                caption={partialCaption || undefined}
+                selectedVoice={selectedVoice}
+                onVoiceChange={setSelectedVoice}
+                selectedLanguage={selectedLanguage}
+                onLanguageChange={setSelectedLanguage}
+                pickerDisabled={pickerDisabled}
+                isBright={isBright}
+                inCall={sessionLive}
+                onRegisterDisconnect={registerDisconnect}
+                onSessionConcluded={handleSessionConcluded}
+                onTranscriptAdd={addTranscript}
+                onTranscriptPartial={addPartial}
+                onConnectionActive={() => setConnectionActive(true)}
+              />
             </div>
           </div>
         </AnimateOnScroll>
