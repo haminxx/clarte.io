@@ -79,6 +79,7 @@ function RoomInnerKrispProvider({
   compact,
   onTranscriptAdd,
   onTranscriptPartial,
+  onSessionConcluded,
 }: {
   onDisconnect: () => void
   withScreen: boolean
@@ -86,6 +87,7 @@ function RoomInnerKrispProvider({
   compact?: boolean
   onTranscriptAdd?: (role: string, content: string) => void
   onTranscriptPartial?: (role: string, content: string) => void
+  onSessionConcluded?: () => void
 }) {
   const krisp = useKrispNoiseFilter()
   return (
@@ -97,6 +99,7 @@ function RoomInnerKrispProvider({
       compact={compact}
       onTranscriptAdd={onTranscriptAdd}
       onTranscriptPartial={onTranscriptPartial}
+      onSessionConcluded={onSessionConcluded}
     />
   )
 }
@@ -121,6 +124,7 @@ function RoomInnerWithKrisp(props: {
   compact?: boolean
   onTranscriptAdd?: (role: string, content: string) => void
   onTranscriptPartial?: (role: string, content: string) => void
+  onSessionConcluded?: () => void
 }) {
   const { useKrisp, compact, ...innerProps } = props
   if (!useKrisp) {
@@ -142,6 +146,7 @@ function RoomInner({
   compact,
   onTranscriptAdd,
   onTranscriptPartial,
+  onSessionConcluded,
 }: {
   onDisconnect: () => void
   withScreen: boolean
@@ -150,6 +155,7 @@ function RoomInner({
   compact?: boolean
   onTranscriptAdd?: (role: string, content: string) => void
   onTranscriptPartial?: (role: string, content: string) => void
+  onSessionConcluded?: () => void
 }) {
   const { localParticipant, isMicrophoneEnabled, microphoneTrack, isScreenShareEnabled, isCameraEnabled } =
     useLocalParticipant()
@@ -176,6 +182,9 @@ function RoomInner({
       }
       if (data?.type === "transcript_partial" && data.role && data.content !== undefined && onTranscriptPartial) {
         onTranscriptPartial(data.role, data.content)
+      }
+      if (data?.type === "session_concluded") {
+        onSessionConcluded?.()
       }
     } catch {
       /* ignore */
@@ -431,7 +440,8 @@ async function fetchToken(
   voice?: string,
   language?: SupportedLanguage,
   user_name?: string | null,
-  voiceProfileId?: string | null
+  voiceProfileId?: string | null,
+  demoMode?: boolean
 ): Promise<{ token: string; room: string } | { error: string }> {
   const normalizedLanguage: SupportedLanguage =
     language && ["en", "ko", "es", "zh", "ja", "hi"].includes(language)
@@ -450,6 +460,9 @@ async function fetchToken(
   const vpId = voiceProfileId?.trim?.()
   if (vpId && vpId.length >= 3) {
     body.voice_profile_id = vpId
+  }
+  if (demoMode) {
+    body.session_type = "demo"
   }
   const res = await fetch(tokenUrl, {
     method: "POST",
@@ -507,6 +520,14 @@ interface RoomProps {
   onTranscriptPartial?: (role: string, content: string) => void
   /** Optional: Deepgram VoiceProfile ID for cloned/custom voices (dashboard/desktop/iOS, not demo). */
   voiceProfileId?: string | null
+  /** Demo page: ephemeral session, no Firestore save, session_type=demo token. */
+  demoMode?: boolean
+  /** Demo page: called when agent invokes conclude_session. */
+  onSessionConcluded?: () => void
+  /** Demo page: register disconnect handler for external timer/end. */
+  onRegisterDisconnect?: (disconnect: () => void) => void
+  /** Demo page: minimal hidden LiveKit chrome. */
+  variant?: "default" | "demo"
 }
 
 export function Room({
@@ -528,6 +549,10 @@ export function Room({
   onTranscriptAdd,
   onTranscriptPartial,
   voiceProfileId,
+  demoMode = false,
+  onSessionConcluded,
+  onRegisterDisconnect,
+  variant = "default",
 }: RoomProps) {
   const [token, setToken] = useState<string | null>(null)
   const [roomName, setRoomName] = useState<string | null>(null)
@@ -565,7 +590,7 @@ export function Room({
     setStatus("idle")
     setError(null)
 
-    if (userId && getAuthToken) {
+    if (userId && getAuthToken && !demoMode) {
       try {
         const authToken = await getAuthToken()
         if (authToken) {
@@ -591,7 +616,11 @@ export function Room({
     }
 
     onDisconnect?.()
-  }, [onDisconnect, userId, getAuthToken, roomName, onConversationSaved])
+  }, [onDisconnect, userId, getAuthToken, roomName, onConversationSaved, demoMode])
+
+  useEffect(() => {
+    onRegisterDisconnect?.(disconnect)
+  }, [onRegisterDisconnect, disconnect])
 
   const startCall = useCallback(async () => {
     if (!LIVEKIT_URL) {
@@ -632,7 +661,7 @@ export function Room({
       }
     }
     try {
-      const result = await fetchToken(tokenUrl, mode, voice, language, userDisplayName, voiceProfileId ?? null)
+      const result = await fetchToken(tokenUrl, mode, voice, language, userDisplayName, voiceProfileId ?? null, demoMode)
       if ("error" in result) {
         setError(result.error)
         setStatus("error")
@@ -650,9 +679,10 @@ export function Room({
       )
       setStatus("error")
     }
-  }, [mode, voice, language, userDisplayName, voiceProfileId, onConnectionActive])
+  }, [mode, voice, language, userDisplayName, voiceProfileId, onConnectionActive, demoMode])
 
   const configured = Boolean(LIVEKIT_URL)
+  const isDemoVariant = variant === "demo"
 
   useEffect(() => {
     if (autoStart && status === "idle" && configured) {
@@ -727,6 +757,39 @@ export function Room({
   )
 
   if (status === "active" && token && roomName) {
+    if (isDemoVariant) {
+      return (
+        <div className="sr-only absolute h-0 w-0 overflow-hidden" aria-hidden>
+          <LiveKitRoom
+            serverUrl={LIVEKIT_URL}
+            token={token}
+            connect={true}
+            audio={true}
+            video={false}
+            onDisconnected={disconnect}
+            onError={(err) => {
+              console.error("[Clarte Voice] LiveKit error:", err)
+              setToken(null)
+              setRoomName(null)
+              setStatus("error")
+              setError(err?.message ?? "Connection error")
+            }}
+          >
+            <RoomInnerWithKrisp
+              onDisconnect={disconnect}
+              withScreen={withScreen}
+              withCamera={withCamera}
+              useKrisp={useKrisp}
+              compact
+              onTranscriptAdd={addTranscript}
+              onTranscriptPartial={addTranscriptPartial}
+              onSessionConcluded={onSessionConcluded}
+            />
+          </LiveKitRoom>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+        </div>
+      )
+    }
     if (cardLayout) {
       return (
         <>
@@ -803,6 +866,13 @@ export function Room({
         </LiveKitRoom>
       </div>
     )
+  }
+
+  if (isDemoVariant) {
+    if (status === "error" && error) {
+      return <p className="text-center text-sm text-destructive">{error}</p>
+    }
+    return null
   }
 
   if (cardLayout) {

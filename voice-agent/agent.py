@@ -59,6 +59,14 @@ No premature advice. No filler ("That's a great question!"). 1–2 sentences max
 search_web: Step 3 only. check_schedule: availability. log_feedback: notes. request_screen_share / request_camera: when asked. switch_to_english / switch_to_korean: language switch. show_guidance: math (LaTeX), steps, screen positions (x,y 0–100).
 """
 
+DEMO_SESSION_APPEND = """
+
+## DEMO SESSION (ephemeral — no persistent memory)
+This is a public demo session. Do not reference past sessions or stored memory.
+log_feedback notes are session-only and will not be saved.
+When the user reaches clarity after Step 3 (Reality Check) and you have given a final summary, call conclude_session to end the demo gracefully.
+"""
+
 # Persona keys used by the frontend to select Deepgram voices.
 # When the value is a full Deepgram model ID (e.g. "aura-2-thalia-en"), we
 # use it directly. When it is a simple persona ("female"/"male"), we resolve
@@ -183,7 +191,7 @@ def _parse_metadata(job) -> dict:
     Metadata is injected by the token server via RoomAgentDispatch. Example:
     {"voice": "aura-2-thalia-en", "mode": "casual", "language": "en", "user_name": "Alex"}
     """
-    out = {"voice": "female", "mode": "expert", "language": "en", "user_name": None, "voice_profile_id": None}
+    out = {"voice": "female", "mode": "expert", "language": "en", "user_name": None, "voice_profile_id": None, "session_type": "account"}
     try:
         meta = getattr(job, "metadata", None) if job else None
         if not meta:
@@ -208,6 +216,9 @@ def _parse_metadata(job) -> dict:
             v = vp_id.strip()
             if 3 <= len(v) <= 200:
                 out["voice_profile_id"] = v
+        st = data.get("session_type")
+        if st in ("demo", "account"):
+            out["session_type"] = st
     except Exception:
         pass
     return out
@@ -219,11 +230,13 @@ from tools import do_check_schedule, do_log_feedback, do_search_web
 class ExecutiveAssistantAgent(Agent):
     """Single unified Executive Assistant with schedule, search, memory, and screen/camera request tools."""
 
-    def __init__(self, room, session=None) -> None:
-        super().__init__(instructions=EXECUTIVE_ASSISTANT_PROMPT)
+    def __init__(self, room, session=None, demo: bool = False) -> None:
+        instructions = EXECUTIVE_ASSISTANT_PROMPT + (DEMO_SESSION_APPEND if demo else "")
+        super().__init__(instructions=instructions)
         self._room = room
         self._session = session  # for TTS language switch tools
         self._silence_timer: Optional[asyncio.Task] = None
+        self._demo = demo
 
     async def tts_node(
         self, text: AsyncIterable[str], model_settings: ModelSettings
@@ -378,7 +391,28 @@ class ExecutiveAssistantAgent(Agent):
     )
     async def log_feedback(self, context: RunContext, content: str, project: str = "") -> str:
         """Log feedback/notes to memory. Stub: returns placeholder until Notion/DB integration."""
+        if self._demo:
+            logger.info("demo log_feedback (session-only): %s", content[:80] if content else "")
+            return (
+                "Noted for this demo session only — nothing is saved after you leave. "
+                "Sign up for a Clarte account to keep building memory over time."
+            )
         return await asyncio.to_thread(do_log_feedback, content, project)
+
+    @function_tool(
+        description="End the demo session when the user has reached clarity after Step 3 Reality Check. Call once with a brief closing summary.",
+    )
+    async def conclude_session(self, context: RunContext, closing_summary: str = "") -> str:
+        """Signal the frontend that the demo conversation has naturally concluded."""
+        try:
+            await self._room.local_participant.publish_data(
+                json.dumps({"type": "session_concluded", "reason": "natural", "summary": closing_summary.strip()}),
+                reliable=True,
+            )
+            logger.info("Sent session_concluded to client")
+        except Exception as e:
+            logger.exception("conclude_session publish failed: %s", e)
+        return "Session concluded. The user will see their demo summary shortly."
 
     @function_tool(
         description="Switch to speaking in English. Call when the user asks you to speak in English.",
@@ -455,6 +489,7 @@ async def entrypoint(ctx: agents.JobContext) -> None:
     meta = _parse_metadata(getattr(ctx, "job", None))
     voice, mode, language, user_name = meta["voice"], meta["mode"], meta["language"], meta.get("user_name")
     voice_profile_id = meta.get("voice_profile_id")
+    is_demo = meta.get("session_type") == "demo"
 
     if not (os.getenv("OPENAI_API_KEY") or "").strip():
         logger.error("OPENAI_API_KEY is not set. LLM will fail.")
@@ -538,8 +573,11 @@ async def entrypoint(ctx: agents.JobContext) -> None:
         asyncio.create_task(_publish())
 
     room_opts = room_io.RoomOptions(video_input=True)  # allow video when user enables screen/camera
-    agent = ExecutiveAssistantAgent(room=room, session=session)
-    logger.info("Starting Executive Assistant session (voice=%s, mode=%s, language=%s, user_name=%s)", voice, mode, language, user_name or "(none)")
+    agent = ExecutiveAssistantAgent(room=room, session=session, demo=is_demo)
+    logger.info(
+        "Starting Executive Assistant session (voice=%s, mode=%s, language=%s, user_name=%s, demo=%s)",
+        voice, mode, language, user_name or "(none)", is_demo,
+    )
     await session.start(
         room=room,
         agent=agent,

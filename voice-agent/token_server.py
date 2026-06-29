@@ -57,6 +57,7 @@ VALID_MODES = frozenset({"casual", "expert", "research"})
 VALID_LANGUAGES = frozenset({"en", "ko", "es", "zh", "ja", "hi"})
 
 VALID_PERSONAS = frozenset({"female", "male"})
+VALID_SESSION_TYPES = frozenset({"demo", "account"})
 
 
 class TokenRequest(BaseModel):
@@ -67,6 +68,7 @@ class TokenRequest(BaseModel):
     language: Optional[str] = None
     user_name: Optional[str] = None
     voice_profile_id: Optional[str] = None
+    session_type: Optional[str] = None
 
 
 @app.get("/health")
@@ -123,6 +125,9 @@ def get_token(body: Optional[TokenRequest] = Body(None)):
     if voice_profile_id and (not isinstance(voice_profile_id, str) or len(voice_profile_id.strip()) < 3):
         voice_profile_id = None
 
+    raw_session_type = (body.session_type if body else None) or "account"
+    session_type = raw_session_type if raw_session_type in VALID_SESSION_TYPES else "account"
+
     try:
         from livekit.api import (
             AccessToken,
@@ -136,7 +141,7 @@ def get_token(body: Optional[TokenRequest] = Body(None)):
         at.with_name(identity or "user")
         room = room_name or f"clarte-{uuid.uuid4().hex[:12]}"
         at.with_grants(VideoGrants(room_join=True, room=room))
-        meta = {"voice": voice, "mode": mode, "language": language}
+        meta = {"voice": voice, "mode": mode, "language": language, "session_type": session_type}
         if user_name:
             meta["user_name"] = user_name
         if voice_profile_id:
@@ -153,7 +158,10 @@ def get_token(body: Optional[TokenRequest] = Body(None)):
         )
 
         token = at.to_jwt()
-        logger.info("Token issued for room=%s voice=%s mode=%s language=%s", room, voice, mode, language)
+        logger.info(
+            "Token issued for room=%s voice=%s mode=%s language=%s session_type=%s",
+            room, voice, mode, language, session_type,
+        )
         return {"token": token, "room": room}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -526,3 +534,157 @@ def save_conversation(
     except Exception as e:
         logger.exception("Firestore save failed: %s", e)
         raise HTTPException(status_code=500, detail="Save failed")
+
+
+class DemoConcludeRequest(BaseModel):
+    transcript: list[dict[str, str]] = []
+    session_type: Optional[str] = "demo"
+
+
+def _transcript_to_text(transcript: list[dict[str, str]]) -> str:
+    if not transcript:
+        return "Voice demo conversation with Clarte (no transcript available)."
+    return "\n\n".join(f"{t.get('role', '')}: {t.get('content', '')}" for t in transcript)
+
+
+def _parse_mindmap_json(raw: str) -> dict[str, Any]:
+    mindmap: dict[str, Any] = {"nodes": [], "edges": []}
+    if not raw:
+        return mindmap
+    try:
+        parsed = json.loads(raw.replace("```json", "").replace("```", "").strip())
+        if isinstance(parsed.get("nodes"), list):
+            mindmap["nodes"] = [
+                {
+                    "id": str(n.get("id", n.get("label", ""))),
+                    "label": str(n.get("label", "")),
+                    "type": n.get("type", "topic")
+                    if n.get("type") in ("topic", "question", "answer", "guidance", "change")
+                    else "topic",
+                }
+                for n in parsed["nodes"]
+            ]
+        if isinstance(parsed.get("edges"), list):
+            mindmap["edges"] = [
+                {"from": str(e.get("from", "")), "to": str(e.get("to", ""))}
+                for e in parsed["edges"]
+            ]
+    except Exception as e:
+        logger.debug("Mindmap parse failed: %s", e)
+    return mindmap
+
+
+@app.post("/demo/conclude")
+def demo_conclude(body: DemoConcludeRequest):
+    """Ephemeral demo conclusion: summary, mindmap, action items, research. No Firestore."""
+    transcript_text = _transcript_to_text(body.transcript)
+
+    openai_key = os.getenv("OPENAI_API_KEY")
+    if not openai_key:
+        raise HTTPException(status_code=503, detail="OpenAI not configured")
+
+    try:
+        from openai import OpenAI
+        from tools import do_search_web
+
+        client = OpenAI(api_key=openai_key)
+    except ImportError:
+        raise HTTPException(status_code=503, detail="OpenAI client not available")
+
+    summary = "Voice demo with Clarte."
+    try:
+        summary_res = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "Summarize this demo conversation in 2-4 sentences as a clear conclusion. "
+                        "Focus on what the user was working on, key insights, and recommended direction."
+                    ),
+                },
+                {"role": "user", "content": transcript_text},
+            ],
+            max_tokens=300,
+        )
+        if summary_res.choices:
+            summary = summary_res.choices[0].message.content.strip() or summary
+    except Exception as e:
+        logger.exception("Demo summary generation failed: %s", e)
+
+    mindmap: dict[str, Any] = {"nodes": [], "edges": []}
+    action_items: list[str] = []
+    try:
+        combined_res = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        'Return JSON only: { "mindmap": { "nodes": [{ "id": "1", "label": "...", "type": "topic" }], '
+                        '"edges": [{ "from": "1", "to": "2" }] }, "action_items": ["..."] }. '
+                        "Mindmap types: topic, question, answer, guidance, change. "
+                        "action_items: 3-5 concrete next steps for the user."
+                    ),
+                },
+                {"role": "user", "content": transcript_text},
+            ],
+            max_tokens=700,
+        )
+        raw = combined_res.choices[0].message.content.strip() if combined_res.choices else ""
+        if raw:
+            parsed = json.loads(raw.replace("```json", "").replace("```", "").strip())
+            if isinstance(parsed.get("mindmap"), dict):
+                mindmap = _parse_mindmap_json(json.dumps(parsed["mindmap"]))
+            elif isinstance(parsed.get("nodes"), list):
+                mindmap = _parse_mindmap_json(raw)
+            if isinstance(parsed.get("action_items"), list):
+                action_items = [str(x).strip() for x in parsed["action_items"] if str(x).strip()]
+    except Exception as e:
+        logger.debug("Demo mindmap/action_items generation failed: %s", e)
+
+    research: list[dict[str, str]] = []
+    try:
+        query_res = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Given this conversation, return ONE web search query (max 12 words) to find supporting research. Return only the query text.",
+                },
+                {"role": "user", "content": transcript_text},
+            ],
+            max_tokens=40,
+        )
+        search_query = (
+            query_res.choices[0].message.content.strip().strip('"')
+            if query_res.choices
+            else ""
+        )
+        if search_query:
+            exa_text = do_search_web(search_query)
+            for block in exa_text.split("\n\n---\n\n")[:4]:
+                lines = block.strip().split("\n")
+                title = lines[0].lstrip("[0123456789].] ") if lines else "Result"
+                url = ""
+                snippet = ""
+                for line in lines[1:]:
+                    if line.startswith("URL:"):
+                        url = line[4:].strip()
+                    elif line and not line.startswith("URL:"):
+                        snippet = (snippet + " " + line).strip()
+                if title or url:
+                    research.append({
+                        "title": title[:200],
+                        "url": url[:500],
+                        "snippet": (snippet[:400] + "…") if len(snippet) > 400 else snippet,
+                    })
+    except Exception as e:
+        logger.debug("Demo research generation failed: %s", e)
+
+    return {
+        "summary": summary,
+        "mindmap": mindmap,
+        "action_items": action_items,
+        "research": research,
+    }
