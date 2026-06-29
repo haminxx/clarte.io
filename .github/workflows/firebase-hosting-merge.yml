@@ -48,12 +48,20 @@ jobs:
 
       - name: Deploy to Firebase Hosting
         env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_CLARTE_8AECE }}
+          FIREBASE_SA_CLARTE: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_CLARTE_8AECE }}
+          FIREBASE_SA_GENERIC: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: |
-          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
-            echo "::error::FIREBASE_SERVICE_ACCOUNT_CLARTE_8AECE secret is not set"
+          if [ -n "$FIREBASE_SA_CLARTE" ]; then
+            printf '%s' "$FIREBASE_SA_CLARTE" > "${RUNNER_TEMP}/firebase-sa.json"
+            export GOOGLE_APPLICATION_CREDENTIALS="${RUNNER_TEMP}/firebase-sa.json"
+          elif [ -n "$FIREBASE_SA_GENERIC" ]; then
+            printf '%s' "$FIREBASE_SA_GENERIC" > "${RUNNER_TEMP}/firebase-sa.json"
+            export GOOGLE_APPLICATION_CREDENTIALS="${RUNNER_TEMP}/firebase-sa.json"
+          elif [ -n "$FIREBASE_TOKEN" ]; then
+            export FIREBASE_TOKEN
+          else
+            echo "::error::No Firebase deploy credentials. Add FIREBASE_SERVICE_ACCOUNT_CLARTE_8AECE (service account JSON) in GitHub repo Settings → Secrets → Actions."
             exit 1
           fi
-          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "${RUNNER_TEMP}/firebase-sa.json"
-          export GOOGLE_APPLICATION_CREDENTIALS="${RUNNER_TEMP}/firebase-sa.json"
           npx firebase-tools@13.0.0 deploy --only hosting --project clarte-8aece --non-interactive --force
