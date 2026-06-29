@@ -37,16 +37,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
+import {
+  formatDemoVoiceError,
+  getLiveKitUrl,
+  getVoiceAgentBaseUrl,
+} from "@/lib/voice-config"
 
 export type CallMode = "voice-only" | "voice-with-screen" | "voice-with-screen-camera" | "voice-with-camera"
 
 type SupportedLanguage = "en" | "ko" | "es" | "zh" | "ja" | "hi"
 
 /** Phase 2: Fail fast if LiveKit URL is not set (client env inlined at build). */
-const LIVEKIT_URL = process.env.NEXT_PUBLIC_LIVEKIT_URL ?? ""
-const VOICE_AGENT_URL = process.env.NEXT_PUBLIC_VOICE_AGENT_URL ?? ""
-
-// LIVEKIT_URL required only for Tier 2/3 (screen share, camera). Tier 1 uses VoiceRoomDirect.
 
 /** Mobile detection for mic error messaging */
 function isMobile(): boolean {
@@ -528,6 +529,8 @@ interface RoomProps {
   onRegisterDisconnect?: (disconnect: () => void) => void
   /** Demo page: minimal hidden LiveKit chrome. */
   variant?: "default" | "demo"
+  /** Demo page: surface connection errors to parent UI. */
+  onVoiceError?: (message: string | null) => void
 }
 
 export function Room({
@@ -553,6 +556,7 @@ export function Room({
   onSessionConcluded,
   onRegisterDisconnect,
   variant = "default",
+  onVoiceError,
 }: RoomProps) {
   const [token, setToken] = useState<string | null>(null)
   const [roomName, setRoomName] = useState<string | null>(null)
@@ -565,6 +569,17 @@ export function Room({
   const useKrisp = true
   const { theme } = useClarteTheme()
   const isBright = theme === "bright"
+  const livekitUrl = getLiveKitUrl()
+  const isDemoVariant = variant === "demo"
+
+  const reportError = useCallback(
+    (message: string | null) => {
+      const formatted = message && isDemoVariant ? formatDemoVoiceError(message) : message
+      setError(formatted)
+      onVoiceError?.(formatted)
+    },
+    [isDemoVariant, onVoiceError]
+  )
 
   const addTranscript = useCallback(
     (role: string, content: string) => {
@@ -589,12 +604,13 @@ export function Room({
     setRoomName(null)
     setStatus("idle")
     setError(null)
+    onVoiceError?.(null)
 
     if (userId && getAuthToken && !demoMode) {
       try {
         const authToken = await getAuthToken()
         if (authToken) {
-          const baseUrl = (VOICE_AGENT_URL ?? "").replace(/\/$/, "")
+          const baseUrl = getVoiceAgentBaseUrl()
           const saveUrl = baseUrl ? `${baseUrl}/conversations/save` : "/api/conversations/save"
           const res = await fetch(saveUrl, {
             method: "POST",
@@ -623,13 +639,14 @@ export function Room({
   }, [onRegisterDisconnect, disconnect])
 
   const startCall = useCallback(async () => {
-    if (!LIVEKIT_URL) {
-      setError("Voice is not configured. Set NEXT_PUBLIC_LIVEKIT_URL in your environment.")
+    const lkUrl = getLiveKitUrl()
+    if (!lkUrl) {
+      reportError("Voice is not configured. Set NEXT_PUBLIC_LIVEKIT_URL in your environment.")
       setStatus("error")
       return
     }
     setStatus("starting")
-    setError(null)
+    reportError(null)
     let stream: MediaStream | null = null
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -639,14 +656,14 @@ export function Room({
         stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       } catch (micErr2) {
         console.error("[Clarte Voice] Microphone access denied or failed:", micErr2)
-        setError(getMicErrorMessage(micErr2))
+        reportError(getMicErrorMessage(micErr2))
         setStatus("error")
         return
       }
     }
     if (stream) stream.getTracks().forEach((t) => t.stop())
 
-    const baseUrl = VOICE_AGENT_URL?.replace(/\/$/, "") ?? ""
+    const baseUrl = getVoiceAgentBaseUrl()
     const tokenUrl = baseUrl ? `${baseUrl}/token` : "/api/token"
     if (baseUrl) {
       console.log("[Clarte Voice] Using Render token server:", tokenUrl)
@@ -663,7 +680,7 @@ export function Room({
     try {
       const result = await fetchToken(tokenUrl, mode, voice, language, userDisplayName, voiceProfileId ?? null, demoMode)
       if ("error" in result) {
-        setError(result.error)
+        reportError(result.error)
         setStatus("error")
         return
       }
@@ -672,17 +689,18 @@ export function Room({
       setStatus("active")
       onConnectionActive?.()
     } catch (e) {
-      setError(
-        baseUrl
-          ? "Cannot reach voice service. Check NEXT_PUBLIC_VOICE_AGENT_URL and that the Render service is running."
-          : (e instanceof Error ? e.message : "Failed to get token")
-      )
+      const raw =
+        baseUrl && isDemoVariant
+          ? "Cannot reach voice service."
+          : e instanceof Error
+            ? e.message
+            : "Failed to get token"
+      reportError(raw)
       setStatus("error")
     }
-  }, [mode, voice, language, userDisplayName, voiceProfileId, onConnectionActive, demoMode])
+  }, [mode, voice, language, userDisplayName, voiceProfileId, onConnectionActive, demoMode, reportError, isDemoVariant])
 
-  const configured = Boolean(LIVEKIT_URL)
-  const isDemoVariant = variant === "demo"
+  const configured = Boolean(livekitUrl)
 
   useEffect(() => {
     if (autoStart && status === "idle" && configured) {
@@ -761,7 +779,7 @@ export function Room({
       return (
         <div className="sr-only absolute h-0 w-0 overflow-hidden" aria-hidden>
           <LiveKitRoom
-            serverUrl={LIVEKIT_URL}
+            serverUrl={livekitUrl}
             token={token}
             connect={true}
             audio={true}
@@ -801,7 +819,7 @@ export function Room({
                 {voiceSelect}
               </div>
               <LiveKitRoom
-                serverUrl={LIVEKIT_URL}
+                serverUrl={livekitUrl}
                 token={token}
                 connect={true}
                 audio={true}
@@ -837,7 +855,7 @@ export function Room({
     return (
       <div className="w-full max-w-lg rounded-2xl border border-border bg-card/90 p-4 sm:p-6 shadow-2xl backdrop-blur-md mx-auto">
         <LiveKitRoom
-          serverUrl={LIVEKIT_URL}
+          serverUrl={livekitUrl}
           token={token}
           connect={true}
           audio={true}
@@ -869,9 +887,6 @@ export function Room({
   }
 
   if (isDemoVariant) {
-    if (status === "error" && error) {
-      return <p className="text-center text-sm text-destructive">{error}</p>
-    }
     return null
   }
 

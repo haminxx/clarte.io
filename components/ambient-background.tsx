@@ -1,21 +1,37 @@
 "use client"
 
 import * as React from "react"
+import { useClarteTheme } from "@/lib/clarte-theme-context"
 import { cn } from "@/lib/utils"
 
 /**
- * Shared ambient background visual: dark midnight blue base with centered
- * radial glow (deep purples/indigos, heavy blur). Used by PageThemeBg and
- * AmbientBackgroundWrapper so all pages share the same "Dark Mode Ambient
- * Radial Glow" style.
+ * Theme-aware page background: clean white/blue (bright) or dark radial glow (dark).
  */
 export function AmbientBackground({ className }: { className?: string }) {
+  const { theme } = useClarteTheme()
+
+  if (theme === "bright") {
+    return (
+      <div className={cn("absolute inset-0 overflow-hidden bg-[#FAFAFA]", className)} aria-hidden>
+        <div className="absolute inset-0 bg-gradient-to-b from-[#FAFAFA] via-[#F7FAFF] to-[#EEF4FF]/90" />
+        <div
+          className="absolute left-1/2 top-[-10%] h-[520px] w-[min(100%,920px)] -translate-x-1/2 rounded-full opacity-80"
+          style={{
+            background: "radial-gradient(circle, rgba(0,114,245,0.09) 0%, transparent 68%)",
+            filter: "blur(48px)",
+          }}
+        />
+        <div
+          className="absolute bottom-0 left-0 right-0 h-40"
+          style={{ background: "linear-gradient(to top, rgba(250,250,250,0.95), transparent)" }}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className={cn("absolute inset-0 overflow-hidden", className)} aria-hidden>
-      {/* Base: very dark midnight blue / almost black */}
       <div className="absolute inset-0 bg-[#0A0A14]" />
-
-      {/* Centered soft radial gradient — deep purples/indigos fading to transparent */}
       <div
         className="absolute left-1/2 top-1/2 h-[min(140vmax,1800px)] w-[min(140vmax,1800px)] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-90"
         style={{
@@ -24,38 +40,9 @@ export function AmbientBackground({ className }: { className?: string }) {
           filter: "blur(120px)",
         }}
       />
-
-      {/* Secondary orb for depth — subtle drift animation */}
-      <div
-        className="absolute left-1/2 top-1/2 h-[600px] w-[600px] md:h-[900px] md:w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full animate-hero-gradient-drift opacity-80"
-        style={{
-          background: "radial-gradient(circle, rgba(59,7,100,0.35) 0%, rgba(49,46,129,0.15) 50%, transparent 70%)",
-          filter: "blur(80px)",
-        }}
-      />
-
-      {/* Accent orbs — moody, immersive */}
-      <div
-        className="absolute right-1/4 top-1/3 h-[300px] w-[300px] md:h-[500px] md:w-[500px] rounded-full animate-hero-gradient-drift opacity-70"
-        style={{
-          background: "radial-gradient(circle, rgba(76,29,149,0.3) 0%, transparent 65%)",
-          filter: "blur(100px)",
-        }}
-      />
-      <div
-        className="absolute left-1/4 bottom-1/3 h-[250px] w-[250px] md:h-[400px] md:w-[400px] rounded-full animate-hero-gradient-drift opacity-70"
-        style={{
-          background: "radial-gradient(circle, rgba(49,46,129,0.3) 0%, transparent 65%)",
-          filter: "blur(100px)",
-        }}
-      />
-
-      {/* Bottom gradient fade for continuity */}
       <div
         className="absolute bottom-0 left-0 right-0 h-[280px] md:h-[400px]"
-        style={{
-          background: "linear-gradient(to top, rgba(10,10,20,0.95) 0%, transparent 100%)",
-        }}
+        style={{ background: "linear-gradient(to top, rgba(10,10,20,0.95) 0%, transparent 100%)" }}
       />
     </div>
   )

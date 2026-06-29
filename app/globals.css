@@ -70,6 +70,16 @@
 }
 
 :root {
+  /* Vercel-inspired accent + surfaces */
+  --clarte-accent: #0072F5;
+  --clarte-accent-focus: #005FCC;
+  --clarte-surface: #FAFAFA;
+  --clarte-elevated: #FFFFFF;
+  --clarte-text: #171717;
+  --clarte-text-secondary: #4D4D4D;
+  --clarte-text-muted: #8F8F8F;
+  --clarte-border: rgba(0, 0, 0, 0.08);
+
   /* Dark blue theme - Clarte brand colors */
   --background: oklch(0.08 0.02 260);
   --foreground: oklch(0.98 0 0);

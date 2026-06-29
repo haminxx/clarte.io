@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { getVoiceAgentBaseUrl } from "@/lib/voice-config"
 
 export const DEMO_LIMIT_MS = 5 * 60 * 1000
 export const DEMO_LIMIT_SECONDS = DEMO_LIMIT_MS / 1000
@@ -28,7 +29,7 @@ const EMPTY_CONCLUSION: DemoConclusionData = {
 }
 
 function getConcludeUrl(): string | null {
-  const base = (process.env.NEXT_PUBLIC_VOICE_AGENT_URL ?? "").replace(/\/$/, "")
+  const base = getVoiceAgentBaseUrl()
   return base ? `${base}/demo/conclude` : null
 }
 

@@ -1,6 +1,7 @@
 "use client"
 
 import dynamic from "next/dynamic"
+import { AlertCircle } from "lucide-react"
 import { VoiceInput, type VoiceInputStatus } from "@/components/ui/voice-input"
 import {
   Select,
@@ -9,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { LANGUAGE_OPTIONS, VOICE_OPTIONS, type SupportedLanguage } from "@/components/voice-card"
+import { VOICE_OPTIONS } from "@/components/voice-card"
 import { cn } from "@/lib/utils"
 
 const Room = dynamic(() => import("@/components/voice/Room").then((m) => ({ default: m.Room })), {
@@ -23,10 +24,9 @@ interface DemoVoiceInputProps {
   caption?: string
   selectedVoice: string
   onVoiceChange: (id: string) => void
-  selectedLanguage: SupportedLanguage
-  onLanguageChange: (lang: SupportedLanguage) => void
   pickerDisabled?: boolean
-  isBright?: boolean
+  voiceError?: string | null
+  onVoiceError?: (message: string | null) => void
   inCall: boolean
   onRegisterDisconnect: (fn: () => void) => void
   onSessionConcluded: () => void
@@ -42,10 +42,9 @@ export function DemoVoiceInput({
   caption,
   selectedVoice,
   onVoiceChange,
-  selectedLanguage,
-  onLanguageChange,
   pickerDisabled = false,
-  isBright = false,
+  voiceError,
+  onVoiceError,
   inCall,
   onRegisterDisconnect,
   onSessionConcluded,
@@ -54,40 +53,37 @@ export function DemoVoiceInput({
   onConnectionActive,
 }: DemoVoiceInputProps) {
   return (
-    <div className="flex w-full max-w-lg flex-col items-center gap-8 scale-110 sm:scale-125">
-      <VoiceInput
-        status={voiceStatus}
-        onToggle={onToggle}
-        remainingSeconds={remainingSeconds}
-        caption={caption}
-        disabled={pickerDisabled && voiceStatus === "idle"}
-        className="w-full"
-      />
+    <div className="flex w-full max-w-md flex-col items-center gap-6">
+      <div
+        className={cn(
+          "w-full rounded-2xl border bg-white p-8 sm:p-10",
+          "shadow-[0_0_0_1px_rgba(0,0,0,0.06),0_8px_30px_rgba(0,0,0,0.04)]"
+        )}
+      >
+        <VoiceInput
+          status={voiceStatus}
+          onToggle={onToggle}
+          remainingSeconds={remainingSeconds}
+          caption={caption}
+          disabled={pickerDisabled && voiceStatus === "idle"}
+          className="w-full"
+        />
+      </div>
 
-      <div className="flex flex-wrap items-center justify-center gap-3">
-        <Select
-          disabled={pickerDisabled}
-          value={selectedLanguage}
-          onValueChange={(v) => onLanguageChange(v as SupportedLanguage)}
+      {voiceError && (
+        <div
+          role="alert"
+          className="flex w-full max-w-md items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-[#991B1B]"
         >
-          <SelectTrigger className={cn("w-[130px] rounded-full", isBright ? "bg-white/80" : "bg-white/10")}>
-            <SelectValue placeholder="Language" />
-          </SelectTrigger>
-          <SelectContent>
-            {LANGUAGE_OPTIONS.map((opt) => (
-              <SelectItem key={opt.langId} value={opt.langId}>
-                {opt.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <p>{voiceError}</p>
+        </div>
+      )}
 
-        <Select
-          disabled={pickerDisabled}
-          value={selectedVoice}
-          onValueChange={onVoiceChange}
-        >
-          <SelectTrigger className={cn("w-[140px] rounded-full", isBright ? "bg-white/80" : "bg-white/10")}>
+      <div className="flex items-center justify-center gap-2">
+        <span className="text-sm text-[#4D4D4D]">Voice</span>
+        <Select disabled={pickerDisabled} value={selectedVoice} onValueChange={onVoiceChange}>
+          <SelectTrigger className="h-9 w-[148px] rounded-lg border-[#EBEBEB] bg-white text-sm shadow-[0_0_0_1px_rgba(0,0,0,0.04)]">
             <SelectValue placeholder="Voice" />
           </SelectTrigger>
           <SelectContent>
@@ -104,19 +100,19 @@ export function DemoVoiceInput({
         <Room
           mode="voice-only"
           voice={selectedVoice}
-          language={selectedLanguage}
+          language="en"
           autoStart
           demoMode
           variant="demo"
           selectedVoiceId={selectedVoice}
           onVoiceChange={onVoiceChange}
-          selectedLanguage={selectedLanguage}
-          onLanguageChange={onLanguageChange}
+          selectedLanguage="en"
           onRegisterDisconnect={onRegisterDisconnect}
           onSessionConcluded={onSessionConcluded}
           onTranscriptAdd={onTranscriptAdd}
           onTranscriptPartial={onTranscriptPartial}
           onConnectionActive={onConnectionActive}
+          onVoiceError={onVoiceError}
         />
       )}
     </div>

@@ -1,29 +1,24 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { ParticleOrb } from "@/components/particle-orb"
 import { AnimateOnScroll } from "@/components/animate-on-scroll"
 import { DemoVoiceInput } from "@/components/demo/demo-voice-input"
 import { DemoConclusionSection } from "@/components/demo/demo-conclusion-section"
 import { useDemoSession } from "@/hooks/use-demo-session"
 import { useClarteTheme } from "@/lib/clarte-theme-context"
-import { cn } from "@/lib/utils"
-import type { SupportedLanguage } from "@/components/voice-card"
 import type { VoiceInputStatus } from "@/components/ui/voice-input"
 
-if (typeof window !== "undefined" && !process.env.NEXT_PUBLIC_LIVEKIT_URL) {
-  console.warn("[Clarte] NEXT_PUBLIC_LIVEKIT_URL is undefined. Voice calls may not work.")
-}
-
 export default function DemoPage() {
-  const { theme } = useClarteTheme()
-  const isBright = theme === "bright"
+  const { setTheme } = useClarteTheme()
   const [connectionActive, setConnectionActive] = useState(false)
-
+  const [voiceError, setVoiceError] = useState<string | null>(null)
   const [selectedVoice, setSelectedVoice] = useState("aura-2-thalia-en")
-  const [selectedLanguage, setSelectedLanguage] = useState<SupportedLanguage>("en")
+
+  useEffect(() => {
+    setTheme("bright")
+  }, [setTheme])
 
   const {
     phase,
@@ -55,13 +50,16 @@ export default function DemoPage() {
     if (phase === "active" || phase === "ending") {
       void endSession("manual")
       setConnectionActive(false)
+      setVoiceError(null)
       return
     }
     if (phase === "concluded") {
       resetDemo()
+      setVoiceError(null)
     }
     startSession()
     setConnectionActive(false)
+    setVoiceError(null)
   }, [phase, endSession, resetDemo, startSession])
 
   const handleSessionConcluded = useCallback(() => {
@@ -72,53 +70,53 @@ export default function DemoPage() {
   const handleStartNew = useCallback(() => {
     resetDemo()
     setConnectionActive(false)
+    setVoiceError(null)
     window.scrollTo({ top: 0, behavior: "smooth" })
   }, [resetDemo])
 
   const pickerDisabled = sessionLive
 
   return (
-    <div className="min-h-screen bg-transparent">
+    <div className="min-h-screen bg-[#FAFAFA]">
       <Header />
 
-      <main className="relative z-10 mx-auto w-full max-w-[min(52rem,94vw)] px-4 pt-[clamp(6rem,18vh,12rem)] pb-24">
-        <AnimateOnScroll animation="fade-up" animateOnMount delay={100}>
-          <div className="mb-10 text-center">
-            <h1 className={cn("font-bold text-[clamp(2rem,5vw,3.25rem)]", isBright ? "text-black" : "text-white")}>
+      <main className="relative z-10 mx-auto w-full max-w-3xl px-4 pt-[clamp(5.5rem,14vh,9rem)] pb-24">
+        <AnimateOnScroll animation="fade-up" animateOnMount delay={80}>
+          <div className="mb-12 text-center">
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#8F8F8F]">
+              Live demo
+            </p>
+            <h1
+              className="mt-3 text-[clamp(2rem,5vw,3rem)] font-semibold tracking-[-0.04em] text-[#171717]"
+              style={{ lineHeight: 1.05 }}
+            >
               Try Clarte
             </h1>
-            <p className={cn("mx-auto mt-3 max-w-xl text-[clamp(0.9375rem,1.5vw,1.0625rem)]", isBright ? "text-black/60" : "text-white/60")}>
-              5-minute demo · Fresh session every time · No account memory stored
+            <p className="mx-auto mt-4 max-w-lg text-[15px] leading-relaxed text-[#4D4D4D]">
+              5-minute English demo · Fresh session every time · No account memory stored
             </p>
           </div>
         </AnimateOnScroll>
 
-        <AnimateOnScroll animation="fade-up" delay={200}>
-          <div className="relative flex min-h-[50vh] flex-col items-center justify-center">
-            <div className="pointer-events-none absolute left-1/2 top-1/2 h-[120vmin] w-[120vmin] -translate-x-1/2 -translate-y-1/2">
-              <ParticleOrb variant={isBright ? "bright" : "dark"} />
-            </div>
-
-            <div className="relative z-20 flex w-full justify-center py-8">
-              <DemoVoiceInput
-                voiceStatus={voiceStatus}
-                onToggle={handleToggle}
-                remainingSeconds={phase === "active" ? remainingSeconds : null}
-                caption={partialCaption || undefined}
-                selectedVoice={selectedVoice}
-                onVoiceChange={setSelectedVoice}
-                selectedLanguage={selectedLanguage}
-                onLanguageChange={setSelectedLanguage}
-                pickerDisabled={pickerDisabled}
-                isBright={isBright}
-                inCall={sessionLive}
-                onRegisterDisconnect={registerDisconnect}
-                onSessionConcluded={handleSessionConcluded}
-                onTranscriptAdd={addTranscript}
-                onTranscriptPartial={addPartial}
-                onConnectionActive={() => setConnectionActive(true)}
-              />
-            </div>
+        <AnimateOnScroll animation="fade-up" delay={160}>
+          <div className="flex min-h-[42vh] flex-col items-center justify-center py-4">
+            <DemoVoiceInput
+              voiceStatus={voiceStatus}
+              onToggle={handleToggle}
+              remainingSeconds={phase === "active" ? remainingSeconds : null}
+              caption={partialCaption || undefined}
+              selectedVoice={selectedVoice}
+              onVoiceChange={setSelectedVoice}
+              pickerDisabled={pickerDisabled}
+              voiceError={voiceError}
+              onVoiceError={setVoiceError}
+              inCall={sessionLive}
+              onRegisterDisconnect={registerDisconnect}
+              onSessionConcluded={handleSessionConcluded}
+              onTranscriptAdd={addTranscript}
+              onTranscriptPartial={addPartial}
+              onConnectionActive={() => setConnectionActive(true)}
+            />
           </div>
         </AnimateOnScroll>
 
@@ -128,7 +126,6 @@ export default function DemoPage() {
           data={conclusion}
           endReason={endReason}
           onStartNew={handleStartNew}
-          isBright={isBright}
         />
       </main>
 
